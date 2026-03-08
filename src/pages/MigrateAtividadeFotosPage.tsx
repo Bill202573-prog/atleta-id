@@ -61,7 +61,44 @@ const saveDoneToStorage = (statuses: Record<string, { status: FileStatus; error?
 
 const MigrateAtividadeFotosPage = () => {
   const [fileStatuses, setFileStatuses] = useState<Record<string, { status: FileStatus; error?: string }>>(loadDoneFromStorage);
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const syncDoneFromServer = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(
+        `https://vxzktyklzkfqitptzctk.supabase.co/functions/v1/migrate-atividade-fotos`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }
+      );
+
+      if (!res.ok) return;
+      const result = await res.json();
+      const uploaded = new Set<string>((result.activities || []).flatMap((a: { fotos_urls?: string[] }) => a.fotos_urls || []));
+
+      const doneFromServer: Record<string, { status: FileStatus }> = {};
+      Object.entries(FILE_MAPPING).forEach(([filename, info]) => {
+        if (uploaded.has(info.fullPath)) {
+          doneFromServer[filename] = { status: "done" };
+        }
+      });
+
+      setFileStatuses((prev) => {
+        const next = { ...prev, ...doneFromServer };
+        saveDoneToStorage(next);
+        return next;
+      });
+    } catch {
+      // silent sync failure
+    }
+  };
+
+  useEffect(() => {
+    void syncDoneFromServer();
+  }, []);
 
   const handleUpload = async (filename: string, file: File) => {
     const mapping = FILE_MAPPING[filename];
