@@ -209,23 +209,21 @@ const MigrateAtividadeFotosPage = () => {
 
                         <label htmlFor={`migrate-file-${filename}`} className="shrink-0">
                           <Button
+                            type="button"
                             size="sm"
                             variant={st?.status === "done" ? "outline" : "default"}
                             disabled={st?.status === "uploading" || st?.status === "done"}
                             className="shrink-0"
-                            asChild
                           >
-                            <span>
-                              {st?.status === "uploading" ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : st?.status === "done" ? (
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                              ) : st?.status === "error" ? (
-                                <AlertCircle className="w-4 h-4 text-red-600" />
-                              ) : (
-                                <ImagePlus className="w-4 h-4" />
-                              )}
-                            </span>
+                            {st?.status === "uploading" ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : st?.status === "done" ? (
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            ) : st?.status === "error" ? (
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                            ) : (
+                              <ImagePlus className="w-4 h-4" />
+                            )}
                           </Button>
                         </label>
 
