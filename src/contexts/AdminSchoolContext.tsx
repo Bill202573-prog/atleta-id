@@ -33,13 +33,13 @@ export function logAdminAction(
 ) {
   supabase
     .from('admin_audit_log')
-    .insert({
+    .insert([{
       admin_user_id: adminUserId,
       escolinha_id: escolinhaId,
       acao,
-      detalhes: detalhes || {},
+      detalhes: (detalhes || {}) as any,
       user_agent: navigator.userAgent,
-    })
+    }])
     .then(({ error }) => {
       if (error) console.error('Erro ao registrar audit log:', error);
     });
