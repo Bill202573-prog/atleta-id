@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Separator } from '@/components/ui/separator';
 import {
   Trophy,
