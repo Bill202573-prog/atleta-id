@@ -43,8 +43,24 @@ const ACTIVITIES = Object.entries(
 
 type FileStatus = "pending" | "uploading" | "done" | "error";
 
+const STORAGE_KEY = "migrate-fotos-done";
+
+const loadDoneFromStorage = (): Record<string, { status: FileStatus }> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return {};
+    const arr = JSON.parse(saved) as string[];
+    return Object.fromEntries(arr.map((f) => [f, { status: "done" as FileStatus }]));
+  } catch { return {}; }
+};
+
+const saveDoneToStorage = (statuses: Record<string, { status: FileStatus; error?: string }>) => {
+  const doneFiles = Object.entries(statuses).filter(([, s]) => s.status === "done").map(([f]) => f);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(doneFiles));
+};
+
 const MigrateAtividadeFotosPage = () => {
-  const [fileStatuses, setFileStatuses] = useState<Record<string, { status: FileStatus; error?: string }>>({});
+  const [fileStatuses, setFileStatuses] = useState<Record<string, { status: FileStatus; error?: string }>>(loadDoneFromStorage);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const handleUpload = async (filename: string, file: File) => {
@@ -54,7 +70,10 @@ const MigrateAtividadeFotosPage = () => {
       return;
     }
 
-    setFileStatuses((prev) => ({ ...prev, [filename]: { status: "uploading" } }));
+    setFileStatuses((prev) => {
+      const next = { ...prev, [filename]: { status: "uploading" as FileStatus } };
+      return next;
+    });
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -77,7 +96,11 @@ const MigrateAtividadeFotosPage = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Erro no upload");
 
-      setFileStatuses((prev) => ({ ...prev, [filename]: { status: "done" } }));
+      setFileStatuses((prev) => {
+        const next = { ...prev, [filename]: { status: "done" as FileStatus } };
+        saveDoneToStorage(next);
+        return next;
+      });
       toast.success(`✅ ${filename} → ${mapping.label}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro";
