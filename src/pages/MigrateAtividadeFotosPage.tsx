@@ -90,9 +90,12 @@ const MigrateAtividadeFotosPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check if filename matches
-    if (file.name !== expectedFilename) {
-      toast.error(`Esperado: ${expectedFilename}, recebido: ${file.name}`);
+    // Match by base name (ignore extension - old system may have converted formats)
+    const expectedBase = expectedFilename.replace(/\.[^.]+$/, "");
+    const actualBase = file.name.replace(/\.[^.]+$/, "");
+
+    if (actualBase !== expectedBase) {
+      toast.error(`Esperado: ${expectedBase}.*, recebido: ${file.name}`);
       return;
     }
 
