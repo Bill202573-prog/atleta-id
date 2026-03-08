@@ -285,6 +285,7 @@ const AlunoFinanceiroHistorico = ({
         acc[m.crianca_id] = {
           id: m.crianca_id,
           nome: m.crianca_nome,
+          foto_url: criancasFotoMap[m.crianca_id] || null,
           mensalidades: [],
           cobrancaEntrada: null as CobrancaEntrada | null,
           convocacoes: [] as typeof amistosoConvocacoes,
@@ -292,7 +293,7 @@ const AlunoFinanceiroHistorico = ({
       }
       acc[m.crianca_id].mensalidades.push(m);
       return acc;
-    }, {} as Record<string, { id: string; nome: string; mensalidades: MensalidadeDetail[]; cobrancaEntrada: CobrancaEntrada | null; convocacoes: typeof amistosoConvocacoes }>);
+    }, {} as Record<string, { id: string; nome: string; foto_url: string | null; mensalidades: MensalidadeDetail[]; cobrancaEntrada: CobrancaEntrada | null; convocacoes: typeof amistosoConvocacoes }>);
 
     // Add cobrancas entrada for students who only have enrollment (no mensalidades yet)
     cobrancasEntrada.forEach(c => {
