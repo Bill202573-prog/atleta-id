@@ -62,8 +62,8 @@ interface MensalidadeDetail {
   data_pagamento: string | null;
   forma_pagamento: string | null;
   observacoes: string | null;
-  abacatepay_url: string | null;
-  abacatepay_billing_id: string | null;
+  asaas_pix_url: string | null;
+  asaas_payment_id: string | null;
 }
 
 interface CobrancaEntrada {
