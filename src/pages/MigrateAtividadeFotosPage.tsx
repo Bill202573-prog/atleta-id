@@ -157,6 +157,7 @@ const MigrateAtividadeFotosPage = () => {
 
     if (actualBase !== expectedBase) {
       toast.error(`Esperado: ${expectedBase}.*, recebido: ${file.name}`);
+      e.target.value = "";
       return;
     }
 
