@@ -43,8 +43,24 @@ const ACTIVITIES = Object.entries(
 
 type FileStatus = "pending" | "uploading" | "done" | "error";
 
+const STORAGE_KEY = "migrate-fotos-done";
+
+const loadDoneFromStorage = (): Record<string, { status: FileStatus }> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return {};
+    const arr = JSON.parse(saved) as string[];
+    return Object.fromEntries(arr.map((f) => [f, { status: "done" as FileStatus }]));
+  } catch { return {}; }
+};
+
+const saveDoneToStorage = (statuses: Record<string, { status: FileStatus; error?: string }>) => {
+  const doneFiles = Object.entries(statuses).filter(([, s]) => s.status === "done").map(([f]) => f);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(doneFiles));
+};
+
 const MigrateAtividadeFotosPage = () => {
-  const [fileStatuses, setFileStatuses] = useState<Record<string, { status: FileStatus; error?: string }>>({});
+  const [fileStatuses, setFileStatuses] = useState<Record<string, { status: FileStatus; error?: string }>>(loadDoneFromStorage);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const handleUpload = async (filename: string, file: File) => {
