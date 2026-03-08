@@ -414,7 +414,7 @@ const SchoolFinanceiroPage = () => {
       if (fetchError) throw fetchError;
       
       // If marking as paid and there's an Asaas payment, cancel it first
-      if (status === 'pago' && mensalidade?.abacatepay_billing_id) {
+      if (status === 'pago' && mensalidade?.asaas_payment_id) {
         try {
           // Call edge function to cancel the Asaas payment
           const { data: cancelResult, error: cancelError } = await supabase.functions.invoke(

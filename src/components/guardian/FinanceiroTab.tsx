@@ -98,8 +98,8 @@ const FinanceiroTab = ({ criancaId, childName }: FinanceiroTabProps) => {
           data_pagamento,
           status,
           forma_pagamento,
-          abacatepay_billing_id,
-          abacatepay_url,
+          asaas_payment_id,
+          asaas_pix_url,
           escolinha:escolinhas!mensalidades_escolinha_id_fkey(nome)
         `)
         .eq('crianca_id', criancaId)

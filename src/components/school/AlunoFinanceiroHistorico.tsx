@@ -657,7 +657,7 @@ const AlunoFinanceiroHistorico = ({
                                         handleRegeneratePix(m);
                                       }}
                                       disabled={regeneratingId === m.id}
-                                      title={m.abacatepay_url ? "Regenerar PIX" : "Gerar PIX"}
+                                      title={m.asaas_pix_url ? "Regenerar PIX" : "Gerar PIX"}
                                     >
                                       {regeneratingId === m.id ? (
                                         <Loader2 className="w-3 h-3 animate-spin" />

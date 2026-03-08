@@ -49,7 +49,7 @@ const MensalidadeActionsDialog = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const [pendingData, setPendingData] = useState<{ dataPagamento?: string; valorPago?: number; observacao?: string } | null>(null);
 
-  const hasAsaasPayment = !!mensalidade?.abacatepay_billing_id;
+  const hasAsaasPayment = !!mensalidade?.asaas_payment_id;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

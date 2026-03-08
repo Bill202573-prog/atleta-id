@@ -130,8 +130,8 @@ const FinanceiroConsolidado = ({ children }: FinanceiroConsolidadoProps) => {
           data_pagamento,
           status,
           forma_pagamento,
-          abacatepay_billing_id,
-          abacatepay_url,
+          asaas_payment_id,
+          asaas_pix_url,
           escolinha:escolinhas!mensalidades_escolinha_id_fkey(nome)
         `)
         .in('crianca_id', childIds)
