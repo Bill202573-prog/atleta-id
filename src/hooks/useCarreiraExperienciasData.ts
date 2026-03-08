@@ -70,9 +70,9 @@ export function useEscolinhasAutocomplete(search: string) {
   return useQuery({
     queryKey: ['escolinhas-autocomplete', search],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('escolinhas_publico')
-        .select('id, nome, logo_url, cidade, estado')
+        .select('id, nome, logo_url, cidade, estado') as any)
         .ilike('nome', `%${search}%`)
         .limit(5);
       if (error) throw error;

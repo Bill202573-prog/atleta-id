@@ -93,9 +93,9 @@ export default function IndicacaoPage() {
 
         // Buscar indicador (view pública)
         if (refId) {
-          const { data: indicadorData } = await supabase
+          const { data: indicadorData } = await (supabase
             .from('responsaveis_publico')
-            .select('id, nome')
+            .select('id, nome') as any)
             .eq('id', refId)
             .single();
 
