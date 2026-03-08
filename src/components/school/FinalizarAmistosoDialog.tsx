@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import {
   Select,
   SelectContent,
