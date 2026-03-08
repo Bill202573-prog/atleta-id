@@ -1,5 +1,6 @@
 import { ReactNode, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminSchoolContext } from '@/contexts/AdminSchoolContext';
 import { ThemeProvider } from 'next-themes';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SchoolSidebar } from './SchoolSidebar';
@@ -10,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { StudentRegistrationProvider, useStudentRegistration } from '@/contexts/StudentRegistrationContext';
 import AlunoFichaDialog from '@/components/school/AlunoFichaDialog';
 import DraftManagerDialog from '@/components/school/DraftManagerDialog';
+import { Badge } from '@/components/ui/badge';
+import { Shield } from 'lucide-react';
 
 interface SchoolDashboardLayoutProps {
   children: ReactNode;
@@ -18,6 +21,8 @@ interface SchoolDashboardLayoutProps {
 // Inner component that uses the context
 function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
   const { user } = useAuth();
+  const adminCtx = useAdminSchoolContext();
+  const isAdminMode = !!adminCtx?.isAdminMode;
   const queryClient = useQueryClient();
   const { 
     isOpen, 
@@ -33,29 +38,35 @@ function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
     openStudentDialogNew
   } = useStudentRegistration();
 
-  // Handle dialog close with data refresh
   const handleDialogClose = useCallback(() => {
     closeDialog();
-    // Invalidate queries to refresh data after closing the dialog
     queryClient.invalidateQueries({ queryKey: ['school-children'] });
     queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
   }, [closeDialog, queryClient]);
 
-  // Fetch school's financial status with reasonable stale time
+  // Fetch school's financial status
   const { data: escolinha } = useQuery({
-    queryKey: ['escolinha-financial-status', user?.id],
+    queryKey: ['escolinha-financial-status', user?.escolinhaId, isAdminMode],
     queryFn: async () => {
+      if (isAdminMode && adminCtx?.escolinhaId) {
+        const { data, error } = await supabase
+          .from('escolinhas')
+          .select('status_financeiro_escola')
+          .eq('id', adminCtx.escolinhaId)
+          .single();
+        if (error) return null;
+        return data;
+      }
       const { data, error } = await supabase
         .from('escolinhas')
         .select('status_financeiro_escola')
         .eq('admin_user_id', user?.id)
         .single();
-      
       if (error) return null;
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 2, // 2 minutes - status doesn't change frequently
+    staleTime: 1000 * 60 * 2,
   });
 
   const effectiveEscolinhaId = escolinhaId || user?.escolinhaId || '';

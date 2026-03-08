@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import StatsCard from '@/components/shared/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ const statusColors: Record<EscolinhaStatus, string> = {
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { escolinhas, planos, stats, isLoading, error } = useAdminData();
   const { acessosPorEscola, acessosPorDia, totalAcessos, acessosHoje, acessos7Dias, isLoading: loadingAcessos } = useAccessLogData();
   
@@ -510,6 +512,15 @@ const AdminDashboard = () => {
                         {escolinha.financeiro.plano.nome}
                       </Badge>
                     )}
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      onClick={() => navigate(`/dashboard?escolinhaId=${escolinha.id}`)}
+                      className="gap-1"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span className="hidden sm:inline">Acessar</span>
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleViewEscolinha(escolinha)}>
                       <Eye className="w-4 h-4" />
                     </Button>

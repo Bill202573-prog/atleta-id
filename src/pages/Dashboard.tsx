@@ -1,7 +1,8 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { SchoolDashboardLayout } from '@/components/layout/SchoolDashboardLayout';
+import { AdminSchoolProvider } from '@/contexts/AdminSchoolContext';
 import AdminDashboard from './dashboard/AdminDashboard';
 import SchoolDashboard from './dashboard/SchoolDashboard';
 import TeacherDashboard from './dashboard/TeacherDashboard';
@@ -34,12 +35,14 @@ import GuardianFinanceiroPage from './dashboard/guardian/GuardianFinanceiroPage'
 import GuardianJornadaPage from './dashboard/guardian/GuardianJornadaPage';
 import GuardianConvocacoesPage from './dashboard/guardian/GuardianConvocacoesPage';
 import GuardianLojaPage from './dashboard/guardian/GuardianLojaPage';
+import EventosManagement from './dashboard/school/EventosManagement';
 
 import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   if (isLoading) {
     return (
@@ -70,6 +73,21 @@ const Dashboard = () => {
     );
   }
 
+  // ============================================
+  // ADMIN IMPERSONATING A SCHOOL
+  // When admin has ?escolinhaId=xxx, show full school layout
+  // ============================================
+  const adminEscolinhaId = searchParams.get('escolinhaId');
+  if (user.role === 'admin' && adminEscolinhaId) {
+    return (
+      <AdminSchoolProvider escolinhaId={adminEscolinhaId}>
+        <SchoolDashboardLayout>
+          <AdminSchoolContent />
+        </SchoolDashboardLayout>
+      </AdminSchoolProvider>
+    );
+  }
+
   // Guardian uses its own layout with sidebar
   if (user.role === 'guardian') {
     const path = location.pathname;
@@ -80,7 +98,6 @@ const Dashboard = () => {
     if (path === '/dashboard/jornada') return <GuardianJornadaPage />;
     if (path === '/dashboard/convocacoes') return <GuardianConvocacoesPage />;
     if (path === '/dashboard/loja') return <GuardianLojaPage />;
-    // Atleta ID agora vive em /atletaid/linkedin (produto separado)
     return <GuardianInicioPage />;
   }
 
@@ -146,6 +163,37 @@ const Dashboard = () => {
       {renderContent()}
     </DashboardLayout>
   );
+};
+
+/**
+ * Content router for admin viewing a school.
+ * All school routes are available here, using the overridden escolinhaId.
+ */
+const AdminSchoolContent = () => {
+  const location = useLocation();
+  const path = location.pathname;
+
+  if (path === '/dashboard/children') return <ChildrenManagement />;
+  if (path === '/dashboard/teachers') return <TeachersManagement />;
+  if (path === '/dashboard/classes') return <ClassesManagement />;
+  if (path === '/dashboard/aulas') return <AulasManagement />;
+  if (path === '/dashboard/chamada') return <SchoolChamadaPage />;
+  if (path === '/dashboard/amistosos') return <AmistososManagement />;
+  if (path === '/dashboard/campeonatos') return <CampeonatosManagement />;
+  if (path.startsWith('/dashboard/campeonatos/')) {
+    const campeonatoId = path.split('/dashboard/campeonatos/')[1]?.split('/')[0];
+    return <CampeonatoDetailPage campeonatoId={campeonatoId} />;
+  }
+  if (path === '/dashboard/trofeus') return <SalaTrofeusPage />;
+  if (path === '/dashboard/comunicados') return <ComunicadosEscolaManagement />;
+  if (path === '/dashboard/indicacoes') return <IndicacoesManagement />;
+  if (path === '/dashboard/loja') return <SchoolLojaPage />;
+  if (path === '/dashboard/perfil-publico') return <SchoolPublicProfilePage />;
+  if (path === '/dashboard/financeiro') return <SchoolFinanceiroPage />;
+  if (path === '/dashboard/eventos') return <EventosManagement />;
+
+  // Default: school dashboard
+  return <SchoolDashboard />;
 };
 
 export default Dashboard;
