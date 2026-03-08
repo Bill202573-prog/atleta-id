@@ -361,10 +361,7 @@ const ChildrenManagement = () => {
                   onClick={() => openEditDialog(child, escolinhaId)}
                 >
                   <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12">
-                      {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                      <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} className="w-12 h-12" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-foreground truncate">{child.nome}</p>
