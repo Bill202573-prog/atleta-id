@@ -31,6 +31,7 @@ const TermosPage = lazy(() => import("./pages/carreira/TermosPage"));
 const PrivacidadePage = lazy(() => import("./pages/carreira/PrivacidadePage"));
 const ContatoPage = lazy(() => import("./pages/carreira/ContatoPage"));
 const ImportUsersPage = lazy(() => import("./pages/ImportUsersPage"));
+const MigrateAtividadeFotosPage = lazy(() => import("./pages/MigrateAtividadeFotosPage"));
 
 
 const queryClient = new QueryClient({
@@ -85,6 +86,7 @@ const App = () => (
                   {/* Carreira routes temporarily disabled */}
                   {/* Retrocompatibilidade com links antigos - temporarily disabled */}
                   <Route path="/import-users" element={<ImportUsersPage />} />
+                  <Route path="/migrate-atividade-fotos" element={<MigrateAtividadeFotosPage />} />
                   
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/dashboard/*" element={<Dashboard />} />
