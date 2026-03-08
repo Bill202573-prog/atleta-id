@@ -628,7 +628,7 @@ const AlunoFinanceiroHistorico = ({
                                 {m.status !== 'pago' && m.status !== 'isento' && (
                                   <div className="flex gap-1">
                                     {/* PIX Link - if exists */}
-                                    {m.abacatepay_url && (
+                                    {m.asaas_pix_url && (
                                       <Button
                                         size="sm"
                                         variant="outline"
