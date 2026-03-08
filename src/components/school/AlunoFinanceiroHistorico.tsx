@@ -188,7 +188,30 @@ const AlunoFinanceiroHistorico = ({
     enabled: !!user?.escolinhaId,
   });
 
-  // Cancel amistoso mutation
+  // Fetch criancas foto_url for avatars
+  const criancaIds = useMemo(() => {
+    const ids = new Set<string>();
+    mensalidades.forEach(m => ids.add(m.crianca_id));
+    return Array.from(ids);
+  }, [mensalidades]);
+
+  const { data: criancasFotoMap = {} } = useQuery({
+    queryKey: ['criancas-foto-map', criancaIds],
+    queryFn: async () => {
+      if (criancaIds.length === 0) return {};
+      const { data, error } = await supabase
+        .from('criancas')
+        .select('id, foto_url')
+        .in('id', criancaIds);
+      if (error) throw error;
+      const map: Record<string, string | null> = {};
+      data?.forEach(c => { map[c.id] = c.foto_url; });
+      return map;
+    },
+    enabled: criancaIds.length > 0,
+  });
+
+
   const cancelAmistosoMutation = useMutation({
     mutationFn: async (convocacaoId: string) => {
       const { data, error } = await supabase.functions.invoke('cancel-amistoso-payment', {
