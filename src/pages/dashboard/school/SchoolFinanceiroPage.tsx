@@ -216,7 +216,7 @@ const SchoolFinanceiroPage = () => {
           data_vencimento,
           data_pagamento,
           metodo_pagamento,
-          abacatepay_url,
+          asaas_pix_url,
           plano:planos_saas(nome)
         `)
         .eq('escolinha_id', user.escolinhaId)
