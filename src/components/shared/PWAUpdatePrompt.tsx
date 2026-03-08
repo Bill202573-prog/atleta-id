@@ -73,21 +73,30 @@ export function PWAUpdatePrompt() {
     if (isUpdating) return;
     setIsUpdating(true);
 
-    if (waitingWorker) {
-      navigator.serviceWorker.addEventListener(
-        'controllerchange',
-        () => {
-          window.location.reload();
-        },
-        { once: true }
-      );
-
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-      reloadTimeoutRef.current = window.setTimeout(() => window.location.reload(), 4000);
+    if (!waitingWorker) {
+      window.location.reload();
       return;
     }
 
-    window.location.reload();
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      () => {
+        if (reloadTimeoutRef.current !== null) {
+          window.clearTimeout(reloadTimeoutRef.current);
+          reloadTimeoutRef.current = null;
+        }
+        window.location.reload();
+      },
+      { once: true }
+    );
+
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+
+    // If controlling event does not fire, keep the prompt and show guidance instead of reloading stale app
+    reloadTimeoutRef.current = window.setTimeout(() => {
+      setIsUpdating(false);
+      toast.error('Não foi possível aplicar a atualização agora. Feche outras abas do sistema e tente novamente.');
+    }, 8000);
   };
 
   const handleDismiss = () => {
