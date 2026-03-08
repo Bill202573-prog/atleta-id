@@ -26,19 +26,6 @@ export function PWAUpdatePrompt() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    const CARREIRA_DOMAINS = ['carreiraid.com.br', 'www.carreiraid.com.br'];
-    const isCarreiraDomain = CARREIRA_DOMAINS.includes(window.location.hostname);
-
-    const isRelevantSW = (sw: ServiceWorker | null) => {
-      if (!sw?.scriptURL) return false;
-      if (isCarreiraDomain) {
-        // On carreira domain, only listen to carreira-sw.js
-        return sw.scriptURL.includes('carreira-sw.js');
-      }
-      // On atletaid domain, only listen to workbox sw.js (not carreira or push)
-      return !sw.scriptURL.includes('carreira-sw.js') && !sw.scriptURL.includes('push-sw.js');
-    };
-
     const listenForUpdates = (registration: ServiceWorkerRegistration) => {
       if (!isRelevantSW(registration.active) && !isRelevantSW(registration.installing) && !isRelevantSW(registration.waiting)) return;
 
@@ -53,6 +40,7 @@ export function PWAUpdatePrompt() {
           });
         }
       });
+
       // Check if already waiting
       if (registration.waiting && isRelevantSW(registration.waiting)) {
         setWaitingWorker(registration.waiting);
@@ -60,7 +48,6 @@ export function PWAUpdatePrompt() {
       }
     };
 
-    // Listen on relevant service workers only
     navigator.serviceWorker.getRegistrations().then((registrations) => {
       registrations.forEach(listenForUpdates);
     });
