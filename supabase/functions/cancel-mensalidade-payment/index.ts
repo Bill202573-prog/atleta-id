@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
             console.error("Error cancelling Asaas payment:", errorData);
             // Continue anyway - we still want to cancel locally
           } else {
-            console.log("Asaas payment cancelled successfully:", mensalidade.abacatepay_billing_id);
+            console.log("Asaas payment cancelled successfully:", mensalidade.asaas_payment_id);
           }
         } catch (asaasError) {
           console.error("Error calling Asaas API:", asaasError);
