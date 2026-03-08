@@ -37,16 +37,19 @@ const MigratePhotosPage = () => {
       return;
     }
 
-    // Check which files already exist in storage
+    // Check which files actually exist in storage by trying to download a tiny portion
     const withStatus = await Promise.all(
       (data || []).map(async (child) => {
-        const { data: fileData } = await supabase.storage
+        // Use list to check if the file actually exists in the bucket
+        const folder = child.foto_url.split('/')[0];
+        const fileName = child.foto_url.split('/').slice(1).join('/');
+        const { data: files } = await supabase.storage
           .from('child-photos')
-          .createSignedUrl(child.foto_url, 60);
+          .list(folder, { limit: 100, search: fileName });
         
         return {
           ...child,
-          uploaded: !!fileData?.signedUrl,
+          uploaded: !!(files && files.length > 0 && files.some(f => child.foto_url.endsWith(f.name))),
         };
       })
     );
