@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, CheckCircle, Loader2, ImagePlus, Camera } from "lucide-react";
+import { Upload, CheckCircle, Loader2, ImagePlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { useSignedUrls } from "@/hooks/useSignedUrl";
 
 interface Activity {
   id: string;
@@ -25,6 +26,25 @@ const TIPO_LABELS: Record<string, string> = {
   competicao_torneio: "Competição / Torneio",
   outro: "Outro",
 };
+
+function ActivityPhotoThumbnails({ paths }: { paths: string[] }) {
+  const urls = useSignedUrls(paths, "atividade-externa-fotos");
+
+  if (urls.length === 0) return null;
+
+  return (
+    <div className="flex gap-2 mt-2">
+      {urls.map((url, i) => (
+        <img
+          key={i}
+          src={url}
+          alt={`Foto ${i + 1}`}
+          className="w-16 h-16 rounded-md object-cover border"
+        />
+      ))}
+    </div>
+  );
+}
 
 const MigrateAtividadeFotosPage = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -83,8 +103,8 @@ const MigrateAtividadeFotosPage = () => {
 
     try {
       for (const file of filesToUpload) {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`Arquivo muito grande: ${file.name}. Máximo 5MB.`);
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`Arquivo muito grande: ${file.name}. Máximo 10MB.`);
           continue;
         }
 
@@ -108,10 +128,9 @@ const MigrateAtividadeFotosPage = () => {
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || "Erro no upload");
 
-        toast.success(`Foto enviada para atividade`);
+        toast.success(`Foto "${file.name}" enviada!`);
       }
 
-      // Refresh list
       await fetchActivities();
     } catch (e) {
       console.error(e);
@@ -139,12 +158,14 @@ const MigrateAtividadeFotosPage = () => {
       <h1 className="text-2xl font-bold mb-2">Migrar Fotos de Atividades Externas</h1>
       <p className="text-muted-foreground mb-6">
         Faça upload das fotos do sistema antigo para cada atividade. Máximo 3 fotos por atividade.
+        <br />
+        <span className="text-xs">Formatos aceitos: JPG, PNG, WebP, AVIF</span>
       </p>
 
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/jpg,image/png"
+        accept="image/jpeg,image/jpg,image/png,image/webp,image/avif"
         multiple
         className="hidden"
         onChange={handleFileSelect}
@@ -168,7 +189,7 @@ const MigrateAtividadeFotosPage = () => {
             <CardContent className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="font-semibold text-sm">{activity.crianca_nome}</span>
                     <Badge variant="outline" className="text-xs">
                       {TIPO_LABELS[activity.tipo] || activity.tipo}
@@ -179,11 +200,16 @@ const MigrateAtividadeFotosPage = () => {
                     <div>{activity.local}</div>
                     {activity.instituicao && <div>{activity.instituicao}</div>}
                   </div>
+
+                  {/* Thumbnails das fotos já enviadas */}
                   {activity.fotos_count > 0 && (
-                    <div className="flex items-center gap-1 mt-2 text-xs text-green-600">
-                      <CheckCircle className="w-3 h-3" />
-                      {activity.fotos_count} foto(s) enviada(s)
-                    </div>
+                    <>
+                      <ActivityPhotoThumbnails paths={activity.fotos_urls} />
+                      <div className="flex items-center gap-1 mt-1 text-xs text-green-600">
+                        <CheckCircle className="w-3 h-3" />
+                        {activity.fotos_count}/3 foto(s)
+                      </div>
+                    </>
                   )}
                 </div>
                 <Button
