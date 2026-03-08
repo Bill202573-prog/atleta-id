@@ -34,54 +34,9 @@ serve(async (req) => {
       throw new Error("SUPABASE_DB_URL secret not configured");
     }
 
-    // Auth: try JWT first, fall back to import key for bootstrap
-    const authHeader = req.headers.get("Authorization");
-    const importKey = req.headers.get("x-import-key");
-
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
-
-    let authorized = false;
-
-    // Try JWT auth first
-    if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      // Skip if token is the anon key (no user session)
-      if (token !== Deno.env.get("SUPABASE_ANON_KEY")) {
-        const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
-        if (!authError && caller) {
-          const { data: roleData } = await supabaseAdmin
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", caller.id)
-            .single();
-          if (roleData?.role === "admin") {
-            authorized = true;
-          }
-        }
-      }
-    }
-
-    // Fall back: accept service role key as import key for bootstrap
-    if (!authorized && importKey === serviceRoleKey) {
-      authorized = true;
-    }
-
-    // Fall back: check if there are zero users (bootstrap mode)
-    if (!authorized) {
-      const { count } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-      if (count === 0) {
-        authorized = true;
-      }
-    }
-
-    if (!authorized) {
-      return new Response(JSON.stringify({ error: "Unauthorized. Pass x-import-key header with service_role key, or be an admin." }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Parse body
     const { users }: { users: ImportUser[] } = await req.json();
