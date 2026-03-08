@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
         mes_referencia,
         status,
         data_vencimento,
-        abacatepay_billing_id,
+        asaas_payment_id,
         crianca_id,
         escolinha_id,
         crianca:criancas!mensalidades_crianca_id_fkey(
