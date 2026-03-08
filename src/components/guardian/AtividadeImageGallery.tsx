@@ -2,14 +2,19 @@ import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSignedUrls } from '@/hooks/useSignedUrl';
 
 interface AtividadeImageGalleryProps {
   images: string[];
   className?: string;
 }
 
-const AtividadeImageGallery = ({ images, className = '' }: AtividadeImageGalleryProps) => {
+const AtividadeImageGallery = ({ images: rawImages, className = '' }: AtividadeImageGalleryProps) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const resolvedImages = useSignedUrls(rawImages, 'atividade-externa-fotos');
+  
+  // Use resolved signed URLs; fall back to raw if already HTTP
+  const images = resolvedImages.length > 0 ? resolvedImages : rawImages?.filter(u => u?.startsWith('http')) || [];
 
   if (!images || images.length === 0) return null;
 
