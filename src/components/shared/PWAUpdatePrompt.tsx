@@ -1,35 +1,30 @@
-import { useEffect, useState, useContext, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, X } from 'lucide-react';
-import { AuthContext } from '@/contexts/auth-context';
+import { toast } from 'sonner';
 
 export function PWAUpdatePrompt() {
-  const auth = useContext(AuthContext);
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const reloadTimeoutRef = useRef<number | null>(null);
 
-  // Disable for Bandeirantes school
-  const DISABLED_ESCOLINHA_IDS = ['4c5d8d10-9fa3-45e7-a84e-df50d357432c'];
-  const isDisabled = auth?.user?.escolinhaId && DISABLED_ESCOLINHA_IDS.includes(auth.user.escolinhaId);
+  const CARREIRA_DOMAINS = ['carreiraid.com.br', 'www.carreiraid.com.br'];
+  const isCarreiraDomain = typeof window !== 'undefined' && CARREIRA_DOMAINS.includes(window.location.hostname);
+
+  const isRelevantSW = (sw: ServiceWorker | null) => {
+    if (!sw?.scriptURL) return false;
+    if (isCarreiraDomain) {
+      // On carreira domain, only listen to carreira-sw.js
+      return sw.scriptURL.includes('carreira-sw.js');
+    }
+    // On atletaid domain, only listen to workbox sw.js (not carreira or push)
+    return !sw.scriptURL.includes('carreira-sw.js') && !sw.scriptURL.includes('push-sw.js');
+  };
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-
-    const CARREIRA_DOMAINS = ['carreiraid.com.br', 'www.carreiraid.com.br'];
-    const isCarreiraDomain = CARREIRA_DOMAINS.includes(window.location.hostname);
-
-    const isRelevantSW = (sw: ServiceWorker | null) => {
-      if (!sw?.scriptURL) return false;
-      if (isCarreiraDomain) {
-        // On carreira domain, only listen to carreira-sw.js
-        return sw.scriptURL.includes('carreira-sw.js');
-      }
-      // On atletaid domain, only listen to workbox sw.js (not carreira or push)
-      return !sw.scriptURL.includes('carreira-sw.js') && !sw.scriptURL.includes('push-sw.js');
-    };
 
     const listenForUpdates = (registration: ServiceWorkerRegistration) => {
       if (!isRelevantSW(registration.active) && !isRelevantSW(registration.installing) && !isRelevantSW(registration.waiting)) return;
@@ -45,6 +40,7 @@ export function PWAUpdatePrompt() {
           });
         }
       });
+
       // Check if already waiting
       if (registration.waiting && isRelevantSW(registration.waiting)) {
         setWaitingWorker(registration.waiting);
@@ -52,7 +48,6 @@ export function PWAUpdatePrompt() {
       }
     };
 
-    // Listen on relevant service workers only
     navigator.serviceWorker.getRegistrations().then((registrations) => {
       registrations.forEach(listenForUpdates);
     });
@@ -78,28 +73,37 @@ export function PWAUpdatePrompt() {
     if (isUpdating) return;
     setIsUpdating(true);
 
-    if (waitingWorker) {
-      navigator.serviceWorker.addEventListener(
-        'controllerchange',
-        () => {
-          window.location.reload();
-        },
-        { once: true }
-      );
-
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
-      reloadTimeoutRef.current = window.setTimeout(() => window.location.reload(), 4000);
+    if (!waitingWorker) {
+      window.location.reload();
       return;
     }
 
-    window.location.reload();
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      () => {
+        if (reloadTimeoutRef.current !== null) {
+          window.clearTimeout(reloadTimeoutRef.current);
+          reloadTimeoutRef.current = null;
+        }
+        window.location.reload();
+      },
+      { once: true }
+    );
+
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+
+    // If controlling event does not fire, keep the prompt and show guidance instead of reloading stale app
+    reloadTimeoutRef.current = window.setTimeout(() => {
+      setIsUpdating(false);
+      toast.error('Não foi possível aplicar a atualização agora. Feche outras abas do sistema e tente novamente.');
+    }, 8000);
   };
 
   const handleDismiss = () => {
     setDismissed(true);
   };
 
-  if (!needsRefresh || dismissed || isDisabled) return null;
+  if (!needsRefresh || dismissed) return null;
 
   return (
     <>
