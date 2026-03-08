@@ -847,7 +847,7 @@ const SchoolFinanceiroPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-blue-900/25">
+          <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
