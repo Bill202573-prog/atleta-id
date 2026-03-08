@@ -636,7 +636,7 @@ const AlunoFinanceiroHistorico = ({
                                         asChild
                                       >
                                         <a 
-                                          href={m.abacatepay_url} 
+                                          href={m.asaas_pix_url} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
                                           title="Abrir link de pagamento PIX"
