@@ -315,7 +315,11 @@ Deno.serve(async (req) => {
         console.error(`Push failed for ${sub.endpoint}:`, err.message);
         failed++;
 
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        if (
+          err.statusCode === 410 ||
+          err.statusCode === 404 ||
+          err.message?.includes('VapidPkHashMismatch')
+        ) {
           expiredEndpoints.push(sub.endpoint);
         }
       }
