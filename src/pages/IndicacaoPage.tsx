@@ -71,9 +71,9 @@ export default function IndicacaoPage() {
 
       try {
         // Buscar escola da view pública (inclui campos de contato para indicações)
-        const { data: escolaPublica, error: escolaError } = await (supabase
+        const { data: escolaPublica, error: escolaError } = await (supabase as any)
           .from('escolinhas_publico')
-          .select('id, nome, logo_url, telefone, whatsapp_indicacoes') as any)
+          .select('id, nome, logo_url, telefone, whatsapp_indicacoes')
           .eq('id', escolaId)
           .maybeSingle();
 
