@@ -86,7 +86,7 @@ interface HistoricoCobrancaSaas {
   data_vencimento: string | null;
   data_pagamento: string | null;
   metodo_pagamento: string | null;
-  abacatepay_url: string | null;
+  asaas_pix_url: string | null;
   plano?: { nome: string } | null;
 }
 
