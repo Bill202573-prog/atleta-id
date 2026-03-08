@@ -90,8 +90,8 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
           data_pagamento,
           status,
           forma_pagamento,
-          abacatepay_url,
-          abacatepay_billing_id,
+          asaas_pix_url,
+          asaas_payment_id,
           escolinha:escolinhas!mensalidades_escolinha_id_fkey(nome)
         `)
         .eq('crianca_id', criancaId)
