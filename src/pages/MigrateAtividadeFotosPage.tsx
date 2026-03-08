@@ -182,17 +182,75 @@ const MigrateAtividadeFotosPage = () => {
       setAutoMigrating(false);
     }
   };
-
   if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const withPhotos = activities.filter((a) => a.fotos_count > 0);
+  const withoutPhotos = activities.filter((a) => a.fotos_count === 0);
 
   return (
     <div className="container mx-auto p-4 max-w-3xl">
       <h1 className="text-2xl font-bold mb-2">Migrar Fotos de Atividades Externas</h1>
-      <p className="text-muted-foreground mb-6">
-        Faça upload das fotos do sistema antigo para cada atividade. Máximo 3 fotos por atividade.
-        <br />
-        <span className="text-xs">Formatos aceitos: JPG, PNG, WebP, AVIF</span>
+      <p className="text-muted-foreground mb-4">
+        Migração automática do sistema antigo ou upload manual. Máximo 3 fotos por atividade.
       </p>
+
+      {/* Auto migration section */}
+      <Card className="mb-6 border-blue-200 bg-blue-50/50">
+        <CardContent className="p-4">
+          <h2 className="font-semibold mb-2">🚀 Migração Automática</h2>
+          <p className="text-xs text-muted-foreground mb-3">
+            Baixa as fotos do sistema antigo e vincula automaticamente às atividades corretas.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleAutoMigrate(true)}
+              disabled={autoMigrating}
+            >
+              {autoMigrating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              Testar (Dry Run)
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleAutoMigrate(false)}
+              disabled={autoMigrating}
+            >
+              {autoMigrating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
+              Executar Migração
+            </Button>
+          </div>
+          {autoResult && (
+            <div className="mt-3 text-xs space-y-1 bg-white/80 p-2 rounded border">
+              <div><strong>Total fotos:</strong> {autoResult.summary.total_photos}</div>
+              <div><strong>Uploaded:</strong> {autoResult.summary.uploaded}</div>
+              <div><strong>Erros:</strong> {autoResult.summary.errors}</div>
+              <div><strong>DB atualizado:</strong> {autoResult.summary.db_updated}</div>
+              {autoResult.summary.unmapped_photos?.length > 0 && (
+                <div className="text-orange-600">
+                  <strong>Fotos sem atividade:</strong> {autoResult.summary.unmapped_photos.join(", ")}
+                </div>
+              )}
+              {autoResult.photo_results?.filter((r: any) => r.status === "error").length > 0 && (
+                <div className="text-red-600 mt-1">
+                  <strong>Erros:</strong>
+                  {autoResult.photo_results
+                    .filter((r: any) => r.status === "error")
+                    .map((r: any, i: number) => (
+                      <div key={i} className="ml-2">{r.path}: {r.error}</div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <input
         ref={fileInputRef}
@@ -233,7 +291,6 @@ const MigrateAtividadeFotosPage = () => {
                     {activity.instituicao && <div>{activity.instituicao}</div>}
                   </div>
 
-                  {/* Thumbnails das fotos já enviadas */}
                   {activity.fotos_count > 0 && (
                     <>
                       <ActivityPhotoThumbnails paths={activity.fotos_urls} />
