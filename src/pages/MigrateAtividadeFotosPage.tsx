@@ -144,16 +144,46 @@ const MigrateAtividadeFotosPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  const handleAutoMigrate = async (dryRun: boolean = false) => {
+    setAutoMigrating(true);
+    setAutoResult(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Você precisa estar logado");
+        return;
+      }
 
-  const withPhotos = activities.filter((a) => a.fotos_count > 0);
-  const withoutPhotos = activities.filter((a) => a.fotos_count === 0);
+      const res = await fetch(
+        `https://vxzktyklzkfqitptzctk.supabase.co/functions/v1/migrate-atividade-fotos-auto${dryRun ? '?dry=true' : ''}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Erro na migração");
+
+      setAutoResult(result);
+      if (!dryRun) {
+        toast.success(`Migração concluída! ${result.summary.uploaded} fotos, ${result.summary.db_updated} atividades atualizadas.`);
+        await fetchActivities();
+      } else {
+        toast.success(`Dry run OK: ${result.summary.total_photos} fotos encontradas no sistema antigo.`);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Erro na migração automática");
+    } finally {
+      setAutoMigrating(false);
+    }
+  };
+
+  if (loading) {
 
   return (
     <div className="container mx-auto p-4 max-w-3xl">
