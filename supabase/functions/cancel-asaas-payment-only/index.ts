@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     // Get the mensalidade details
     const { data: mensalidade, error: mensalidadeError } = await supabase
       .from("mensalidades")
-      .select("id, abacatepay_billing_id, escolinha_id")
+      .select("id, asaas_payment_id, escolinha_id")
       .eq("id", mensalidadeId)
       .single();
 
