@@ -1056,7 +1056,7 @@ const SchoolFinanceiroPage = () => {
                                 asChild
                               >
                                 <a 
-                                  href={mensalidade.abacatepay_url} 
+                                  href={mensalidade.asaas_pix_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   title="Abrir link de pagamento PIX"

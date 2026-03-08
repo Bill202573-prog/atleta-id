@@ -442,7 +442,7 @@ const AdminFinanceiroPage = () => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => window.open(cobranca.abacatepay_url!, '_blank')}
+                                        onClick={() => window.open(cobranca.asaas_pix_url!, '_blank')}
                                         className="gap-1"
                                       >
                                         <ExternalLink className="w-3 h-3" />
