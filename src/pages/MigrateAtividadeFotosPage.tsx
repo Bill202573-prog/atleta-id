@@ -7,9 +7,12 @@ import { toast } from "sonner";
 
 // Mapping: filename → { activityId, fullPath, label }
 const FILE_MAPPING: Record<string, { activityId: string; fullPath: string; label: string }> = {
+  // David Ribeiro Nogueira (89c8bf37...)
   "1772132486624-9w4a4fhcx.png": { activityId: "34e0cebc-3a6b-4b3d-bc82-5bb8226b13df", fullPath: "89c8bf37-31fd-4b60-b376-757d00e5a098/1772132486624-9w4a4fhcx.png", label: "David - Competição 01/12" },
   "1772132436057-hftcy2tvw.png": { activityId: "dbe9fef9-1c5c-44d2-bb53-6a06714904fe", fullPath: "89c8bf37-31fd-4b60-b376-757d00e5a098/1772132436057-hftcy2tvw.png", label: "David - Treino 02/01" },
+  // Cristiano Ronaldinho Junior (a67a6e1b...)
   "1771894177589-lk2dn1bij.png": { activityId: "c240e3fd-fc33-46cc-b603-5b92f4f70ddc", fullPath: "a67a6e1b-e33f-4c2e-85a5-b5d29fdfbc05/1771894177589-lk2dn1bij.png", label: "Cristiano - Clínica 05/02" },
+  // Miguel Alves Mohaupt (b196c67a...)
   "1770916869147-58vkeerfd.jpg": { activityId: "7692c1e2-2d4c-4419-8518-b08c5ee2f04c", fullPath: "b196c67a-1983-4456-92fc-89609d22fb52/1770916869147-58vkeerfd.jpg", label: "Miguel - Competição 14/12" },
   "1770916302277-pz965hi4o.jpg": { activityId: "504a06bb-e47d-493a-b488-4aef1c7f0ab0", fullPath: "b196c67a-1983-4456-92fc-89609d22fb52/1770916302277-pz965hi4o.jpg", label: "Miguel - Treino 20/01" },
   "1770916304103-8kz0m9qfk.jpg": { activityId: "504a06bb-e47d-493a-b488-4aef1c7f0ab0", fullPath: "b196c67a-1983-4456-92fc-89609d22fb52/1770916304103-8kz0m9qfk.jpg", label: "Miguel - Treino 20/01" },
@@ -17,17 +20,6 @@ const FILE_MAPPING: Record<string, { activityId: string; fullPath: string; label
   "1770915990598-okwdzz9ft.jpg": { activityId: "8afb46c9-31ba-416e-99fd-603544ac0b42", fullPath: "b196c67a-1983-4456-92fc-89609d22fb52/1770915990598-okwdzz9ft.jpg", label: "Miguel - Clínica 30/01" },
   "1770915993521-d4ckkei1x.jpg": { activityId: "8afb46c9-31ba-416e-99fd-603544ac0b42", fullPath: "b196c67a-1983-4456-92fc-89609d22fb52/1770915993521-d4ckkei1x.jpg", label: "Miguel - Clínica 30/01" },
   "1770915995164-j4tuyuchs.jpg": { activityId: "8afb46c9-31ba-416e-99fd-603544ac0b42", fullPath: "b196c67a-1983-4456-92fc-89609d22fb52/1770915995164-j4tuyuchs.jpg", label: "Miguel - Clínica 30/01" },
-  "1770321004212-z8xlzkf4a.jpg": { activityId: "9cfcbb8e-394d-4f49-91da-8c62096eedf5", fullPath: "e1277a26-c847-483b-a3f9-e76fad2ce8ac/1770321004212-z8xlzkf4a.jpg", label: "Guilherme - Clínica 29/01" },
-  "1770321060323-d41bnhfpn.jpg": { activityId: "9cfcbb8e-394d-4f49-91da-8c62096eedf5", fullPath: "e1277a26-c847-483b-a3f9-e76fad2ce8ac/1770321060323-d41bnhfpn.jpg", label: "Guilherme - Clínica 29/01" },
-  "1770321061436-wlilmzq9m.jpg": { activityId: "9cfcbb8e-394d-4f49-91da-8c62096eedf5", fullPath: "e1277a26-c847-483b-a3f9-e76fad2ce8ac/1770321061436-wlilmzq9m.jpg", label: "Guilherme - Clínica 29/01" },
-  "1770322673737-mg7ydg2a5.jpg": { activityId: "0fe1f34b-05b9-4ede-88bf-71e9cd8c4bf1", fullPath: "e1277a26-c847-483b-a3f9-e76fad2ce8ac/1770322673737-mg7ydg2a5.jpg", label: "Guilherme - Treino 02/01" },
-  "1770322675235-lefrkdz0x.jpg": { activityId: "0fe1f34b-05b9-4ede-88bf-71e9cd8c4bf1", fullPath: "e1277a26-c847-483b-a3f9-e76fad2ce8ac/1770322675235-lefrkdz0x.jpg", label: "Guilherme - Treino 02/01" },
-  "1770325021242-ty3wt1ucl.jpg": { activityId: "553ec2c0-b6e4-4a0f-ac13-b1bf4a57e7a3", fullPath: "e1277a26-c847-483b-a3f9-e76fad2ce8ac/1770325021242-ty3wt1ucl.jpg", label: "Guilherme - Avaliação 05/02" },
-  "1770061431486-hknk3d320.jpg": { activityId: "55315eca-1b88-41a0-a688-528ed9981929", fullPath: "ed3e3083-7455-452d-b7ac-6734c191adf4/1770061431486-hknk3d320.jpg", label: "João Guilherme - Competição 11/10" },
-  "1770061478287-ku66ja0rv.jpg": { activityId: "55315eca-1b88-41a0-a688-528ed9981929", fullPath: "ed3e3083-7455-452d-b7ac-6734c191adf4/1770061478287-ku66ja0rv.jpg", label: "João Guilherme - Competição 11/10" },
-  "1770062483967-piju49o12.jpg": { activityId: "55315eca-1b88-41a0-a688-528ed9981929", fullPath: "ed3e3083-7455-452d-b7ac-6734c191adf4/1770062483967-piju49o12.jpg", label: "João Guilherme - Competição 11/10" },
-  "1770062801529-4yeokx9ms.jpg": { activityId: "43bcbf0e-fe01-4c4f-8cf9-617f3f16bac6", fullPath: "ed3e3083-7455-452d-b7ac-6734c191adf4/1770062801529-4yeokx9ms.jpg", label: "João Guilherme - Competição 18/10" },
-  "1770063490724-o0c20foa9.jpg": { activityId: "43bcbf0e-fe01-4c4f-8cf9-617f3f16bac6", fullPath: "ed3e3083-7455-452d-b7ac-6734c191adf4/1770063490724-o0c20foa9.jpg", label: "João Guilherme - Competição 18/10" },
 };
 
 // Group by activity for display
