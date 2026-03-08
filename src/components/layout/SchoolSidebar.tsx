@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminSchoolContext } from '@/contexts/AdminSchoolContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,6 +41,8 @@ import {
   UserPlus,
   ShoppingBag,
   Globe,
+  ArrowLeft,
+  Shield,
 } from 'lucide-react';
 import ChangePasswordDialog from '@/components/auth/ChangePasswordDialog';
 import { cn } from '@/lib/utils';
@@ -63,8 +66,10 @@ const navItems = [
 
 export function SchoolSidebar() {
   const { user, logout } = useAuth();
+  const adminCtx = useAdminSchoolContext();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const queryClient = useQueryClient();
@@ -72,20 +77,43 @@ export function SchoolSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === 'collapsed';
 
+  const isAdminMode = !!adminCtx?.isAdminMode;
+  const escolinhaIdParam = searchParams.get('escolinhaId');
+
+  // Build link with escolinhaId param preserved for admin mode
+  const buildHref = (href: string) => {
+    if (isAdminMode && escolinhaIdParam) {
+      return `${href}?escolinhaId=${escolinhaIdParam}`;
+    }
+    return href;
+  };
+
+  const escolinhaQueryId = isAdminMode ? adminCtx.escolinhaId : user?.id;
+
   const { data: escolinha } = useQuery({
-    queryKey: ['escolinha-header', user?.id],
+    queryKey: ['escolinha-header', escolinhaQueryId, isAdminMode],
     queryFn: async () => {
+      if (isAdminMode && adminCtx?.escolinhaId) {
+        // Admin mode: fetch by escolinha ID directly
+        const { data, error } = await supabase
+          .from('escolinhas')
+          .select('id, nome, logo_url, status_financeiro_escola')
+          .eq('id', adminCtx.escolinhaId)
+          .single();
+        if (error) return null;
+        return data;
+      }
+      // Normal school mode: fetch by admin_user_id
       const { data, error } = await supabase
         .from('escolinhas')
         .select('id, nome, logo_url, status_financeiro_escola')
         .eq('admin_user_id', user?.id)
         .single();
-      
       if (error) return null;
       return data;
     },
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 2, // 2 minutes - logo doesn't change often
+    enabled: !!escolinhaQueryId,
+    staleTime: 1000 * 60 * 2,
   });
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -143,6 +171,10 @@ export function SchoolSidebar() {
     navigate('/auth');
   };
 
+  const handleBackToAdmin = () => {
+    navigate('/dashboard');
+  };
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -159,18 +191,47 @@ export function SchoolSidebar() {
       />
 
       <SidebarHeader className="border-b border-sidebar-border">
+        {/* Admin Mode Banner */}
+        {isAdminMode && !isCollapsed && (
+          <div className="px-2 pt-2">
+            <button
+              onClick={handleBackToAdmin}
+              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 hover:bg-amber-500/20 transition-colors text-sm font-medium"
+            >
+              <ArrowLeft className="w-4 h-4 shrink-0" />
+              <Shield className="w-4 h-4 shrink-0" />
+              <span className="truncate">Modo Admin</span>
+            </button>
+          </div>
+        )}
+        {isAdminMode && isCollapsed && (
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={handleBackToAdmin}
+              className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 hover:bg-amber-500/20 transition-colors"
+              title="Voltar ao painel admin"
+            >
+              <Shield className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <div className={cn(
           "flex items-center gap-3 p-2",
           isCollapsed && "justify-center"
         )}>
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="relative group cursor-pointer shrink-0"
-            title="Clique para alterar a logo"
+            onClick={() => !isAdminMode && fileInputRef.current?.click()}
+            disabled={uploading || isAdminMode}
+            className={cn(
+              "relative group shrink-0",
+              !isAdminMode && "cursor-pointer"
+            )}
+            title={isAdminMode ? escolinha?.nome : "Clique para alterar a logo"}
           >
             <Avatar className={cn(
-              "border-2 border-sidebar-border transition-all group-hover:border-primary",
+              "border-2 border-sidebar-border transition-all",
+              !isAdminMode && "group-hover:border-primary",
               isCollapsed ? "w-8 h-8" : "w-12 h-12"
             )}>
               {escolinha?.logo_url ? (
@@ -180,13 +241,15 @@ export function SchoolSidebar() {
                 {escolinha?.nome?.charAt(0) || 'E'}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploading ? (
-                <Loader2 className="w-4 h-4 text-white animate-spin" />
-              ) : (
-                <Upload className="w-4 h-4 text-white" />
-              )}
-            </div>
+            {!isAdminMode && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 text-white" />
+                )}
+              </div>
+            )}
           </button>
           
           {!isCollapsed && (
@@ -194,7 +257,9 @@ export function SchoolSidebar() {
               <h1 className="font-bold text-sidebar-foreground text-sm truncate">
                 {escolinha?.nome || 'Escolinha'}
               </h1>
-              <p className="text-xs text-sidebar-foreground/60">Administração</p>
+              <p className="text-xs text-sidebar-foreground/60">
+                {isAdminMode ? 'Visualizando como Admin' : 'Administração'}
+              </p>
             </div>
           )}
         </div>
@@ -204,25 +269,31 @@ export function SchoolSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.href}
-                    tooltip={item.label}
-                  >
-                    <Link to={item.href} onClick={() => {
-                      // Close sidebar on mobile when navigating
-                      if (window.innerWidth < 768) {
-                        toggleSidebar();
-                      }
-                    }}>
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navItems.map((item) => {
+                const href = buildHref(item.href);
+                const isActive = isAdminMode
+                  ? location.pathname === item.href
+                  : location.pathname === item.href;
+                
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                    >
+                      <Link to={href} onClick={() => {
+                        if (window.innerWidth < 768) {
+                          toggleSidebar();
+                        }
+                      }}>
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -242,43 +313,55 @@ export function SchoolSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
 
-          {/* Change password */}
-          <SidebarMenuItem>
-            <ChangePasswordDialog
-              trigger={
-                <SidebarMenuButton tooltip="Alterar Senha">
-                  <Key className="w-4 h-4" />
-                  <span>Alterar Senha</span>
-                </SidebarMenuButton>
-              }
-            />
-          </SidebarMenuItem>
+          {/* Change password - only for real school users */}
+          {!isAdminMode && (
+            <SidebarMenuItem>
+              <ChangePasswordDialog
+                trigger={
+                  <SidebarMenuButton tooltip="Alterar Senha">
+                    <Key className="w-4 h-4" />
+                    <span>Alterar Senha</span>
+                  </SidebarMenuButton>
+                }
+              />
+            </SidebarMenuItem>
+          )}
 
           <SidebarSeparator />
 
-          {/* User info and logout */}
+          {/* User info and logout/back */}
           <SidebarMenuItem>
             <div className={cn(
               "flex items-center gap-2 p-2",
               isCollapsed && "justify-center"
             )}>
               <Avatar className="w-8 h-8 shrink-0">
-                {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-                <AvatarFallback className="text-xs">{user?.name?.charAt(0)}</AvatarFallback>
+                {adminCtx?.realUser?.avatarUrl && <AvatarImage src={adminCtx.realUser.avatarUrl} alt={adminCtx.realUser.name} />}
+                {!adminCtx && user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user?.name} />}
+                <AvatarFallback className="text-xs">
+                  {(isAdminMode ? adminCtx?.realUser?.name : user?.name)?.charAt(0)}
+                </AvatarFallback>
               </Avatar>
               {!isCollapsed && (
                 <span className="text-sm font-medium text-sidebar-foreground truncate flex-1">
-                  {user?.name}
+                  {isAdminMode ? adminCtx?.realUser?.name : user?.name}
                 </span>
               )}
             </div>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} tooltip="Sair">
-              <LogOut className="w-4 h-4" />
-              <span>Sair</span>
-            </SidebarMenuButton>
+            {isAdminMode ? (
+              <SidebarMenuButton onClick={handleBackToAdmin} tooltip="Voltar ao Admin">
+                <ArrowLeft className="w-4 h-4" />
+                <span>Voltar ao Admin</span>
+              </SidebarMenuButton>
+            ) : (
+              <SidebarMenuButton onClick={handleLogout} tooltip="Sair">
+                <LogOut className="w-4 h-4" />
+                <span>Sair</span>
+              </SidebarMenuButton>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
