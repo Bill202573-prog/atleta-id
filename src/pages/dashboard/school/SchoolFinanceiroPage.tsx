@@ -407,7 +407,7 @@ const SchoolFinanceiroPage = () => {
       // First, get the mensalidade to check if it has an Asaas payment
       const { data: mensalidade, error: fetchError } = await supabase
         .from('mensalidades')
-        .select('abacatepay_billing_id')
+        .select('asaas_payment_id')
         .eq('id', id)
         .single();
       
