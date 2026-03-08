@@ -817,7 +817,7 @@ const SchoolFinanceiroPage = () => {
       {/* Growth Charts */}
       {growthData.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="border-2 border-blue-900/25">
+          <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
