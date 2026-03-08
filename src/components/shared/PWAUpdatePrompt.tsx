@@ -11,7 +11,7 @@ export function PWAUpdatePrompt() {
   const reloadTimeoutRef = useRef<number | null>(null);
 
   const CARREIRA_DOMAINS = ['carreiraid.com.br', 'www.carreiraid.com.br'];
-  const isCarreiraDomain = CARREIRA_DOMAINS.includes(window.location.hostname);
+  const isCarreiraDomain = typeof window !== 'undefined' && CARREIRA_DOMAINS.includes(window.location.hostname);
 
   const isRelevantSW = (sw: ServiceWorker | null) => {
     if (!sw?.scriptURL) return false;
