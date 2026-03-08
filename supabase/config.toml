@@ -6,5 +6,8 @@ verify_jwt = false
 [functions.asaas-webhook]
 verify_jwt = false
 
+[functions.migrate-atividade-fotos-auto]
+verify_jwt = false
+
 [functions.asaas-configure-webhook]
 verify_jwt = false
