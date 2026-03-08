@@ -483,12 +483,7 @@ export function AmistosoConvocacoesDialog({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={atleta.foto_url || ''} alt={atleta.nome} />
-                              <AvatarFallback className="text-xs">
-                                {atleta.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
+                            <ChildAvatar fotoUrl={atleta.foto_url} nome={atleta.nome} className="h-8 w-8" fallbackClassName="text-xs" />
                             <div>
                               <span className="font-medium">{atleta.nome}</span>
                               <Badge variant="outline" className="ml-2 text-xs">{atleta.categoria}</Badge>

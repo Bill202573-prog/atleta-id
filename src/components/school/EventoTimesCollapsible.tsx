@@ -100,12 +100,7 @@ function TimePresencasSection({ time }: { time: EventoPresencasByTime }) {
                 : 'bg-muted'
             )}
           >
-            <Avatar className="w-6 h-6">
-              <AvatarImage src={presenca.crianca.foto_url || undefined} />
-              <AvatarFallback className="text-xs">
-                {presenca.crianca.nome.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <ChildAvatar fotoUrl={presenca.crianca.foto_url} nome={presenca.crianca.nome} className="w-6 h-6" fallbackClassName="text-xs" />
             <span className="truncate max-w-[120px]">{presenca.crianca.nome.split(' ')[0]}</span>
             {presenca.confirmado_responsavel && (
               <Check className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />

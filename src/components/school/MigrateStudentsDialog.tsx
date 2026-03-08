@@ -194,10 +194,7 @@ const MigrateStudentsDialog = ({ open, onOpenChange, turma }: MigrateStudentsDia
                     onClick={() => toggleStudent(crianca.id)}
                   >
                     <Checkbox checked={selected} />
-                    <Avatar className="h-8 w-8">
-                      {crianca.foto_url && <AvatarImage src={crianca.foto_url} />}
-                      <AvatarFallback>{crianca.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className="h-8 w-8" />
                     <span className="flex-1 font-medium">{crianca.nome}</span>
                   </div>
                 ))}

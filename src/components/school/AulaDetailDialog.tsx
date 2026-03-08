@@ -354,10 +354,7 @@ const AulaDetailDialog = ({ open, onOpenChange, aula, turmaDetails, escolinhaId 
                           'bg-secondary/30'
                         }`}
                       >
-                        <Avatar className="w-8 h-8">
-                          {crianca.foto_url && <AvatarImage src={crianca.foto_url} />}
-                          <AvatarFallback className="text-xs">{crianca.nome.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className="w-8 h-8" fallbackClassName="text-xs" />
                         <span className="text-sm flex-1">{crianca.nome}</span>
                         {isConfirmed && <Check className="w-4 h-4 text-success" />}
                         {isDeclined && <X className="w-4 h-4 text-destructive" />}
