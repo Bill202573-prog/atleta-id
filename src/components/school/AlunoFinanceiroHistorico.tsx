@@ -590,7 +590,7 @@ const AlunoFinanceiroHistorico = ({
                             >
                               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                 {/* PIX indicator when URL exists */}
-                                {m.abacatepay_url && m.status !== 'pago' && m.status !== 'isento' ? (
+                                {m.asaas_pix_url && m.status !== 'pago' && m.status !== 'isento' ? (
                                   <div className="relative flex-shrink-0">
                                     {getStatusIcon(m.status)}
                                     <QrCode className="w-3 h-3 text-primary absolute -bottom-1 -right-1" />
