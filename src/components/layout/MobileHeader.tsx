@@ -172,14 +172,7 @@ export function MobileHeader({ children, currentChild, guardianName, onChildChan
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <button className="flex items-center gap-3 touch-manipulation active:opacity-80">
-              <Avatar className="w-9 h-9 border-2 border-primary-foreground/30">
-                {currentChild?.foto_url && (
-                  <AvatarImage src={currentChild.foto_url} alt={currentChild?.nome} />
-                )}
-                <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-sm font-semibold">
-                  {currentChild?.nome?.charAt(0) || ''}
-                </AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={currentChild?.foto_url} nome={currentChild?.nome || ''} className="w-9 h-9 border-2 border-primary-foreground/30" fallbackClassName="bg-primary-foreground/20 text-primary-foreground text-sm font-semibold" />
               <div className="flex flex-col items-start">
                 <span className="text-sm font-semibold leading-tight truncate max-w-[140px]">
                   {formattedChildName || 'Selecionar'}
