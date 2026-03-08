@@ -241,10 +241,7 @@ const SchoolDashboard = () => {
               <div className="space-y-3">
                 {birthdaysToday.map((child) => (
                   <div key={child.id} className="flex items-center gap-3 p-3 rounded-lg gradient-birthday">
-                    <Avatar>
-                      {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                      <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} />
                     <div className="flex-1">
                       <p className="font-semibold text-warning-foreground">{child.nome}</p>
                       <p className="text-xs text-warning-foreground/80">Completa {calculateAge(child.data_nascimento)} anos hoje! 🎉</p>
