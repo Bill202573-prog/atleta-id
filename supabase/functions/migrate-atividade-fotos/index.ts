@@ -121,8 +121,13 @@ serve(async (req) => {
         });
       }
 
-      const currentPhotos = atividade.fotos_urls || [];
-      if (currentPhotos.includes(filePath)) {
+      const currentPhotos: string[] = atividade.fotos_urls || [];
+      
+      // Check duplicate by base name (ignore extension - previous uploads may have different ext)
+      const fileBase = filePath.replace(/\.[^.]+$/, "");
+      const alreadyExists = currentPhotos.some((p: string) => p.replace(/\.[^.]+$/, "") === fileBase);
+      
+      if (alreadyExists) {
         return new Response(JSON.stringify({ success: true, atividadeId, filePath, totalPhotos: currentPhotos.length, alreadyLinked: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

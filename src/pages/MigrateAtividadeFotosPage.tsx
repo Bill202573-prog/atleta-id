@@ -69,11 +69,16 @@ const MigrateAtividadeFotosPage = () => {
 
       if (!res.ok) return;
       const result = await res.json();
-      const uploaded = new Set<string>((result.activities || []).flatMap((a: { fotos_urls?: string[] }) => a.fotos_urls || []));
+      const uploadedBases = new Set<string>(
+        (result.activities || [])
+          .flatMap((a: { fotos_urls?: string[] }) => a.fotos_urls || [])
+          .map((p: string) => p.replace(/\.[^.]+$/, ""))
+      );
 
       const doneFromServer: Record<string, { status: FileStatus }> = {};
       Object.entries(FILE_MAPPING).forEach(([filename, info]) => {
-        if (uploaded.has(info.fullPath)) {
+        const base = info.fullPath.replace(/\.[^.]+$/, "");
+        if (uploadedBases.has(base)) {
           doneFromServer[filename] = { status: "done" };
         }
       });
