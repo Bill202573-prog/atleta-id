@@ -301,6 +301,7 @@ const AlunoFinanceiroHistorico = ({
         grouped[c.crianca_id] = {
           id: c.crianca_id,
           nome: c.crianca_nome,
+          foto_url: criancasFotoMap[c.crianca_id] || null,
           mensalidades: [],
           cobrancaEntrada: c,
           convocacoes: [],
