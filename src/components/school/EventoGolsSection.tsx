@@ -282,12 +282,7 @@ const EventoGolsSection = ({ evento, times, isReadOnly = false, escolaTeamName }
                     className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
                   >
                     <span className="text-lg">⚽</span>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={gol.crianca?.foto_url || undefined} />
-                      <AvatarFallback className="text-xs">
-                        {gol.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={gol.crianca?.foto_url} nome={gol.crianca?.nome || '?'} className="h-8 w-8" fallbackClassName="text-xs" />
                     <span className="flex-1 font-medium">{gol.crianca?.nome}</span>
                     {!isReadOnly ? (
                       <div className="flex items-center gap-2">

@@ -416,12 +416,7 @@ const EventoDetailDialog = ({ open, onOpenChange, evento: eventoProp, eventoId }
                       key={aluno.id}
                       className="flex items-center gap-2 p-2 bg-muted/50 rounded-md"
                     >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={aluno.crianca?.foto_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {aluno.crianca?.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <ChildAvatar fotoUrl={aluno.crianca?.foto_url} nome={aluno.crianca?.nome || '?'} className="h-8 w-8" fallbackClassName="text-xs" />
                       <span className="flex-1 text-sm truncate">{aluno.crianca?.nome}</span>
                     </div>
                   ))}
