@@ -328,7 +328,7 @@ const AlunoFinanceiroHistorico = ({
     });
 
     return grouped;
-  }, [mensalidades, cobrancasEntrada, amistosoConvocacoes]);
+  }, [mensalidades, cobrancasEntrada, amistosoConvocacoes, criancasFotoMap]);
 
   // Convert to array and calculate stats
   const alunosArray = useMemo(() => Object.values(alunosMensalidades).map(aluno => {
