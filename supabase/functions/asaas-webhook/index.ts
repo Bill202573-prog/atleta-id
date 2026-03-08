@@ -255,7 +255,7 @@ serve(async (req) => {
         // ============================================
         // Not an amistoso, check if it's a mensalidade
         // ============================================
-        // Find mensalidade by Asaas payment ID (stored in abacatepay_billing_id field)
+        // Find mensalidade by Asaas payment ID
         const { data: mensalidade, error: mensalidadeError } = await supabase
           .from("mensalidades")
           .select("id, crianca_id, status")
