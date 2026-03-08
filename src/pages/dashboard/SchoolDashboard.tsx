@@ -250,10 +250,7 @@ const SchoolDashboard = () => {
                 ))}
                 {birthdaysThisMonth.map((child) => (
                   <div key={child.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
-                    <Avatar>
-                      {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                      <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} />
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{child.nome}</p>
                       <p className="text-xs text-muted-foreground">Dia {new Date(child.data_nascimento).getDate()} - {calculateAge(child.data_nascimento)} anos</p>
