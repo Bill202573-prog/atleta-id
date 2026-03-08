@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,19 +14,10 @@ interface ImportResult {
 }
 
 const ImportUsersPage = () => {
-  const auth = useContext(AuthContext);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  if (!auth?.user || auth.user.role !== "admin") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Acesso restrito a administradores.</p>
-      </div>
-    );
-  }
 
   const handleImport = async () => {
     if (!file) return;
