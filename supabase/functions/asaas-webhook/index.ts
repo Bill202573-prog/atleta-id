@@ -259,7 +259,7 @@ serve(async (req) => {
         const { data: mensalidade, error: mensalidadeError } = await supabase
           .from("mensalidades")
           .select("id, crianca_id, status")
-          .eq("abacatepay_billing_id", payment.id)
+          .eq("asaas_payment_id", payment.id)
           .single();
 
         if (mensalidadeError || !mensalidade) {
