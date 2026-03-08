@@ -199,25 +199,27 @@ const MigrateAtividadeFotosPage = () => {
                           disabled={st?.status === "uploading" || st?.status === "done"}
                         />
 
-                        <label htmlFor={`migrate-file-${filename}`} className="shrink-0">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant={st?.status === "done" ? "outline" : "default"}
-                            disabled={st?.status === "uploading" || st?.status === "done"}
-                            className="shrink-0"
-                          >
-                            {st?.status === "uploading" ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : st?.status === "done" ? (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                            ) : st?.status === "error" ? (
-                              <AlertCircle className="w-4 h-4 text-red-600" />
-                            ) : (
-                              <ImagePlus className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </label>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={st?.status === "done" ? "outline" : "default"}
+                          disabled={st?.status === "uploading" || st?.status === "done"}
+                          className="shrink-0"
+                          onClick={() => {
+                            const input = document.getElementById(`migrate-file-${filename}`) as HTMLInputElement | null;
+                            input?.click();
+                          }}
+                        >
+                          {st?.status === "uploading" ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : st?.status === "done" ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : st?.status === "error" ? (
+                            <AlertCircle className="w-4 h-4 text-red-600" />
+                          ) : (
+                            <ImagePlus className="w-4 h-4" />
+                          )}
+                        </Button>
 
                         <code className="text-xs bg-muted px-2 py-1 rounded truncate flex-1">
                           {filename}
