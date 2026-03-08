@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
       // Ignore cancelled billings - they should allow regeneration
       const { data: existingBillings } = await supabase
         .from('mensalidades')
-        .select('id, abacatepay_billing_id, status')
+        .select('id, asaas_payment_id, status')
         .eq('crianca_id', crianca.id)
         .eq('escolinha_id', escolinha_id)
         .eq('mes_referencia', mes_referencia);
