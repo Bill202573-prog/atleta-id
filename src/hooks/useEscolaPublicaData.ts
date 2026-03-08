@@ -25,9 +25,9 @@ export function useEscolaBySlug(slug: string) {
   return useQuery({
     queryKey: ['escola-publica', slug],
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const { data, error } = await (supabase as any)
         .from('escolinhas_publico')
-        .select('*') as any)
+        .select('*')
         .eq('slug', slug)
         .maybeSingle();
 

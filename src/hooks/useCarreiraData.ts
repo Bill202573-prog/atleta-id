@@ -185,9 +185,9 @@ export function useEscolinhasCarreira(criancaId: string | null | undefined) {
       if (!vinculos?.length) return [];
 
       const escolinhaIds = vinculos.map(v => v.escolinha_id);
-      const { data: escolinhas, error: escError } = await (supabase
+      const { data: escolinhas, error: escError } = await (supabase as any)
         .from('escolinhas_publico')
-        .select('id, nome, logo_url, slug') as any)
+        .select('id, nome, logo_url, slug')
         .in('id', escolinhaIds);
 
       if (escError) throw escError;
