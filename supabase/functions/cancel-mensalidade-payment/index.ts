@@ -156,8 +156,8 @@ Deno.serve(async (req) => {
       .from("mensalidades")
       .update({
         status: 'cancelado',
-        abacatepay_billing_id: null,
-        abacatepay_url: null,
+        asaas_payment_id: null,
+        asaas_pix_url: null,
       })
       .eq("id", mensalidadeId);
 

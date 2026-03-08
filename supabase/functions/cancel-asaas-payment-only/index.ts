@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           } else {
-            console.log("Asaas payment cancelled successfully:", mensalidade.abacatepay_billing_id);
+            console.log("Asaas payment cancelled successfully:", mensalidade.asaas_payment_id);
           }
         } catch (asaasError) {
           console.error("Error calling Asaas API:", asaasError);

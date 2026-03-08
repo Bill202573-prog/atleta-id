@@ -478,8 +478,8 @@ Deno.serve(async (req) => {
             data_vencimento: dataVencimentoStr,
             status: initialStatus,
             forma_pagamento: 'pix',
-            abacatepay_billing_id: paymentData.id, // Reusing field for Asaas payment ID
-            abacatepay_url: paymentData.invoiceUrl || null, // Reusing field for invoice URL
+            asaas_payment_id: paymentData.id,
+            asaas_pix_url: paymentData.invoiceUrl || null,
             observacoes: `PIX gerado via Asaas em ${new Date().toISOString()}. ${pixData ? 'QR Code disponível.' : ''}`,
           });
 

@@ -300,7 +300,7 @@ serve(async (req) => {
                 data_pagamento: paymentDate,
                 forma_pagamento: "pix",
                 valor_pago: payment.netValue || payment.value,
-                abacatepay_billing_id: payment.id, // Store Asaas payment ID
+                asaas_payment_id: payment.id,
               })
               .eq("id", mensalidadeByRef.id);
 
