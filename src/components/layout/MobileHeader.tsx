@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { LogOut, Settings, ChevronDown, Check, Bell, User, Users, ShoppingBag, ExternalLink } from 'lucide-react';
