@@ -711,7 +711,7 @@ const SchoolFinanceiroPage = () => {
 
       {/* Monthly Summary */}
       {monthlySummary.length > 0 && (
-        <Card className="border border-blue-900/15">
+        <Card className="border-2 border-blue-900/25">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Resumo Mensal</CardTitle>
