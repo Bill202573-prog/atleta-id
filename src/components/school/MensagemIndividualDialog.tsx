@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Mail } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { toast } from 'sonner';
 import { useCreateComunicadoEscola } from '@/hooks/useComunicadosEscolaData';
 
