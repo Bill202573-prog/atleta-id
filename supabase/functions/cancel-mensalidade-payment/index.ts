@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     }
 
     // Cancel in Asaas if payment ID exists
-    if (mensalidade.abacatepay_billing_id) {
+    if (mensalidade.asaas_payment_id) {
       // Get school's Asaas API key or use master key
       const { data: cadastroBancario } = await supabase
         .from("escola_cadastro_bancario")
