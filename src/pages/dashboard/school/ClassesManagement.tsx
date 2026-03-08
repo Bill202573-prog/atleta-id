@@ -412,10 +412,7 @@ const ClassesManagement = () => {
                     <TableRow key={crianca.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            {crianca.foto_url && <AvatarImage src={crianca.foto_url} alt={crianca.nome} />}
-                            <AvatarFallback className="text-xs">{crianca.nome.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                          <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className="w-8 h-8" fallbackClassName="text-xs" />
                           <div>
                             <span className="font-medium text-sm">{crianca.nome}</span>
                             <span className="block sm:hidden text-xs text-muted-foreground">
