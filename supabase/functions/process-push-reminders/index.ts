@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
           `)
           .eq('turmas.escolinha_id', config.escolinha_id)
           .eq('data', targetDateStr)
-          .eq('status', 'agendada');
+          .in('status', ['normal', 'extra']);
 
         if (!aulas || aulas.length === 0) continue;
 
