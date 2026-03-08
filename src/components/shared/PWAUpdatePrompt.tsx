@@ -103,7 +103,7 @@ export function PWAUpdatePrompt() {
     setDismissed(true);
   };
 
-  if (!needsRefresh || dismissed || isDisabled) return null;
+  if (!needsRefresh || dismissed) return null;
 
   return (
     <>
