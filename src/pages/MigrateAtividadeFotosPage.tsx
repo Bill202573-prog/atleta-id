@@ -119,6 +119,7 @@ const MigrateAtividadeFotosPage = () => {
       // Upload via edge function (has service role)
       const formData = new FormData();
       formData.append("atividadeId", mapping.activityId);
+      formData.append("targetPath", mapping.fullPath);
       formData.append("file", file);
 
       const res = await fetch(
