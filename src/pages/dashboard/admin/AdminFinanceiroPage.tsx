@@ -438,7 +438,7 @@ const AdminFinanceiroPage = () => {
                                     }
                                   </TableCell>
                                   <TableCell className="text-center">
-                                    {cobranca.abacatepay_url ? (
+                                    {cobranca.asaas_pix_url ? (
                                       <Button
                                         variant="ghost"
                                         size="sm"
