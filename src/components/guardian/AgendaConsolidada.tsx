@@ -150,12 +150,7 @@ const AgendaConsolidada = ({
   // Child avatar badge component
   const ChildBadge = ({ crianca }: { crianca: { id: string; nome: string; foto_url: string | null } }) => (
     <div className="flex items-center gap-1.5 bg-muted/50 rounded-full px-2 py-0.5">
-      <Avatar className="w-5 h-5">
-        {crianca.foto_url && <AvatarImage src={crianca.foto_url} />}
-        <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-          {crianca.nome.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
+      <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className="w-5 h-5" fallbackClassName="text-[10px] bg-primary/20 text-primary" />
       <span className="text-xs font-medium text-foreground truncate max-w-[80px]">
         {crianca.nome.split(' ')[0]}
       </span>

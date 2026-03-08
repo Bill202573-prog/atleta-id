@@ -281,12 +281,7 @@ const SchoolChamadaPage = () => {
                 {/* Header row with avatar and info */}
                 <div className="flex items-start gap-3">
                   <div className="relative shrink-0">
-                    <Avatar className="w-12 h-12">
-                      {aluno.crianca.foto_url && (
-                        <AvatarImage src={aluno.crianca.foto_url} alt={aluno.crianca.nome} />
-                      )}
-                      <AvatarFallback className="text-sm font-medium">{aluno.crianca.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={aluno.crianca.foto_url} nome={aluno.crianca.nome} className="w-12 h-12" fallbackClassName="text-sm font-medium" />
                     {isBirthday && (
                       <div className="absolute -top-1 -right-1">
                         <BirthdayBadge isToday showLabel={false} />

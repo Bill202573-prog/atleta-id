@@ -205,12 +205,7 @@ export function MobileHeader({ children, currentChild, guardianName, onChildChan
                       : 'bg-muted border-2 border-transparent hover:bg-muted/80'
                   }`}
                 >
-                  <Avatar className="w-12 h-12">
-                    {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                    <AvatarFallback className="text-lg font-semibold">
-                      {child.nome.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} className="w-12 h-12" fallbackClassName="text-lg font-semibold" />
                   <span className="flex-1 text-left font-medium">{child.nome}</span>
                   {currentChild?.id === child.id && (
                     <Check className="w-5 h-5 text-primary" />
