@@ -466,10 +466,7 @@ const ChildrenManagement = () => {
                     <TableRow key={child.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar>
-                            {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                            <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                          <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} />
                           <div>
                             <p className="font-medium">{child.nome}</p>
                             <p className="text-xs text-muted-foreground">
