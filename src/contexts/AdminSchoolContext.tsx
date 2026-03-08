@@ -1,39 +1,53 @@
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { AuthContext } from '@/contexts/auth-context';
 import { supabase } from '@/integrations/supabase/client';
 import type { AuthUser } from './auth-context';
 
 interface AdminSchoolContextType {
-  /** The escolinha being viewed by the admin */
   escolinhaId: string;
-  /** Whether this is an admin impersonating a school */
   isAdminMode: boolean;
-  /** The real admin user (before override) */
   realUser: AuthUser | null;
 }
 
-const AdminSchoolContext = createContext<AdminSchoolContextType | null>(null);
+const AdminSchoolCtx = createContext<AdminSchoolContextType | null>(null);
 
-/**
- * Hook to check if we're in admin school impersonation mode.
- * Returns null if not in admin mode.
- */
 export function useAdminSchoolContext() {
-  return useContext(AdminSchoolContext);
+  return useContext(AdminSchoolCtx);
 }
 
-/**
- * Hook that returns the effective escolinhaId — from admin context override or auth user.
- */
 export function useEffectiveEscolinhaId(): string | undefined {
-  const adminCtx = useContext(AdminSchoolContext);
+  const adminCtx = useContext(AdminSchoolCtx);
   const { user } = useAuth();
   return adminCtx?.escolinhaId || user?.escolinhaId;
 }
 
 /**
- * Provider that overrides the auth user's escolinhaId for admin impersonation.
- * Wraps the AuthContext so all downstream hooks see the overridden escolinhaId.
+ * Logs an admin action to the audit table (fire-and-forget).
+ */
+export function logAdminAction(
+  adminUserId: string,
+  escolinhaId: string,
+  acao: string,
+  detalhes?: Record<string, unknown>
+) {
+  supabase
+    .from('admin_audit_log')
+    .insert({
+      admin_user_id: adminUserId,
+      escolinha_id: escolinhaId,
+      acao,
+      detalhes: detalhes || {},
+      user_agent: navigator.userAgent,
+    })
+    .then(({ error }) => {
+      if (error) console.error('Erro ao registrar audit log:', error);
+    });
+}
+
+/**
+ * Wraps children so that useAuth().user.escolinhaId returns the admin-selected school.
+ * All existing school hooks work transparently.
  */
 export function AdminSchoolProvider({
   escolinhaId,
@@ -44,27 +58,19 @@ export function AdminSchoolProvider({
   escolinhaNome?: string;
   children: ReactNode;
 }) {
-  const { user } = useAuth();
+  const authContext = useAuth();
+  const { user } = authContext;
 
   // Log admin access on mount
   useEffect(() => {
     if (user?.id && escolinhaId) {
-      supabase
-        .from('admin_audit_log')
-        .insert({
-          admin_user_id: user.id,
-          escolinha_id: escolinhaId,
-          acao: 'acessou_escola',
-          detalhes: { escolinha_nome: escolinhaNome },
-          user_agent: navigator.userAgent,
-        })
-        .then(({ error }) => {
-          if (error) console.error('Erro ao registrar audit log:', error);
-        });
+      logAdminAction(user.id, escolinhaId, 'acessou_escola', {
+        escolinha_nome: escolinhaNome,
+      });
     }
   }, [user?.id, escolinhaId, escolinhaNome]);
 
-  // Create overridden user with escolinhaId set
+  // Create overridden user with escolinhaId
   const overriddenUser: AuthUser | null = user
     ? {
         ...user,
@@ -74,45 +80,21 @@ export function AdminSchoolProvider({
     : null;
 
   return (
-    <AdminSchoolContext.Provider
+    <AdminSchoolCtx.Provider
       value={{
         escolinhaId,
         isAdminMode: true,
         realUser: user,
       }}
     >
-      {/* 
-        We use a nested AuthContext.Provider to override the user for all child components.
-        This way useAuth().user.escolinhaId returns the admin-selected school.
-      */}
-      <OverrideAuthUser overriddenUser={overriddenUser}>
+      <AuthContext.Provider
+        value={{
+          ...authContext,
+          user: overriddenUser,
+        }}
+      >
         {children}
-      </OverrideAuthUser>
-    </AdminSchoolContext.Provider>
-  );
-}
-
-/**
- * Internal component that overrides the auth user via context.
- */
-function OverrideAuthUser({
-  overriddenUser,
-  children,
-}: {
-  overriddenUser: AuthUser | null;
-  children: ReactNode;
-}) {
-  const authContext = useAuth();
-  const { AuthContext } = require('./auth-context');
-
-  return (
-    <AuthContext.Provider
-      value={{
-        ...authContext,
-        user: overriddenUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+      </AuthContext.Provider>
+    </AdminSchoolCtx.Provider>
   );
 }
