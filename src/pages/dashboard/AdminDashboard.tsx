@@ -47,6 +47,7 @@ const statusColors: Record<EscolinhaStatus, string> = {
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { escolinhas, planos, stats, isLoading, error } = useAdminData();
   const { acessosPorEscola, acessosPorDia, totalAcessos, acessosHoje, acessos7Dias, isLoading: loadingAcessos } = useAccessLogData();
   
