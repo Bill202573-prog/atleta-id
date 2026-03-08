@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-import-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface ImportUser {
@@ -34,38 +34,51 @@ serve(async (req) => {
       throw new Error("SUPABASE_DB_URL secret not configured");
     }
 
+    // Auth: try JWT first, fall back to import key for bootstrap
+    const authHeader = req.headers.get("Authorization");
+    const importKey = req.headers.get("x-import-key");
+
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify caller is admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No authorization header" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    let authorized = false;
+
+    // Try JWT auth first
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      // Skip if token is the anon key (no user session)
+      if (token !== Deno.env.get("SUPABASE_ANON_KEY")) {
+        const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
+        if (!authError && caller) {
+          const { data: roleData } = await supabaseAdmin
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", caller.id)
+            .single();
+          if (roleData?.role === "admin") {
+            authorized = true;
+          }
+        }
+      }
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller }, error: authError } = await supabaseAdmin.auth.getUser(token);
-
-    if (authError || !caller) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Fall back: accept service role key as import key for bootstrap
+    if (!authorized && importKey === serviceRoleKey) {
+      authorized = true;
     }
 
-    const { data: roleData } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .single();
+    // Fall back: check if there are zero users (bootstrap mode)
+    if (!authorized) {
+      const { count } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
+      if (count === 0) {
+        authorized = true;
+      }
+    }
 
-    if (roleData?.role !== "admin") {
-      return new Response(JSON.stringify({ error: "Only admins can import users" }), {
-        status: 403,
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized. Pass x-import-key header with service_role key, or be an admin." }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -87,7 +100,6 @@ serve(async (req) => {
 
     for (const u of users) {
       try {
-        // Try creating the user
         const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
           id: u.id,
           email: u.email,
@@ -114,7 +126,6 @@ serve(async (req) => {
         const userId = created.user?.id || u.id;
         await sql`UPDATE auth.users SET encrypted_password = ${u.encrypted_password} WHERE id = ${userId}::uuid`;
 
-        // Update created_at if provided
         if (u.created_at) {
           await sql`UPDATE auth.users SET created_at = ${u.created_at}::timestamptz WHERE id = ${userId}::uuid`;
         }
@@ -126,7 +137,6 @@ serve(async (req) => {
       }
     }
 
-    // Close postgres connection
     await sql.end();
 
     return new Response(
