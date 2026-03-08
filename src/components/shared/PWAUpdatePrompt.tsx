@@ -1,102 +1,66 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { registerSW } from 'virtual:pwa-register';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
+
 export function PWAUpdatePrompt() {
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const reloadTimeoutRef = useRef<number | null>(null);
-
-  const CARREIRA_DOMAINS = ['carreiraid.com.br', 'www.carreiraid.com.br'];
-  const isCarreiraDomain = typeof window !== 'undefined' && CARREIRA_DOMAINS.includes(window.location.hostname);
-
-  const isRelevantSW = (sw: ServiceWorker | null) => {
-    if (!sw?.scriptURL) return false;
-    if (isCarreiraDomain) {
-      // On carreira domain, only listen to carreira-sw.js
-      return sw.scriptURL.includes('carreira-sw.js');
-    }
-    // On atletaid domain, only listen to workbox sw.js (not carreira or push)
-    return !sw.scriptURL.includes('carreira-sw.js') && !sw.scriptURL.includes('push-sw.js');
-  };
+  const updateSWRef = useRef<UpdateServiceWorker | null>(null);
+  const updateTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
-
-    const listenForUpdates = (registration: ServiceWorkerRegistration) => {
-      if (!isRelevantSW(registration.active) && !isRelevantSW(registration.installing) && !isRelevantSW(registration.waiting)) return;
-
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (newWorker && isRelevantSW(newWorker)) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              setWaitingWorker(newWorker);
-              setNeedsRefresh(true);
-            }
-          });
-        }
-      });
-
-      // Check if already waiting
-      if (registration.waiting && isRelevantSW(registration.waiting)) {
-        setWaitingWorker(registration.waiting);
+    const updateSW = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        setDismissed(false);
         setNeedsRefresh(true);
-      }
-    };
-
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach(listenForUpdates);
+      },
+      onRegisterError(error) {
+        console.error('[PWA] register error:', error);
+      },
     });
 
-    // Check for updates every 5 minutes
-    const interval = setInterval(() => {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((reg) => {
-          if (isRelevantSW(reg.active)) reg.update();
-        });
-      });
-    }, 5 * 60 * 1000);
+    updateSWRef.current = updateSW;
 
     return () => {
-      clearInterval(interval);
-      if (reloadTimeoutRef.current !== null) {
-        window.clearTimeout(reloadTimeoutRef.current);
+      if (updateTimeoutRef.current !== null) {
+        window.clearTimeout(updateTimeoutRef.current);
       }
     };
   }, []);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (isUpdating) return;
-    setIsUpdating(true);
+    const updateSW = updateSWRef.current;
 
-    if (!waitingWorker) {
+    if (!updateSW) {
       window.location.reload();
       return;
     }
 
-    navigator.serviceWorker.addEventListener(
-      'controllerchange',
-      () => {
-        if (reloadTimeoutRef.current !== null) {
-          window.clearTimeout(reloadTimeoutRef.current);
-          reloadTimeoutRef.current = null;
-        }
-        window.location.reload();
-      },
-      { once: true }
-    );
+    setIsUpdating(true);
 
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    try {
+      updateTimeoutRef.current = window.setTimeout(() => {
+        setIsUpdating(false);
+        toast.error('Não foi possível aplicar a atualização agora. Feche outras abas do sistema e tente novamente.');
+      }, 10000);
 
-    // If controlling event does not fire, keep the prompt and show guidance instead of reloading stale app
-    reloadTimeoutRef.current = window.setTimeout(() => {
+      await updateSW(true);
+    } catch (error) {
+      if (updateTimeoutRef.current !== null) {
+        window.clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
       setIsUpdating(false);
-      toast.error('Não foi possível aplicar a atualização agora. Feche outras abas do sistema e tente novamente.');
-    }, 8000);
+      console.error('[PWA] update error:', error);
+      toast.error('Falha ao atualizar. Tente novamente em alguns segundos.');
+    }
   };
 
   const handleDismiss = () => {
@@ -108,11 +72,8 @@ export function PWAUpdatePrompt() {
   return (
     <>
       {/* Backdrop overlay */}
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
-        onClick={handleDismiss}
-      />
-      
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]" />
+
       {/* Centered modal */}
       <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
         <div className="relative bg-card border border-border rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 fade-in duration-200">
@@ -135,9 +96,7 @@ export function PWAUpdatePrompt() {
 
           {/* Content */}
           <div className="text-center mb-6">
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Nova versão disponível!
-            </h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">Nova versão disponível!</h3>
             <p className="text-muted-foreground text-sm">
               Uma atualização está pronta para ser instalada. Atualize agora para ter acesso às últimas melhorias e correções.
             </p>
