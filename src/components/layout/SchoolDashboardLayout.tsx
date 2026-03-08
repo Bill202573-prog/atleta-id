@@ -1,5 +1,6 @@
 import { ReactNode, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminSchoolContext } from '@/contexts/AdminSchoolContext';
 import { ThemeProvider } from 'next-themes';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SchoolSidebar } from './SchoolSidebar';
@@ -10,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { StudentRegistrationProvider, useStudentRegistration } from '@/contexts/StudentRegistrationContext';
 import AlunoFichaDialog from '@/components/school/AlunoFichaDialog';
 import DraftManagerDialog from '@/components/school/DraftManagerDialog';
+import { Badge } from '@/components/ui/badge';
+import { Shield } from 'lucide-react';
 
 interface SchoolDashboardLayoutProps {
   children: ReactNode;
