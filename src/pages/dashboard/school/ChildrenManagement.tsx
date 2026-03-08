@@ -24,6 +24,7 @@ import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -360,10 +361,7 @@ const ChildrenManagement = () => {
                   onClick={() => openEditDialog(child, escolinhaId)}
                 >
                   <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12">
-                      {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                      <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} className="w-12 h-12" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-foreground truncate">{child.nome}</p>
@@ -468,10 +466,7 @@ const ChildrenManagement = () => {
                     <TableRow key={child.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar>
-                            {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                            <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                          <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} />
                           <div>
                             <p className="font-medium">{child.nome}</p>
                             <p className="text-xs text-muted-foreground">

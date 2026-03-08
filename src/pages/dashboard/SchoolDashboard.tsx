@@ -15,6 +15,7 @@ import StatsCard from '@/components/shared/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
@@ -240,10 +241,7 @@ const SchoolDashboard = () => {
               <div className="space-y-3">
                 {birthdaysToday.map((child) => (
                   <div key={child.id} className="flex items-center gap-3 p-3 rounded-lg gradient-birthday">
-                    <Avatar>
-                      {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                      <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} />
                     <div className="flex-1">
                       <p className="font-semibold text-warning-foreground">{child.nome}</p>
                       <p className="text-xs text-warning-foreground/80">Completa {calculateAge(child.data_nascimento)} anos hoje! 🎉</p>
@@ -252,10 +250,7 @@ const SchoolDashboard = () => {
                 ))}
                 {birthdaysThisMonth.map((child) => (
                   <div key={child.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
-                    <Avatar>
-                      {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                      <AvatarFallback>{child.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} />
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{child.nome}</p>
                       <p className="text-xs text-muted-foreground">Dia {new Date(child.data_nascimento).getDate()} - {calculateAge(child.data_nascimento)} anos</p>
