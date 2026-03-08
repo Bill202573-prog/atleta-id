@@ -323,9 +323,9 @@ section {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* School dashboard – subtle navy border on all cards */
+  /* School dashboard – bold navy border on all cards */
   .school-dashboard [data-slot="card"] {
-    border-width: 2.5px;
-    border-color: hsl(215 40% 15% / 0.22);
+    border-width: 3px;
+    border-color: hsl(215 40% 15% / 0.32);
   }
 }
