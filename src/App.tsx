@@ -30,6 +30,7 @@ const CarreiraConexoesPage = lazy(() => import("./pages/carreira/CarreiraConexoe
 const TermosPage = lazy(() => import("./pages/carreira/TermosPage"));
 const PrivacidadePage = lazy(() => import("./pages/carreira/PrivacidadePage"));
 const ContatoPage = lazy(() => import("./pages/carreira/ContatoPage"));
+const ImportUsersPage = lazy(() => import("./pages/ImportUsersPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
