@@ -81,6 +81,7 @@ serve(async (req) => {
     if (req.method === "POST") {
       const formData = await req.formData();
       const atividadeId = String(formData.get("atividadeId") || "").trim();
+      const targetPath = String(formData.get("targetPath") || "").trim();
       const file = formData.get("file");
 
       if (!atividadeId) {
@@ -112,16 +113,27 @@ serve(async (req) => {
         });
       }
 
+      const filePath = targetPath || `${atividade.crianca_id}/${file.name}`;
+      if (!filePath.startsWith(`${atividade.crianca_id}/`)) {
+        return new Response(JSON.stringify({ error: "targetPath inválido para a atividade" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const currentPhotos = atividade.fotos_urls || [];
+      if (currentPhotos.includes(filePath)) {
+        return new Response(JSON.stringify({ success: true, atividadeId, filePath, totalPhotos: currentPhotos.length, alreadyLinked: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       if (currentPhotos.length >= 3) {
         return new Response(JSON.stringify({ error: "Máximo de 3 fotos por atividade" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      // Use original filename to preserve mapping from old system
-      const filePath = `${atividade.crianca_id}/${file.name}`;
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from("atividade-externa-fotos")

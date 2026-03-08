@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,7 +61,44 @@ const saveDoneToStorage = (statuses: Record<string, { status: FileStatus; error?
 
 const MigrateAtividadeFotosPage = () => {
   const [fileStatuses, setFileStatuses] = useState<Record<string, { status: FileStatus; error?: string }>>(loadDoneFromStorage);
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const syncDoneFromServer = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch(
+        `https://vxzktyklzkfqitptzctk.supabase.co/functions/v1/migrate-atividade-fotos`,
+        {
+          method: "GET",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }
+      );
+
+      if (!res.ok) return;
+      const result = await res.json();
+      const uploaded = new Set<string>((result.activities || []).flatMap((a: { fotos_urls?: string[] }) => a.fotos_urls || []));
+
+      const doneFromServer: Record<string, { status: FileStatus }> = {};
+      Object.entries(FILE_MAPPING).forEach(([filename, info]) => {
+        if (uploaded.has(info.fullPath)) {
+          doneFromServer[filename] = { status: "done" };
+        }
+      });
+
+      setFileStatuses((prev) => {
+        const next = { ...prev, ...doneFromServer };
+        saveDoneToStorage(next);
+        return next;
+      });
+    } catch {
+      // silent sync failure
+    }
+  };
+
+  useEffect(() => {
+    void syncDoneFromServer();
+  }, []);
 
   const handleUpload = async (filename: string, file: File) => {
     const mapping = FILE_MAPPING[filename];
@@ -82,6 +119,7 @@ const MigrateAtividadeFotosPage = () => {
       // Upload via edge function (has service role)
       const formData = new FormData();
       formData.append("atividadeId", mapping.activityId);
+      formData.append("targetPath", mapping.fullPath);
       formData.append("file", file);
 
       const res = await fetch(
@@ -119,6 +157,7 @@ const MigrateAtividadeFotosPage = () => {
 
     if (actualBase !== expectedBase) {
       toast.error(`Esperado: ${expectedBase}.*, recebido: ${file.name}`);
+      e.target.value = "";
       return;
     }
 
@@ -160,30 +199,33 @@ const MigrateAtividadeFotosPage = () => {
                     return (
                       <div key={filename} className="flex items-center gap-2">
                         <input
+                          id={`migrate-file-${filename}`}
                           type="file"
                           accept="image/*"
                           className="hidden"
-                          ref={(el) => { fileInputRefs.current[filename] = el; }}
                           onChange={handleFileSelect(filename)}
+                          disabled={st?.status === "uploading" || st?.status === "done"}
                         />
 
-                        <Button
-                          size="sm"
-                          variant={st?.status === "done" ? "outline" : "default"}
-                          disabled={st?.status === "uploading" || st?.status === "done"}
-                          onClick={() => fileInputRefs.current[filename]?.click()}
-                          className="shrink-0"
-                        >
-                          {st?.status === "uploading" ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : st?.status === "done" ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : st?.status === "error" ? (
-                            <AlertCircle className="w-4 h-4 text-red-600" />
-                          ) : (
-                            <ImagePlus className="w-4 h-4" />
-                          )}
-                        </Button>
+                        <label htmlFor={`migrate-file-${filename}`} className="shrink-0">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={st?.status === "done" ? "outline" : "default"}
+                            disabled={st?.status === "uploading" || st?.status === "done"}
+                            className="shrink-0"
+                          >
+                            {st?.status === "uploading" ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : st?.status === "done" ? (
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                            ) : st?.status === "error" ? (
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                            ) : (
+                              <ImagePlus className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </label>
 
                         <code className="text-xs bg-muted px-2 py-1 rounded truncate flex-1">
                           {filename}
