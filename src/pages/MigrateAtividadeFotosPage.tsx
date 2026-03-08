@@ -52,6 +52,8 @@ const MigrateAtividadeFotosPage = () => {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const [autoMigrating, setAutoMigrating] = useState(false);
+  const [autoResult, setAutoResult] = useState<any>(null);
 
   const fetchActivities = async () => {
     setLoading(true);
