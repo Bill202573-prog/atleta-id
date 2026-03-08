@@ -696,7 +696,7 @@ const SchoolFinanceiroPage = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total de Alunos</p>
-                <p className="text-2xl font-bold text-foreground">{totalAlunos}</p>
+                <p className="text-2xl font-bold text-foreground">{alunosAtivos}</p>
               </div>
             </div>
           </CardContent>
