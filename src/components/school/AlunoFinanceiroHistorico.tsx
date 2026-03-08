@@ -485,9 +485,7 @@ const AlunoFinanceiroHistorico = ({
                     <AccordionTrigger className="hover:no-underline py-3 sm:py-4">
                       <div className="flex flex-1 items-center justify-between pr-2 sm:pr-4 gap-2">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 flex-shrink-0">
-                            <User className="w-5 h-5 text-primary" />
-                          </div>
+                          <ChildAvatar fotoUrl={aluno.foto_url} nome={aluno.nome} className="hidden sm:flex w-12 h-12" fallbackClassName="text-sm" />
                           <div className="text-left min-w-0">
                             <h4 className="font-semibold text-foreground text-sm sm:text-base truncate">{aluno.nome}</h4>
                             <div className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground flex-wrap">
