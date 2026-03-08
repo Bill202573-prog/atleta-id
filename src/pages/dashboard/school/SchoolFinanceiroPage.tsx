@@ -672,7 +672,7 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-blue-900/15">
+        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/20">
