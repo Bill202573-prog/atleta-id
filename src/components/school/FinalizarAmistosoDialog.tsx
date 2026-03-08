@@ -642,12 +642,7 @@ export default function FinalizarAmistosoDialog({
                     : 'bg-muted/30'
                 }`}
               >
-                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 shrink-0">
-                  <AvatarImage src={conv.crianca?.foto_url || undefined} />
-                  <AvatarFallback className="text-[10px] sm:text-xs">
-                    {conv.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <ChildAvatar fotoUrl={conv.crianca?.foto_url} nome={conv.crianca?.nome || '?'} className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" fallbackClassName="text-[10px] sm:text-xs" />
                 <span className="flex-1 font-medium truncate text-xs sm:text-sm">{conv.crianca?.nome}</span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Button type="button" size="sm" variant={isPresente ? 'default' : 'outline'} className={`h-7 w-7 sm:h-8 sm:w-8 p-0 ${isPresente ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePresencaChange(conv.crianca_id, true); }}>
