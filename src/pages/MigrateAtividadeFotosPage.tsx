@@ -199,30 +199,35 @@ const MigrateAtividadeFotosPage = () => {
                     return (
                       <div key={filename} className="flex items-center gap-2">
                         <input
+                          id={`migrate-file-${filename}`}
                           type="file"
                           accept="image/*"
                           className="hidden"
-                          ref={(el) => { fileInputRefs.current[filename] = el; }}
                           onChange={handleFileSelect(filename)}
+                          disabled={st?.status === "uploading" || st?.status === "done"}
                         />
 
-                        <Button
-                          size="sm"
-                          variant={st?.status === "done" ? "outline" : "default"}
-                          disabled={st?.status === "uploading" || st?.status === "done"}
-                          onClick={() => fileInputRefs.current[filename]?.click()}
-                          className="shrink-0"
-                        >
-                          {st?.status === "uploading" ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : st?.status === "done" ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                          ) : st?.status === "error" ? (
-                            <AlertCircle className="w-4 h-4 text-red-600" />
-                          ) : (
-                            <ImagePlus className="w-4 h-4" />
-                          )}
-                        </Button>
+                        <label htmlFor={`migrate-file-${filename}`} className="shrink-0">
+                          <Button
+                            size="sm"
+                            variant={st?.status === "done" ? "outline" : "default"}
+                            disabled={st?.status === "uploading" || st?.status === "done"}
+                            className="shrink-0"
+                            asChild
+                          >
+                            <span>
+                              {st?.status === "uploading" ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : st?.status === "done" ? (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              ) : st?.status === "error" ? (
+                                <AlertCircle className="w-4 h-4 text-red-600" />
+                              ) : (
+                                <ImagePlus className="w-4 h-4" />
+                              )}
+                            </span>
+                          </Button>
+                        </label>
 
                         <code className="text-xs bg-muted px-2 py-1 rounded truncate flex-1">
                           {filename}
