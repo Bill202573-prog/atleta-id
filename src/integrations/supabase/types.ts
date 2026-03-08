@@ -2000,8 +2000,8 @@ export type Database = {
       }
       historico_cobrancas: {
         Row: {
-          abacatepay_billing_id: string | null
-          abacatepay_url: string | null
+          asaas_payment_id: string | null
+          asaas_pix_url: string | null
           comprovante_url: string | null
           created_at: string
           data_pagamento: string | null
@@ -2016,8 +2016,8 @@ export type Database = {
           valor: number
         }
         Insert: {
-          abacatepay_billing_id?: string | null
-          abacatepay_url?: string | null
+          asaas_payment_id?: string | null
+          asaas_pix_url?: string | null
           comprovante_url?: string | null
           created_at?: string
           data_pagamento?: string | null
@@ -2032,8 +2032,8 @@ export type Database = {
           valor: number
         }
         Update: {
-          abacatepay_billing_id?: string | null
-          abacatepay_url?: string | null
+          asaas_payment_id?: string | null
+          asaas_pix_url?: string | null
           comprovante_url?: string | null
           created_at?: string
           data_pagamento?: string | null
@@ -2123,8 +2123,8 @@ export type Database = {
       }
       mensalidades: {
         Row: {
-          abacatepay_billing_id: string | null
-          abacatepay_url: string | null
+          asaas_payment_id: string | null
+          asaas_pix_url: string | null
           created_at: string
           crianca_id: string
           data_pagamento: string | null
@@ -2140,8 +2140,8 @@ export type Database = {
           valor_pago: number | null
         }
         Insert: {
-          abacatepay_billing_id?: string | null
-          abacatepay_url?: string | null
+          asaas_payment_id?: string | null
+          asaas_pix_url?: string | null
           created_at?: string
           crianca_id: string
           data_pagamento?: string | null
@@ -2157,8 +2157,8 @@ export type Database = {
           valor_pago?: number | null
         }
         Update: {
-          abacatepay_billing_id?: string | null
-          abacatepay_url?: string | null
+          asaas_payment_id?: string | null
+          asaas_pix_url?: string | null
           created_at?: string
           crianca_id?: string
           data_pagamento?: string | null
