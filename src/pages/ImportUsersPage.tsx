@@ -87,11 +87,11 @@ const ImportUsersPage = () => {
               </div>
               <div className="grid grid-cols-3 gap-2 text-center text-sm">
                 <div className="p-2 bg-background rounded">
-                  <div className="text-lg font-bold text-green-600">{result.imported}</div>
+                  <div className="text-lg font-bold text-success">{result.imported}</div>
                   <div className="text-muted-foreground">Importados</div>
                 </div>
                 <div className="p-2 bg-background rounded">
-                  <div className="text-lg font-bold text-yellow-600">{result.skipped}</div>
+                  <div className="text-lg font-bold text-warning">{result.skipped}</div>
                   <div className="text-muted-foreground">Pulados</div>
                 </div>
                 <div className="p-2 bg-background rounded">
