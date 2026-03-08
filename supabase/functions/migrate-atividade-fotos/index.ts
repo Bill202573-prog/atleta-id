@@ -120,11 +120,8 @@ serve(async (req) => {
         });
       }
 
-      // Upload to bucket: criancaId/timestamp-random.ext
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 11);
-      const filePath = `${atividade.crianca_id}/${timestamp}-${randomStr}.${fileExt}`;
+      // Use original filename to preserve mapping from old system
+      const filePath = `${atividade.crianca_id}/${file.name}`;
 
       const { error: uploadError } = await supabaseAdmin.storage
         .from("atividade-externa-fotos")
