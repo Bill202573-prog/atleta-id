@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import {
   Select,
   SelectContent,
@@ -197,12 +198,7 @@ const EventoPremiacoesSection = ({ evento, times, isReadOnly = false }: EventoPr
               className="flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg"
             >
               <span className="text-xl">{getTipoEmoji(p.tipo_premiacao)}</span>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={p.crianca?.foto_url || undefined} />
-                <AvatarFallback className="text-xs">
-                  {p.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={p.crianca?.foto_url} nome={p.crianca?.nome || '?'} className="h-8 w-8" fallbackClassName="text-xs" />
               <div className="flex-1">
                 <div className="font-medium">{p.crianca?.nome}</div>
                 <div className="text-xs text-muted-foreground">{getTipoLabel(p.tipo_premiacao)}</div>

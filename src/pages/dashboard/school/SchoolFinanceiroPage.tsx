@@ -656,7 +656,7 @@ const SchoolFinanceiroPage = () => {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-blue-900/15">
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/20">
@@ -672,7 +672,7 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-blue-900/15">
+        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/20">
@@ -688,21 +688,21 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="border border-blue-900/15">
+        <Card className="border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20">
-                <Users className="w-6 h-6 text-primary" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary">
+                <Users className="w-6 h-6 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Alunos Ativos</p>
+                <p className="text-sm text-muted-foreground">Total de Alunos</p>
                 <p className="text-2xl font-bold text-foreground">{alunosAtivos}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-blue-900/15">
+        <Card className="border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary">
@@ -719,7 +719,7 @@ const SchoolFinanceiroPage = () => {
 
       {/* Monthly Summary */}
       {monthlySummary.length > 0 && (
-        <Card className="border border-blue-900/15">
+        <Card className="border-2 border-blue-900/25">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Resumo Mensal</CardTitle>
@@ -817,13 +817,13 @@ const SchoolFinanceiroPage = () => {
       {/* Growth Charts */}
       {growthData.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="border border-blue-900/15">
+          <Card className="border-2 border-blue-900/25">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-emerald-500" />
-                <CardTitle className="text-base">Crescimento Financeiro</CardTitle>
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Evolução da Receita</CardTitle>
               </div>
-              <CardDescription>Receita nos últimos 6 meses</CardDescription>
+              <CardDescription>Receita mensal dos últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-64">
@@ -831,27 +831,23 @@ const SchoolFinanceiroPage = () => {
                   <BarChart data={growthData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="mesLabel" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <YAxis
-                      className="text-xs"
-                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                      tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-                    />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$${v}`} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px'
                       }}
-                      formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Receita']}
+                      formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Receita']}
                     />
-                    <Bar dataKey="receita" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="receita" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-blue-900/15">
+          <Card className="border-2 border-blue-900/25">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />

@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -411,10 +412,7 @@ const ClassesManagement = () => {
                     <TableRow key={crianca.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            {crianca.foto_url && <AvatarImage src={crianca.foto_url} alt={crianca.nome} />}
-                            <AvatarFallback className="text-xs">{crianca.nome.charAt(0)}</AvatarFallback>
-                          </Avatar>
+                          <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className="w-8 h-8" fallbackClassName="text-xs" />
                           <div>
                             <span className="font-medium text-sm">{crianca.nome}</span>
                             <span className="block sm:hidden text-xs text-muted-foreground">
@@ -501,12 +499,7 @@ const ClassesManagement = () => {
                       }`}
                       onClick={() => setSelectedCriancaId(child.id)}
                     >
-                      <Avatar className="h-8 w-8 shrink-0">
-                        {child.foto_url && <AvatarImage src={child.foto_url} />}
-                        <AvatarFallback className="text-xs">
-                          {child.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} className="h-8 w-8" fallbackClassName="text-xs" />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{child.nome}</p>
                         <p className="text-xs text-muted-foreground">

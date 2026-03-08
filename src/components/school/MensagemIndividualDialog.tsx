@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Mail } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { toast } from 'sonner';
 import { useCreateComunicadoEscola } from '@/hooks/useComunicadosEscolaData';
 
@@ -88,10 +89,7 @@ export default function MensagemIndividualDialog({
         </DialogHeader>
 
         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-          <Avatar>
-            {crianca.foto_url && <AvatarImage src={crianca.foto_url} alt={crianca.nome} />}
-            <AvatarFallback>{crianca.nome.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} />
           <div>
             <p className="font-medium">{crianca.nome}</p>
             <p className="text-xs text-muted-foreground">Destinatário</p>

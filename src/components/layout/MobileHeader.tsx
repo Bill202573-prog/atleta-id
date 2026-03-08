@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { LogOut, Settings, ChevronDown, Check, Bell, User, Users, ShoppingBag, ExternalLink } from 'lucide-react';
@@ -171,14 +172,7 @@ export function MobileHeader({ children, currentChild, guardianName, onChildChan
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <button className="flex items-center gap-3 touch-manipulation active:opacity-80">
-              <Avatar className="w-9 h-9 border-2 border-primary-foreground/30">
-                {currentChild?.foto_url && (
-                  <AvatarImage src={currentChild.foto_url} alt={currentChild?.nome} />
-                )}
-                <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-sm font-semibold">
-                  {currentChild?.nome?.charAt(0) || ''}
-                </AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={currentChild?.foto_url} nome={currentChild?.nome || ''} className="w-9 h-9 border-2 border-primary-foreground/30" fallbackClassName="bg-primary-foreground/20 text-primary-foreground text-sm font-semibold" />
               <div className="flex flex-col items-start">
                 <span className="text-sm font-semibold leading-tight truncate max-w-[140px]">
                   {formattedChildName || 'Selecionar'}
@@ -211,12 +205,7 @@ export function MobileHeader({ children, currentChild, guardianName, onChildChan
                       : 'bg-muted border-2 border-transparent hover:bg-muted/80'
                   }`}
                 >
-                  <Avatar className="w-12 h-12">
-                    {child.foto_url && <AvatarImage src={child.foto_url} alt={child.nome} />}
-                    <AvatarFallback className="text-lg font-semibold">
-                      {child.nome.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ChildAvatar fotoUrl={child.foto_url} nome={child.nome} className="w-12 h-12" fallbackClassName="text-lg font-semibold" />
                   <span className="flex-1 text-left font-medium">{child.nome}</span>
                   {currentChild?.id === child.id && (
                     <Check className="w-5 h-5 text-primary" />

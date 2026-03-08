@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import {
   Select,
   SelectContent,
@@ -641,12 +642,7 @@ export default function FinalizarAmistosoDialog({
                     : 'bg-muted/30'
                 }`}
               >
-                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 shrink-0">
-                  <AvatarImage src={conv.crianca?.foto_url || undefined} />
-                  <AvatarFallback className="text-[10px] sm:text-xs">
-                    {conv.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
+                <ChildAvatar fotoUrl={conv.crianca?.foto_url} nome={conv.crianca?.nome || '?'} className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" fallbackClassName="text-[10px] sm:text-xs" />
                 <span className="flex-1 font-medium truncate text-xs sm:text-sm">{conv.crianca?.nome}</span>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Button type="button" size="sm" variant={isPresente ? 'default' : 'outline'} className={`h-7 w-7 sm:h-8 sm:w-8 p-0 ${isPresente ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); handlePresencaChange(conv.crianca_id, true); }}>
@@ -763,10 +759,7 @@ export default function FinalizarAmistosoDialog({
           {gols.map(gol => (
             <div key={gol.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <span className="text-lg">⚽</span>
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={gol.crianca?.foto_url || undefined} />
-                <AvatarFallback className="text-xs">{gol.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={gol.crianca?.foto_url} nome={gol.crianca?.nome || '?'} className="h-7 w-7" fallbackClassName="text-xs" />
               <span className="flex-1 font-medium">{gol.crianca?.nome}</span>
               <Badge variant="secondary">{gol.quantidade} gol(s)</Badge>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDeleteGol(gol.id)} disabled={deleteGolMutation.isPending}>
@@ -820,10 +813,7 @@ export default function FinalizarAmistosoDialog({
           {premiacoes.map(p => (
             <div key={p.id} className="flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
               <span className="text-xl">{getTipoEmoji(p.tipo_premiacao)}</span>
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={p.crianca?.foto_url || undefined} />
-                <AvatarFallback className="text-xs">{p.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={p.crianca?.foto_url} nome={p.crianca?.nome || '?'} className="h-7 w-7" fallbackClassName="text-xs" />
               <div className="flex-1">
                 <div className="font-medium">{p.crianca?.nome}</div>
                 <div className="text-xs text-muted-foreground">{getTipoLabel(p.tipo_premiacao)}</div>
@@ -862,10 +852,7 @@ export default function FinalizarAmistosoDialog({
               }`}
               onClick={() => handleToggleDestaque(a.crianca_id)}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={a.crianca?.foto_url || undefined} />
-                <AvatarFallback className="text-xs">{a.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={a.crianca?.foto_url} nome={a.crianca?.nome || '?'} className="h-8 w-8" fallbackClassName="text-xs" />
               <span className="flex-1 font-medium text-sm">{a.crianca?.nome}</span>
               <div className={`p-1.5 rounded-full transition-colors ${destaques[a.crianca_id] ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 <ThumbsUp className="w-4 h-4" />

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Separator } from '@/components/ui/separator';
 import { 
   AlertDialog,
@@ -158,12 +159,7 @@ function ConvocacaoCard({ convocacao, onPagar, onCancelar, onConfirmar, isCancel
       
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
-          <Avatar className={`h-10 w-10 ${isRecusado ? 'opacity-60' : ''}`}>
-            <AvatarImage src={crianca.foto_url || undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {crianca.nome.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+          <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className={`h-10 w-10 ${isRecusado ? 'opacity-60' : ''}`} fallbackClassName="bg-primary/10 text-primary" />
           <div className="flex-1 min-w-0">
             <CardTitle className={`text-base whitespace-nowrap ${isRecusado ? 'text-muted-foreground' : ''}`}>
               {crianca.nome}

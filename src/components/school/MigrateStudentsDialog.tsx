@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Loader2, Users, ArrowRight, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -193,10 +194,7 @@ const MigrateStudentsDialog = ({ open, onOpenChange, turma }: MigrateStudentsDia
                     onClick={() => toggleStudent(crianca.id)}
                   >
                     <Checkbox checked={selected} />
-                    <Avatar className="h-8 w-8">
-                      {crianca.foto_url && <AvatarImage src={crianca.foto_url} />}
-                      <AvatarFallback>{crianca.nome.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className="h-8 w-8" />
                     <span className="flex-1 font-medium">{crianca.nome}</span>
                   </div>
                 ))}
