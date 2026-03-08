@@ -247,8 +247,8 @@ const SchoolFinanceiroPage = () => {
           data_pagamento,
           forma_pagamento,
           observacoes,
-          abacatepay_url,
-          abacatepay_billing_id,
+          asaas_pix_url,
+          asaas_payment_id,
           crianca:criancas!mensalidades_crianca_id_fkey(nome)
         `)
         .eq('escolinha_id', user.escolinhaId)
