@@ -255,11 +255,11 @@ serve(async (req) => {
         // ============================================
         // Not an amistoso, check if it's a mensalidade
         // ============================================
-        // Find mensalidade by Asaas payment ID (stored in abacatepay_billing_id field)
+        // Find mensalidade by Asaas payment ID
         const { data: mensalidade, error: mensalidadeError } = await supabase
           .from("mensalidades")
           .select("id, crianca_id, status")
-          .eq("abacatepay_billing_id", payment.id)
+          .eq("asaas_payment_id", payment.id)
           .single();
 
         if (mensalidadeError || !mensalidade) {
@@ -300,7 +300,7 @@ serve(async (req) => {
                 data_pagamento: paymentDate,
                 forma_pagamento: "pix",
                 valor_pago: payment.netValue || payment.value,
-                abacatepay_billing_id: payment.id, // Store Asaas payment ID
+                asaas_payment_id: payment.id,
               })
               .eq("id", mensalidadeByRef.id);
 

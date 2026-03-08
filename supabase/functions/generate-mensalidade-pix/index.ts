@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
         mes_referencia,
         status,
         data_vencimento,
-        abacatepay_billing_id,
+        asaas_payment_id,
         crianca_id,
         escolinha_id,
         crianca:criancas!mensalidades_crianca_id_fkey(
@@ -322,7 +322,7 @@ Deno.serve(async (req) => {
     const { error: updateError } = await supabase
       .from('mensalidades')
       .update({
-        abacatepay_billing_id: paymentResult.id, // Reusing this field for Asaas payment ID
+        asaas_payment_id: paymentResult.id,
         observacoes: `PIX gerado via Asaas em ${new Date().toISOString()}`,
       })
       .eq('id', mensalidade_id);

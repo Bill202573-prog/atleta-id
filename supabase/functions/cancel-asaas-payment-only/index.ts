@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     // Get the mensalidade details
     const { data: mensalidade, error: mensalidadeError } = await supabase
       .from("mensalidades")
-      .select("id, abacatepay_billing_id, escolinha_id")
+      .select("id, asaas_payment_id, escolinha_id")
       .eq("id", mensalidadeId)
       .single();
 
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     }
 
     // Cancel in Asaas if payment ID exists
-    if (mensalidade.abacatepay_billing_id) {
+    if (mensalidade.asaas_payment_id) {
       // Get school's Asaas API key or use master key
       const { data: cadastroBancario } = await supabase
         .from("escola_cadastro_bancario")
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
           
           // Delete/cancel the payment in Asaas
           const deleteResponse = await fetch(
-            `${asaasBaseUrl}/payments/${mensalidade.abacatepay_billing_id}`,
+            `${asaasBaseUrl}/payments/${mensalidade.asaas_payment_id}`,
             {
               method: "DELETE",
               headers: {
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           } else {
-            console.log("Asaas payment cancelled successfully:", mensalidade.abacatepay_billing_id);
+            console.log("Asaas payment cancelled successfully:", mensalidade.asaas_payment_id);
           }
         } catch (asaasError) {
           console.error("Error calling Asaas API:", asaasError);

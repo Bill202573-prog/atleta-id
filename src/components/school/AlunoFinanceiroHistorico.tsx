@@ -62,8 +62,8 @@ interface MensalidadeDetail {
   data_pagamento: string | null;
   forma_pagamento: string | null;
   observacoes: string | null;
-  abacatepay_url: string | null;
-  abacatepay_billing_id: string | null;
+  asaas_pix_url: string | null;
+  asaas_payment_id: string | null;
 }
 
 interface CobrancaEntrada {
@@ -590,7 +590,7 @@ const AlunoFinanceiroHistorico = ({
                             >
                               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                 {/* PIX indicator when URL exists */}
-                                {m.abacatepay_url && m.status !== 'pago' && m.status !== 'isento' ? (
+                                {m.asaas_pix_url && m.status !== 'pago' && m.status !== 'isento' ? (
                                   <div className="relative flex-shrink-0">
                                     {getStatusIcon(m.status)}
                                     <QrCode className="w-3 h-3 text-primary absolute -bottom-1 -right-1" />
@@ -628,7 +628,7 @@ const AlunoFinanceiroHistorico = ({
                                 {m.status !== 'pago' && m.status !== 'isento' && (
                                   <div className="flex gap-1">
                                     {/* PIX Link - if exists */}
-                                    {m.abacatepay_url && (
+                                    {m.asaas_pix_url && (
                                       <Button
                                         size="sm"
                                         variant="outline"
@@ -636,7 +636,7 @@ const AlunoFinanceiroHistorico = ({
                                         asChild
                                       >
                                         <a 
-                                          href={m.abacatepay_url} 
+                                          href={m.asaas_pix_url} 
                                           target="_blank" 
                                           rel="noopener noreferrer"
                                           title="Abrir link de pagamento PIX"
@@ -657,7 +657,7 @@ const AlunoFinanceiroHistorico = ({
                                         handleRegeneratePix(m);
                                       }}
                                       disabled={regeneratingId === m.id}
-                                      title={m.abacatepay_url ? "Regenerar PIX" : "Gerar PIX"}
+                                      title={m.asaas_pix_url ? "Regenerar PIX" : "Gerar PIX"}
                                     >
                                       {regeneratingId === m.id ? (
                                         <Loader2 className="w-3 h-3 animate-spin" />

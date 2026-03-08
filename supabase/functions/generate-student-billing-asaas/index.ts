@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
       // Ignore cancelled billings - they should allow regeneration
       const { data: existingBillings } = await supabase
         .from('mensalidades')
-        .select('id, abacatepay_billing_id, status')
+        .select('id, asaas_payment_id, status')
         .eq('crianca_id', crianca.id)
         .eq('escolinha_id', escolinha_id)
         .eq('mes_referencia', mes_referencia);
@@ -478,8 +478,8 @@ Deno.serve(async (req) => {
             data_vencimento: dataVencimentoStr,
             status: initialStatus,
             forma_pagamento: 'pix',
-            abacatepay_billing_id: paymentData.id, // Reusing field for Asaas payment ID
-            abacatepay_url: paymentData.invoiceUrl || null, // Reusing field for invoice URL
+            asaas_payment_id: paymentData.id,
+            asaas_pix_url: paymentData.invoiceUrl || null,
             observacoes: `PIX gerado via Asaas em ${new Date().toISOString()}. ${pixData ? 'QR Code disponível.' : ''}`,
           });
 

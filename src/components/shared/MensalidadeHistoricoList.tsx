@@ -41,8 +41,8 @@ interface Mensalidade {
   data_pagamento: string | null;
   status: string;
   forma_pagamento: string | null;
-  abacatepay_url: string | null;
-  abacatepay_billing_id: string | null;
+  asaas_pix_url: string | null;
+  asaas_payment_id: string | null;
   escolinha: {
     nome: string;
   } | null;
@@ -90,8 +90,8 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
           data_pagamento,
           status,
           forma_pagamento,
-          abacatepay_url,
-          abacatepay_billing_id,
+          asaas_pix_url,
+          asaas_payment_id,
           escolinha:escolinhas!mensalidades_escolinha_id_fkey(nome)
         `)
         .eq('crianca_id', criancaId)
@@ -193,7 +193,7 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
                     <Clock className="w-4 h-4 text-blue-500" />
                   )}
                   {/* PIX indicator */}
-                  {mensalidade.abacatepay_url && mensalidade.status?.toLowerCase() !== 'pago' && (
+                  {mensalidade.asaas_pix_url && mensalidade.status?.toLowerCase() !== 'pago' && (
                     <QrCode className="w-3 h-3 text-primary absolute -bottom-0.5 -right-0.5" />
                   )}
                 </div>

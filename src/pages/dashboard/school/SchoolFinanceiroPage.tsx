@@ -57,8 +57,8 @@ interface MensalidadeDetail {
   data_pagamento: string | null;
   forma_pagamento: string | null;
   observacoes: string | null;
-  abacatepay_url: string | null;
-  abacatepay_billing_id: string | null;
+  asaas_pix_url: string | null;
+  asaas_payment_id: string | null;
 }
 
 interface GrowthData {
@@ -86,7 +86,7 @@ interface HistoricoCobrancaSaas {
   data_vencimento: string | null;
   data_pagamento: string | null;
   metodo_pagamento: string | null;
-  abacatepay_url: string | null;
+  asaas_pix_url: string | null;
   plano?: { nome: string } | null;
 }
 
@@ -216,7 +216,7 @@ const SchoolFinanceiroPage = () => {
           data_vencimento,
           data_pagamento,
           metodo_pagamento,
-          abacatepay_url,
+          asaas_pix_url,
           plano:planos_saas(nome)
         `)
         .eq('escolinha_id', user.escolinhaId)
@@ -247,8 +247,8 @@ const SchoolFinanceiroPage = () => {
           data_pagamento,
           forma_pagamento,
           observacoes,
-          abacatepay_url,
-          abacatepay_billing_id,
+          asaas_pix_url,
+          asaas_payment_id,
           crianca:criancas!mensalidades_crianca_id_fkey(nome)
         `)
         .eq('escolinha_id', user.escolinhaId)
@@ -407,14 +407,14 @@ const SchoolFinanceiroPage = () => {
       // First, get the mensalidade to check if it has an Asaas payment
       const { data: mensalidade, error: fetchError } = await supabase
         .from('mensalidades')
-        .select('abacatepay_billing_id')
+        .select('asaas_payment_id')
         .eq('id', id)
         .single();
       
       if (fetchError) throw fetchError;
       
       // If marking as paid and there's an Asaas payment, cancel it first
-      if (status === 'pago' && mensalidade?.abacatepay_billing_id) {
+      if (status === 'pago' && mensalidade?.asaas_payment_id) {
         try {
           // Call edge function to cancel the Asaas payment
           const { data: cancelResult, error: cancelError } = await supabase.functions.invoke(
@@ -439,8 +439,8 @@ const SchoolFinanceiroPage = () => {
         updateData.valor_pago = valorPago;
         updateData.forma_pagamento = 'manual';
         // Clear Asaas payment data since we cancelled/paid manually
-        updateData.abacatepay_billing_id = null;
-        updateData.abacatepay_url = null;
+        updateData.asaas_payment_id = null;
+        updateData.asaas_pix_url = null;
       }
       
       if (observacao) {
@@ -1048,7 +1048,7 @@ const SchoolFinanceiroPage = () => {
                         {/* Actions */}
                         {mensalidade.status !== 'pago' && mensalidade.status !== 'isento' && mensalidade.status !== 'cancelado' && (
                           <div className="flex gap-1">
-                            {mensalidade.abacatepay_url && (
+                            {mensalidade.asaas_pix_url && (
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -1056,7 +1056,7 @@ const SchoolFinanceiroPage = () => {
                                 asChild
                               >
                                 <a 
-                                  href={mensalidade.abacatepay_url} 
+                                  href={mensalidade.asaas_pix_url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                   title="Abrir link de pagamento PIX"

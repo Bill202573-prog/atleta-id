@@ -67,8 +67,8 @@ export interface HistoricoCobranca {
   data_pagamento: string | null;
   observacoes: string | null;
   created_at: string;
-  abacatepay_billing_id?: string | null;
-  abacatepay_url?: string | null;
+  asaas_payment_id?: string | null;
+  asaas_pix_url?: string | null;
   data_vencimento?: string | null;
   metodo_pagamento?: string | null;
   plano?: PlanoSaas;
