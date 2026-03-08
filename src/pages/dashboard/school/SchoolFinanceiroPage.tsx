@@ -820,7 +820,31 @@ const SchoolFinanceiroPage = () => {
           <Card className="border-2 border-blue-900/25">
             <CardHeader>
               <div className="flex items-center gap-2">
-...
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Evolução da Receita</CardTitle>
+              </div>
+              <CardDescription>Receita mensal dos últimos 6 meses</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={growthData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="mesLabel" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$${v}`} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                      formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Receita']}
+                    />
+                    <Bar dataKey="receita" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
           </Card>
 
           <Card className="border-2 border-blue-900/25">
