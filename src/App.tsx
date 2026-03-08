@@ -30,6 +30,7 @@ const CarreiraConexoesPage = lazy(() => import("./pages/carreira/CarreiraConexoe
 const TermosPage = lazy(() => import("./pages/carreira/TermosPage"));
 const PrivacidadePage = lazy(() => import("./pages/carreira/PrivacidadePage"));
 const ContatoPage = lazy(() => import("./pages/carreira/ContatoPage"));
+const ImportUsersPage = lazy(() => import("./pages/ImportUsersPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +83,7 @@ const App = () => (
                   <Route path="/i" element={<ShortIndicacaoRedirect />} />
                   {/* Carreira routes temporarily disabled */}
                   {/* Retrocompatibilidade com links antigos - temporarily disabled */}
+                  <Route path="/import-users" element={<ImportUsersPage />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/dashboard/*" element={<Dashboard />} />
                   <Route path="*" element={<NotFound />} />
