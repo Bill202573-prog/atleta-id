@@ -439,8 +439,8 @@ const SchoolFinanceiroPage = () => {
         updateData.valor_pago = valorPago;
         updateData.forma_pagamento = 'manual';
         // Clear Asaas payment data since we cancelled/paid manually
-        updateData.abacatepay_billing_id = null;
-        updateData.abacatepay_url = null;
+        updateData.asaas_payment_id = null;
+        updateData.asaas_pix_url = null;
       }
       
       if (observacao) {
