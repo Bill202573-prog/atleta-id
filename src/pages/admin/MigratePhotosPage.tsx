@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Upload, Check, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Upload, Check, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface PendingChild {
   id: string;
   nome: string;
-  foto_url: string; // path like "uuid/timestamp.ext"
+  foto_url: string;
   uploaded?: boolean;
 }
+
+const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/migrate-child-photos`;
 
 const MigratePhotosPage = () => {
   const [children, setChildren] = useState<PendingChild[]>([]);
@@ -23,52 +25,65 @@ const MigratePhotosPage = () => {
     loadPendingChildren();
   }, []);
 
-  const loadPendingChildren = async () => {
-    const { data, error } = await supabase
-      .from('criancas')
-      .select('id, nome, foto_url')
-      .not('foto_url', 'is', null)
-      .not('foto_url', 'like', 'http%')
-      .order('nome');
+  const getAuthHeaders = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (error) {
-      toast.error('Erro ao carregar crianças');
-      console.error(error);
-      return;
+    if (!session?.access_token) {
+      throw new Error('Você precisa estar logado para migrar as fotos');
     }
 
-    // Check which files actually exist in storage by trying to download a tiny portion
-    const withStatus = await Promise.all(
-      (data || []).map(async (child) => {
-        // Use list to check if the file actually exists in the bucket
-        const folder = child.foto_url.split('/')[0];
-        const fileName = child.foto_url.split('/').slice(1).join('/');
-        const { data: files } = await supabase.storage
-          .from('child-photos')
-          .list(folder, { limit: 100, search: fileName });
-        
-        return {
-          ...child,
-          uploaded: !!(files && files.length > 0 && files.some(f => child.foto_url.endsWith(f.name))),
-        };
-      })
-    );
+    return {
+      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${session.access_token}`,
+    };
+  };
 
-    setChildren(withStatus);
-    setLoading(false);
+  const loadPendingChildren = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(FUNCTION_URL, {
+        method: 'GET',
+        headers: await getAuthHeaders(),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || 'Erro ao carregar lista de migração');
+      }
+
+      setChildren(result.children || []);
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao carregar crianças');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFileUpload = async (child: PendingChild, file: File) => {
     setUploading(child.id);
     try {
-      const { error } = await supabase.storage
-        .from('child-photos')
-        .upload(child.foto_url, file, { upsert: true });
+      const formData = new FormData();
+      formData.append('childId', child.id);
+      formData.append('file', file);
 
-      if (error) throw error;
+      const response = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: await getAuthHeaders(),
+        body: formData,
+      });
 
-      setChildren(prev =>
-        prev.map(c => c.id === child.id ? { ...c, uploaded: true } : c)
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || 'Falha no upload');
+      }
+
+      setChildren((prev) =>
+        prev.map((c) => (c.id === child.id ? { ...c, uploaded: true } : c))
       );
       toast.success(`Foto de ${child.nome} enviada!`);
     } catch (err: any) {
@@ -78,57 +93,53 @@ const MigratePhotosPage = () => {
     }
   };
 
-  const getExpectedFileName = (fotoUrl: string) => {
-    // Extract just the filename from the path (e.g., "1769518270470.jpg")
-    return fotoUrl.split('/').pop() || fotoUrl;
-  };
+  const getExpectedFileName = (fotoUrl: string) => fotoUrl.split('/').pop() || fotoUrl;
 
-  const uploadedCount = children.filter(c => c.uploaded).length;
+  const uploadedCount = children.filter((c) => c.uploaded).length;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 max-w-3xl mx-auto">
+    <div className="mx-auto min-h-screen max-w-3xl bg-background p-4 md:p-8">
       <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-        <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
       </Button>
 
-      <h1 className="text-2xl font-bold mb-2">Migrar Fotos dos Alunos</h1>
-      <p className="text-muted-foreground mb-6">
-        {uploadedCount}/{children.length} fotos já enviadas. Para cada aluno abaixo, clique em "Enviar Foto"
-        e selecione o arquivo correspondente que você baixou do projeto antigo.
+      <h1 className="mb-2 text-2xl font-bold">Migrar Fotos dos Alunos</h1>
+      <p className="mb-6 text-muted-foreground">
+        {uploadedCount}/{children.length} fotos já enviadas. Envie cada arquivo com o nome correspondente.
       </p>
 
       <div className="space-y-3">
-        {children.map(child => (
-          <Card key={child.id} className={child.uploaded ? 'border-green-500/50 bg-green-50/50 dark:bg-green-950/20' : ''}>
+        {children.map((child) => (
+          <Card key={child.id} className={child.uploaded ? 'border-primary/30 bg-muted/40' : ''}>
             <CardContent className="flex items-center justify-between p-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{child.nome}</p>
-                <p className="text-xs text-muted-foreground font-mono truncate">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{child.nome}</p>
+                <p className="truncate font-mono text-xs text-muted-foreground">
                   {getExpectedFileName(child.foto_url)}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 ml-4">
+              <div className="ml-4 flex items-center gap-2">
                 {child.uploaded ? (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <Check className="w-5 h-5" />
+                  <div className="flex items-center gap-1 text-primary">
+                    <Check className="h-5 w-5" />
                     <span className="text-sm font-medium">OK</span>
                   </div>
                 ) : uploading === child.id ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 ) : (
                   <label className="cursor-pointer">
                     <Button size="sm" variant="outline" asChild>
                       <span>
-                        <Upload className="w-4 h-4 mr-1" /> Enviar Foto
+                        <Upload className="mr-1 h-4 w-4" /> Enviar Foto
                       </span>
                     </Button>
                     <input
@@ -136,8 +147,8 @@ const MigratePhotosPage = () => {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleFileUpload(child, file);
+                        const selected = e.target.files?.[0];
+                        if (selected) handleFileUpload(child, selected);
                         e.target.value = '';
                       }}
                     />
@@ -149,16 +160,20 @@ const MigratePhotosPage = () => {
         ))}
       </div>
 
+      {children.length === 0 && (
+        <Card className="mt-6">
+          <CardContent className="p-4 text-center text-sm text-muted-foreground">
+            Nenhuma foto pendente encontrada.
+          </CardContent>
+        </Card>
+      )}
+
       {uploadedCount === children.length && children.length > 0 && (
-        <Card className="mt-6 border-green-500 bg-green-50 dark:bg-green-950/30">
+        <Card className="mt-6 border-primary/30 bg-muted/40">
           <CardContent className="p-4 text-center">
-            <Check className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <p className="font-bold text-green-700 dark:text-green-400">
-              Todas as fotos foram migradas com sucesso!
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Você pode remover esta página depois.
-            </p>
+            <Check className="mx-auto mb-2 h-8 w-8 text-primary" />
+            <p className="font-bold">Todas as fotos foram migradas com sucesso!</p>
+            <p className="mt-1 text-sm text-muted-foreground">Você pode remover esta página depois.</p>
           </CardContent>
         </Card>
       )}
