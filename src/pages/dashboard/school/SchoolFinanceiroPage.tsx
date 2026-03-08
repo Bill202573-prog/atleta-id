@@ -688,21 +688,13 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="border border-blue-900/15">
+        <Card className="border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/20">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Alunos Ativos</p>
-                <p className="text-2xl font-bold text-foreground">{alunosAtivos}</p>
-              </div>
-            </div>
-          </CardContent>
+...
         </Card>
 
-        <Card className="border border-blue-900/15">
+        <Card className="border-2 border-blue-900/25">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary">
