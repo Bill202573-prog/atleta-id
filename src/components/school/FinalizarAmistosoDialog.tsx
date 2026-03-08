@@ -813,10 +813,7 @@ export default function FinalizarAmistosoDialog({
           {premiacoes.map(p => (
             <div key={p.id} className="flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
               <span className="text-xl">{getTipoEmoji(p.tipo_premiacao)}</span>
-              <Avatar className="h-7 w-7">
-                <AvatarImage src={p.crianca?.foto_url || undefined} />
-                <AvatarFallback className="text-xs">{p.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={p.crianca?.foto_url} nome={p.crianca?.nome || '?'} className="h-7 w-7" fallbackClassName="text-xs" />
               <div className="flex-1">
                 <div className="font-medium">{p.crianca?.nome}</div>
                 <div className="text-xs text-muted-foreground">{getTipoLabel(p.tipo_premiacao)}</div>
