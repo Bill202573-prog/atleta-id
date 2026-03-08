@@ -244,6 +244,15 @@ Deno.serve(async (req) => {
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
 
+    const authHeader = req.headers.get('Authorization') || '';
+    const bearerToken = authHeader.replace('Bearer ', '').trim();
+    if (bearerToken !== supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { user_ids, title, body, url, tag, tipo, referencia_id, dias_antes, escolinha_id } = await req.json();

@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.asaas-configure-webhook]
 verify_jwt = false
+
+[functions.push-vapid-public-key]
+verify_jwt = false
