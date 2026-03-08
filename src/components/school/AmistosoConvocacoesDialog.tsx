@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import {
   Table,
   TableBody,
