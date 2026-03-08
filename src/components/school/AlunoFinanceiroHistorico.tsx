@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { parseLocalDate } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -187,7 +188,30 @@ const AlunoFinanceiroHistorico = ({
     enabled: !!user?.escolinhaId,
   });
 
-  // Cancel amistoso mutation
+  // Fetch criancas foto_url for avatars
+  const criancaIds = useMemo(() => {
+    const ids = new Set<string>();
+    mensalidades.forEach(m => ids.add(m.crianca_id));
+    return Array.from(ids);
+  }, [mensalidades]);
+
+  const { data: criancasFotoMap = {} } = useQuery({
+    queryKey: ['criancas-foto-map', criancaIds],
+    queryFn: async () => {
+      if (criancaIds.length === 0) return {};
+      const { data, error } = await supabase
+        .from('criancas')
+        .select('id, foto_url')
+        .in('id', criancaIds);
+      if (error) throw error;
+      const map: Record<string, string | null> = {};
+      data?.forEach(c => { map[c.id] = c.foto_url; });
+      return map;
+    },
+    enabled: criancaIds.length > 0,
+  });
+
+
   const cancelAmistosoMutation = useMutation({
     mutationFn: async (convocacaoId: string) => {
       const { data, error } = await supabase.functions.invoke('cancel-amistoso-payment', {
@@ -284,6 +308,7 @@ const AlunoFinanceiroHistorico = ({
         acc[m.crianca_id] = {
           id: m.crianca_id,
           nome: m.crianca_nome,
+          foto_url: criancasFotoMap[m.crianca_id] || null,
           mensalidades: [],
           cobrancaEntrada: null as CobrancaEntrada | null,
           convocacoes: [] as typeof amistosoConvocacoes,
@@ -291,7 +316,7 @@ const AlunoFinanceiroHistorico = ({
       }
       acc[m.crianca_id].mensalidades.push(m);
       return acc;
-    }, {} as Record<string, { id: string; nome: string; mensalidades: MensalidadeDetail[]; cobrancaEntrada: CobrancaEntrada | null; convocacoes: typeof amistosoConvocacoes }>);
+    }, {} as Record<string, { id: string; nome: string; foto_url: string | null; mensalidades: MensalidadeDetail[]; cobrancaEntrada: CobrancaEntrada | null; convocacoes: typeof amistosoConvocacoes }>);
 
     // Add cobrancas entrada for students who only have enrollment (no mensalidades yet)
     cobrancasEntrada.forEach(c => {
@@ -299,6 +324,7 @@ const AlunoFinanceiroHistorico = ({
         grouped[c.crianca_id] = {
           id: c.crianca_id,
           nome: c.crianca_nome,
+          foto_url: criancasFotoMap[c.crianca_id] || null,
           mensalidades: [],
           cobrancaEntrada: c,
           convocacoes: [],
@@ -314,6 +340,7 @@ const AlunoFinanceiroHistorico = ({
         grouped[c.crianca_id] = {
           id: c.crianca_id,
           nome: (c.crianca as any)?.nome || 'Desconhecido',
+          foto_url: criancasFotoMap[c.crianca_id] || null,
           mensalidades: [],
           cobrancaEntrada: null,
           convocacoes: [c],
@@ -324,7 +351,7 @@ const AlunoFinanceiroHistorico = ({
     });
 
     return grouped;
-  }, [mensalidades, cobrancasEntrada, amistosoConvocacoes]);
+  }, [mensalidades, cobrancasEntrada, amistosoConvocacoes, criancasFotoMap]);
 
   // Convert to array and calculate stats
   const alunosArray = useMemo(() => Object.values(alunosMensalidades).map(aluno => {
@@ -481,9 +508,7 @@ const AlunoFinanceiroHistorico = ({
                     <AccordionTrigger className="hover:no-underline py-3 sm:py-4">
                       <div className="flex flex-1 items-center justify-between pr-2 sm:pr-4 gap-2">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <div className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 flex-shrink-0">
-                            <User className="w-5 h-5 text-primary" />
-                          </div>
+                          <ChildAvatar fotoUrl={aluno.foto_url} nome={aluno.nome} className="hidden sm:flex w-12 h-12" fallbackClassName="text-sm" />
                           <div className="text-left min-w-0">
                             <h4 className="font-semibold text-foreground text-sm sm:text-base truncate">{aluno.nome}</h4>
                             <div className="flex items-center gap-1 sm:gap-2 text-xs text-muted-foreground flex-wrap">
