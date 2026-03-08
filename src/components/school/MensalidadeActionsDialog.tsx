@@ -22,7 +22,7 @@ interface Mensalidade {
   mes_referencia: string;
   valor: number;
   status: string;
-  abacatepay_billing_id?: string | null;
+  asaas_payment_id?: string | null;
 }
 
 interface MensalidadeActionsDialogProps {
