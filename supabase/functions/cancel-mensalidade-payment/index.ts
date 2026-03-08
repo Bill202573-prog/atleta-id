@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
           
           // Delete/cancel the payment in Asaas
           const deleteResponse = await fetch(
-            `${asaasBaseUrl}/payments/${mensalidade.abacatepay_billing_id}`,
+            `${asaasBaseUrl}/payments/${mensalidade.asaas_payment_id}`,
             {
               method: "DELETE",
               headers: {
