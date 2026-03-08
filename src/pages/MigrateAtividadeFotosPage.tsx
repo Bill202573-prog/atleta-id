@@ -70,7 +70,10 @@ const MigrateAtividadeFotosPage = () => {
       return;
     }
 
-    setFileStatuses((prev) => ({ ...prev, [filename]: { status: "uploading" } }));
+    setFileStatuses((prev) => {
+      const next = { ...prev, [filename]: { status: "uploading" as FileStatus } };
+      return next;
+    });
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
