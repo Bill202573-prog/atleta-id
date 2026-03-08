@@ -31,6 +31,7 @@ const TermosPage = lazy(() => import("./pages/carreira/TermosPage"));
 const PrivacidadePage = lazy(() => import("./pages/carreira/PrivacidadePage"));
 const ContatoPage = lazy(() => import("./pages/carreira/ContatoPage"));
 const ImportUsersPage = lazy(() => import("./pages/ImportUsersPage"));
+const MigrateAtividadeFotosPage = lazy(() => import("./pages/MigrateAtividadeFotosPage"));
 
 
 const queryClient = new QueryClient({
