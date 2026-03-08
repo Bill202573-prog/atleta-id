@@ -15,6 +15,7 @@ import StatsCard from '@/components/shared/StatsCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import ChildAvatar from '@/components/shared/ChildAvatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
