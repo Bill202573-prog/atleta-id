@@ -18,6 +18,7 @@ const Card = React.forwardRef<
   return (
     <div
       ref={ref}
+      data-slot="card"
       className={cn(
         "rounded-xl text-card-foreground transition-all duration-200",
         variantClasses[variant],

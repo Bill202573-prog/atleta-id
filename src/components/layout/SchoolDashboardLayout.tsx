@@ -73,7 +73,7 @@ function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
 
   return (
     <>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="school-dashboard min-h-screen flex w-full bg-background">
         <SchoolSidebar />
         
         <SidebarInset className="flex flex-col">

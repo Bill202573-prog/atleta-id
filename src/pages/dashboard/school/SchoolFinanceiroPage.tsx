@@ -656,7 +656,7 @@ const SchoolFinanceiroPage = () => {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-2 border-blue-900/25">
+        <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/20">
@@ -672,7 +672,7 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-2 border-blue-900/25">
+        <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-500/20">
@@ -688,7 +688,7 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-blue-900/25">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary">
@@ -702,7 +702,7 @@ const SchoolFinanceiroPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="border-2 border-blue-900/25">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-secondary">
@@ -719,7 +719,7 @@ const SchoolFinanceiroPage = () => {
 
       {/* Monthly Summary */}
       {monthlySummary.length > 0 && (
-        <Card className="border-2 border-blue-900/25">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Resumo Mensal</CardTitle>
@@ -817,7 +817,7 @@ const SchoolFinanceiroPage = () => {
       {/* Growth Charts */}
       {growthData.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card className="border-2 border-blue-900/25">
+          <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
@@ -847,7 +847,7 @@ const SchoolFinanceiroPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-2 border-blue-900/25">
+          <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
