@@ -1048,7 +1048,7 @@ const SchoolFinanceiroPage = () => {
                         {/* Actions */}
                         {mensalidade.status !== 'pago' && mensalidade.status !== 'isento' && mensalidade.status !== 'cancelado' && (
                           <div className="flex gap-1">
-                            {mensalidade.abacatepay_url && (
+                            {mensalidade.asaas_pix_url && (
                               <Button
                                 size="sm"
                                 variant="outline"
