@@ -86,6 +86,7 @@ const App = () => (
                   {/* Carreira routes temporarily disabled */}
                   {/* Retrocompatibilidade com links antigos - temporarily disabled */}
                   <Route path="/import-users" element={<ImportUsersPage />} />
+                  <Route path="/migrate-atividade-fotos" element={<MigrateAtividadeFotosPage />} />
                   
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/dashboard/*" element={<Dashboard />} />
