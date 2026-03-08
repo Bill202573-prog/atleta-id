@@ -159,8 +159,7 @@ function ConvocacaoCard({ convocacao, onPagar, onCancelar, onConfirmar, isCancel
       
       <CardHeader className="pb-3">
         <div className="flex items-center gap-3">
-            <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className={`h-10 w-10 ${isRecusado ? 'opacity-60' : ''}`} fallbackClassName="bg-primary/10 text-primary" />
-          </Avatar>
+          <ChildAvatar fotoUrl={crianca.foto_url} nome={crianca.nome} className={`h-10 w-10 ${isRecusado ? 'opacity-60' : ''}`} fallbackClassName="bg-primary/10 text-primary" />
           <div className="flex-1 min-w-0">
             <CardTitle className={`text-base whitespace-nowrap ${isRecusado ? 'text-muted-foreground' : ''}`}>
               {crianca.nome}
