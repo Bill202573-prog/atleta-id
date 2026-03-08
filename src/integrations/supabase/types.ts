@@ -52,6 +52,47 @@ export type Database = {
           },
         ]
       }
+      admin_audit_log: {
+        Row: {
+          acao: string
+          admin_user_id: string
+          created_at: string
+          detalhes: Json | null
+          escolinha_id: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          acao: string
+          admin_user_id: string
+          created_at?: string
+          detalhes?: Json | null
+          escolinha_id?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          acao?: string
+          admin_user_id?: string
+          created_at?: string
+          detalhes?: Json | null
+          escolinha_id?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_escolinha_id_fkey"
+            columns: ["escolinha_id"]
+            isOneToOne: false
+            referencedRelation: "escolinhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       amistoso_convocacoes: {
         Row: {
           asaas_payment_id: string | null
