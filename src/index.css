@@ -327,6 +327,6 @@ section {
   .school-dashboard [data-slot="card"] {
     border-style: solid;
     border-width: 3px;
-    border-color: hsl(215 40% 15% / 0.32);
+    border-color: hsl(215 50% 20%);
   }
 }
