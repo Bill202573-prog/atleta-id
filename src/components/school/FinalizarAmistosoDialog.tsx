@@ -852,10 +852,7 @@ export default function FinalizarAmistosoDialog({
               }`}
               onClick={() => handleToggleDestaque(a.crianca_id)}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={a.crianca?.foto_url || undefined} />
-                <AvatarFallback className="text-xs">{a.crianca?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2)}</AvatarFallback>
-              </Avatar>
+              <ChildAvatar fotoUrl={a.crianca?.foto_url} nome={a.crianca?.nome || '?'} className="h-8 w-8" fallbackClassName="text-xs" />
               <span className="flex-1 font-medium text-sm">{a.crianca?.nome}</span>
               <div className={`p-1.5 rounded-full transition-colors ${destaques[a.crianca_id] ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'}`}>
                 <ThumbsUp className="w-4 h-4" />
