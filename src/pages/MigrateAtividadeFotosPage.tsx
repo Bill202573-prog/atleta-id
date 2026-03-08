@@ -96,7 +96,11 @@ const MigrateAtividadeFotosPage = () => {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Erro no upload");
 
-      setFileStatuses((prev) => ({ ...prev, [filename]: { status: "done" } }));
+      setFileStatuses((prev) => {
+        const next = { ...prev, [filename]: { status: "done" as FileStatus } };
+        saveDoneToStorage(next);
+        return next;
+      });
       toast.success(`✅ ${filename} → ${mapping.label}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Erro";
