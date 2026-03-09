@@ -899,7 +899,7 @@ const MonthlyBillingReport = () => {
           await generateBulkBillingMutation.mutateAsync(mesReferencia);
         }}
         isLoading={generateBulkBillingMutation.isPending}
-        billingStatusByMonth={{}}
+        billingStatusByMonth={dialogBillingStatus}
       />
 
       {/* Bulk Success Dialog */}
