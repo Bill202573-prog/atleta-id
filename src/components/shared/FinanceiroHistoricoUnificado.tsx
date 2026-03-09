@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,25 +21,30 @@ import {
   Receipt,
   Loader2,
   School,
-  Trophy,
-  Swords,
+  QrCode,
+  CreditCard,
   Ban,
-  Minus,
+  Swords,
+  Trophy,
   GraduationCap,
   Shirt,
-  CreditCard
+  ShoppingBag,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { logAdminAction } from '@/contexts/AdminSchoolContext';
+import MensalidadeActionsDialog from '@/components/school/MensalidadeActionsDialog';
 
 interface FinanceiroHistoricoUnificadoProps {
   criancaId: string;
   canDelete?: boolean;
-  responsavelId?: string; // Para buscar pedidos da loja
-  childName?: string; // Nome da criança para exibição consolidada
-  escolinhaId?: string; // Quando fornecido, filtra dados apenas desta escola (multi-tenant isolation)
+  responsavelId?: string;
+  childName?: string;
+  escolinhaId?: string;
 }
 
 interface MensalidadeItem {
@@ -53,6 +57,8 @@ interface MensalidadeItem {
   status: string;
   escolinha_nome: string | null;
   sortDate: string;
+  asaas_pix_url: string | null;
+  asaas_payment_id: string | null;
 }
 
 interface EventoItem {
@@ -102,81 +108,49 @@ interface PedidoLojaItem {
 
 type FinanceiroItem = MensalidadeItem | EventoItem | MatriculaItem | PedidoLojaItem;
 
+const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
 const formatMesReferencia = (mes: string) => {
-  const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const [year, month] = mes.split('-');
   return `${monthNames[parseInt(month)]}/${year}`;
 };
 
-const getStatusBadge = (status: string, isento?: boolean) => {
-  if (isento) {
-    return <Badge variant="secondary"><Minus className="w-3 h-3 mr-1" />Isento</Badge>;
-  }
-  
-  const normalizedStatus = status?.toLowerCase();
-  switch (normalizedStatus) {
-    case 'pago':
-    case 'confirmado':
-      return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20"><CheckCircle2 className="w-3 h-3 mr-1" />Pago</Badge>;
-    case 'a_vencer':
-    case 'pendente':
-    case 'aguardando_pagamento':
-      return <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20"><Clock className="w-3 h-3 mr-1" />Aguardando</Badge>;
-    case 'convocado':
-      return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20"><Clock className="w-3 h-3 mr-1" />Convocado</Badge>;
-    case 'atrasado':
-      return <Badge className="bg-destructive/10 text-destructive border-destructive/20"><AlertCircle className="w-3 h-3 mr-1" />Atrasado</Badge>;
-    case 'isento':
-      return <Badge variant="secondary"><Minus className="w-3 h-3 mr-1" />Isento</Badge>;
-    case 'recusado':
-      return <Badge variant="outline" className="text-muted-foreground"><Ban className="w-3 h-3 mr-1" />Recusado</Badge>;
-    case 'cancelado':
-      return <Badge variant="outline" className="text-muted-foreground"><Ban className="w-3 h-3 mr-1" />Cancelado</Badge>;
-    default:
-      return <Badge variant="outline">{status}</Badge>;
-  }
-};
-
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {
-    case 'mensalidade':
-      return <Receipt className="w-4 h-4" />;
-    case 'amistoso':
-      return <Swords className="w-4 h-4" />;
-    case 'campeonato':
-      return <Trophy className="w-4 h-4" />;
-    case 'matricula':
-      return <GraduationCap className="w-4 h-4" />;
-    case 'pedido_loja':
-      return <Shirt className="w-4 h-4" />;
-    default:
-      return <Receipt className="w-4 h-4" />;
+    case 'mensalidade': return <CreditCard className="w-4 h-4 text-primary" />;
+    case 'amistoso': return <Swords className="w-4 h-4 text-orange-500" />;
+    case 'campeonato': return <Trophy className="w-4 h-4 text-amber-500" />;
+    case 'matricula': return <GraduationCap className="w-4 h-4 text-primary" />;
+    case 'pedido_loja': return <ShoppingBag className="w-4 h-4 text-violet-500" />;
+    default: return <Receipt className="w-4 h-4 text-muted-foreground" />;
   }
 };
 
 const getTipoBadge = (tipo: string) => {
-  switch (tipo) {
-    case 'mensalidade':
-      return <Badge variant="outline" className="text-xs">Mensalidade</Badge>;
-    case 'amistoso':
-      return <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-600 border-orange-500/20">Amistoso</Badge>;
-    case 'campeonato':
-      return <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/20">Campeonato</Badge>;
-    case 'matricula':
-      return <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">Matrícula</Badge>;
-    case 'pedido_loja':
-      return <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/20">Loja</Badge>;
-    default:
-      return null;
-  }
+  const labels: Record<string, string> = {
+    mensalidade: 'Mensalidade',
+    amistoso: 'Amistoso',
+    campeonato: 'Campeonato',
+    matricula: 'Matrícula',
+    pedido_loja: 'Loja',
+  };
+  return <Badge variant="outline" className="text-[10px] px-1.5 py-0">{labels[tipo] || tipo}</Badge>;
 };
 
+const getStatusBadge = (status: string, isento?: boolean) => {
+  if (isento) return <Badge variant="secondary" className="text-xs">Isento</Badge>;
+  const s = status?.toLowerCase();
+  if (s === 'pago' || s === 'confirmado') return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">Pago</Badge>;
+  if (s === 'atrasado') return <Badge className="bg-destructive/10 text-destructive border-destructive/20 text-xs">Atrasado</Badge>;
+  if (s === 'recusado' || s === 'cancelado') return <Badge variant="secondary" className="text-xs">{s === 'recusado' ? 'Recusado' : 'Cancelado'}</Badge>;
+  if (s === 'isento') return <Badge variant="secondary" className="text-xs">Isento</Badge>;
+  return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">Pendente</Badge>;
+};
 
-// Helper to get display value for an item
 const getItemDisplayValue = (item: FinanceiroItem): number | null => {
   if (item.tipo === 'matricula') {
-    return item.valor_total;
+    return (item as MatriculaItem).valor_total;
   }
   if (item.tipo === 'mensalidade') {
     return item.valor;
@@ -184,7 +158,6 @@ const getItemDisplayValue = (item: FinanceiroItem): number | null => {
   if (item.tipo === 'pedido_loja') {
     return (item as PedidoLojaItem).valor;
   }
-  // EventoItem
   return (item as EventoItem).valor;
 };
 
@@ -193,13 +166,20 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<FinanceiroItem | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  
+  // Action dialog state for baixa/isentar
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [selectedMensalidade, setSelectedMensalidade] = useState<MensalidadeItem | null>(null);
+  const [actionType, setActionType] = useState<'pagar' | 'isentar' | null>(null);
+  
   const scopedEscolinhaId = escolinhaId || (canDelete ? user?.escolinhaId : undefined);
 
-  // Fetch all financial items for the child (mensalidades + amistoso convocacoes + matriculas + pedidos)
+  // Fetch all financial items for the child
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['financeiro-historico-unificado', criancaId, responsavelId, scopedEscolinhaId],
     queryFn: async () => {
-      // Fetch mensalidades - exclude cancelled ones from guardian view
+      // Fetch mensalidades - now includes asaas fields
       let mensalidadesQuery = supabase
         .from('mensalidades')
         .select(`
@@ -210,6 +190,8 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
           data_pagamento,
           status,
           escolinha_id,
+          asaas_pix_url,
+          asaas_payment_id,
           escolinha:escolinhas!mensalidades_escolinha_id_fkey(nome)
         `)
         .eq('crianca_id', criancaId)
@@ -224,7 +206,7 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
 
       if (mensalidadesError) throw mensalidadesError;
 
-      // Fetch amistoso convocacoes (strict school isolation when scopedEscolinhaId is provided)
+      // Fetch amistoso convocacoes
       let amistososQuery = supabase
         .from('amistoso_convocacoes')
         .select(`
@@ -256,26 +238,28 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
 
       if (amistososError) throw amistososError;
 
-      // Fetch cobrancas_entrada (enrollment charges)
+      // Fetch cobrancas_entrada
       let matriculasQuery = supabase
         .from('cobrancas_entrada')
         .select(`
           id,
-          status,
           valor_total,
           valor_matricula,
           valor_uniforme,
           valor_mensalidade,
+          status,
           data_pagamento,
           created_at,
+          escolinha_id,
           escolinha:escolinhas!cobrancas_entrada_escolinha_id_fkey(nome)
         `)
-        .eq('crianca_id', criancaId);
-      
+        .eq('crianca_id', criancaId)
+        .eq('status', 'pago');
+
       if (scopedEscolinhaId) {
         matriculasQuery = matriculasQuery.eq('escolinha_id', scopedEscolinhaId);
       }
-      
+
       const { data: matriculas, error: matriculasError } = await matriculasQuery
         .order('created_at', { ascending: false });
 
@@ -283,7 +267,7 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
 
       // Fetch pedidos da loja
       let pedidosQuery = supabase
-        .from('pedidos')
+        .from('pedidos_loja')
         .select(`
           id,
           numero_pedido,
@@ -291,35 +275,40 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
           status,
           data_pagamento,
           created_at,
-          escolinha:escolinhas!pedidos_escolinha_id_fkey(nome)
+          escolinha_id,
+          escolinha:escolinhas!pedidos_loja_escolinha_id_fkey(nome)
         `)
-        .eq('crianca_id', criancaId)
-        .in('status', ['pago', 'entregue']);
-      
+        .eq('crianca_id', criancaId);
+
+      if (responsavelId) {
+        pedidosQuery = pedidosQuery.eq('responsavel_id', responsavelId);
+      }
       if (scopedEscolinhaId) {
         pedidosQuery = pedidosQuery.eq('escolinha_id', scopedEscolinhaId);
       }
-      
+
       const { data: pedidos, error: pedidosError } = await pedidosQuery
         .order('created_at', { ascending: false });
 
-      if (pedidosError) console.log('Pedidos query error:', pedidosError);
+      if (pedidosError) throw pedidosError;
 
       // Transform mensalidades
       const mensalidadeItems: MensalidadeItem[] = (mensalidades || []).map(m => ({
         id: m.id,
         tipo: 'mensalidade' as const,
-        descricao: `Mensalidade ${formatMesReferencia(m.mes_referencia)}`,
+        descricao: formatMesReferencia(m.mes_referencia),
         valor: m.valor,
         data_vencimento: m.data_vencimento,
         data_pagamento: m.data_pagamento,
         status: m.status,
         escolinha_nome: (m.escolinha as any)?.nome || null,
-        sortDate: m.data_vencimento,
+        sortDate: m.mes_referencia,
+        asaas_pix_url: m.asaas_pix_url,
+        asaas_payment_id: m.asaas_payment_id,
       }));
 
       // Transform amistosos
-      const amistosoItems: EventoItem[] = (amistosos || []).map(a => {
+      const amistosoItems: EventoItem[] = (amistosos || []).filter(a => a.evento).map(a => {
         const evento = a.evento as any;
         const adversario = evento?.adversario ? ` vs ${evento.adversario}` : '';
         return {
@@ -327,24 +316,24 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
           tipo: 'amistoso' as const,
           descricao: `${evento?.nome || 'Amistoso'}${adversario}`,
           valor: a.valor,
-          data_evento: evento?.data || '',
+          data_evento: evento?.data,
           data_pagamento: a.data_pagamento,
           status: a.status,
           escolinha_nome: evento?.escolinha?.nome || null,
-          isento: a.isento,
-          sortDate: evento?.data || '',
+          isento: a.isento || false,
+          sortDate: evento?.data || a.data_pagamento || '',
           taxa_participacao: evento?.taxa_participacao,
           taxa_juiz: evento?.taxa_juiz,
-          cobrar_taxa_participacao: evento?.cobrar_taxa_participacao ?? false,
-          cobrar_taxa_juiz: evento?.cobrar_taxa_juiz ?? false,
+          cobrar_taxa_participacao: evento?.cobrar_taxa_participacao,
+          cobrar_taxa_juiz: evento?.cobrar_taxa_juiz,
         };
       });
 
-      // Transform matriculas (enrollment charges)
+      // Transform matriculas
       const matriculaItems: MatriculaItem[] = (matriculas || []).map(m => ({
         id: m.id,
         tipo: 'matricula' as const,
-        descricao: 'Taxa de Matrícula',
+        descricao: 'Matrícula + Uniforme',
         valor_total: m.valor_total,
         valor_matricula: m.valor_matricula,
         valor_uniforme: m.valor_uniforme,
@@ -370,50 +359,125 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
         sortDate: p.created_at,
       }));
 
-      // Combine and sort by date (most recent first)
+      // Combine and sort
       const allItems: FinanceiroItem[] = [...mensalidadeItems, ...amistosoItems, ...matriculaItems, ...pedidoItems];
-      allItems.sort((a, b) => {
-        return b.sortDate.localeCompare(a.sortDate);
-      });
+      allItems.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
       return allItems;
     },
     enabled: !!criancaId,
   });
 
-  // Delete mutation - uses edge function for mensalidades to cancel in Asaas
+  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (item: FinanceiroItem) => {
       if (item.tipo === 'mensalidade') {
-        // Use edge function to cancel in Asaas and update status
         const { data, error } = await supabase.functions.invoke('cancel-mensalidade-payment', {
           body: { mensalidadeId: item.id },
         });
         if (error) throw error;
         if (!data.success) throw new Error(data.error || 'Erro ao cancelar cobrança');
       } else if (item.tipo === 'amistoso') {
-        // Use edge function to cancel amistoso payment in Asaas
         const { data, error } = await supabase.functions.invoke('cancel-amistoso-payment', {
           body: { convocacaoId: item.id },
         });
         if (error) throw error;
         if (!data.success) throw new Error(data.error || 'Erro ao cancelar cobrança');
       }
-      // Note: matricula items cannot be deleted by the user
     },
-    onSuccess: () => {
+    onSuccess: (_, item) => {
       toast.success('Registro cancelado com sucesso');
+      if (user?.id && user?.escolinhaId) {
+        logAdminAction(user.id, user.escolinhaId, 'cancelar_cobranca_ficha', {
+          tipo: item.tipo,
+          id: item.id,
+          descricao: item.descricao,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['financeiro-historico-unificado', criancaId] });
       queryClient.invalidateQueries({ queryKey: ['mensalidades-historico', criancaId] });
       queryClient.invalidateQueries({ queryKey: ['guardian-mensalidades', criancaId] });
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       queryClient.invalidateQueries({ queryKey: ['guardian-amistoso-convocacoes'] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
     },
     onError: (error: Error) => {
-      console.error('Error cancelling item:', error);
       toast.error('Erro ao cancelar registro: ' + error.message);
+    },
+  });
+
+  // Regenerate PIX mutation
+  const regeneratePixMutation = useMutation({
+    mutationFn: async (mensalidadeId: string) => {
+      setRegeneratingId(mensalidadeId);
+      const { data, error } = await supabase.functions.invoke('generate-mensalidade-pix', {
+        body: { mensalidade_id: mensalidadeId },
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Erro ao gerar PIX');
+      return data;
+    },
+    onSuccess: (_, mensalidadeId) => {
+      toast.success('PIX gerado com sucesso!');
+      if (user?.id && user?.escolinhaId) {
+        logAdminAction(user.id, user.escolinhaId, 'regenerar_pix_ficha', { mensalidade_id: mensalidadeId });
+      }
+      queryClient.invalidateQueries({ queryKey: ['financeiro-historico-unificado', criancaId] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      setRegeneratingId(null);
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao gerar PIX: ' + error.message);
+      setRegeneratingId(null);
+    },
+  });
+
+  // Update mensalidade mutation (baixa manual / isentar)
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status, dataPagamento, valorPago, observacao }: {
+      id: string; status: string; dataPagamento?: string; valorPago?: number; observacao?: string;
+    }) => {
+      if (status === 'pago') {
+        const m = items.find(x => x.id === id && x.tipo === 'mensalidade') as MensalidadeItem | undefined;
+        if (m?.asaas_payment_id) {
+          try { await supabase.functions.invoke('cancel-asaas-payment-only', { body: { mensalidadeId: id } }); }
+          catch (e) { console.warn('Could not cancel Asaas payment:', e); }
+        }
+      }
+
+      const updateData: Record<string, unknown> = { status };
+      if (status === 'pago') {
+        updateData.data_pagamento = dataPagamento;
+        updateData.valor_pago = valorPago;
+        updateData.forma_pagamento = 'manual';
+        updateData.asaas_payment_id = null;
+        updateData.asaas_pix_url = null;
+      }
+      if (observacao) updateData.observacoes = observacao;
+
+      const { error } = await supabase.from('mensalidades').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(variables.status === 'pago' ? 'Baixa realizada com sucesso!' : 'Mensalidade marcada como isenta');
+      if (user?.id && user?.escolinhaId) {
+        logAdminAction(user.id, user.escolinhaId, variables.status === 'pago' ? 'baixa_manual_ficha' : 'isentar_ficha', {
+          mensalidade_id: variables.id,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['financeiro-historico-unificado', criancaId] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      queryClient.invalidateQueries({ queryKey: ['school-growth-data'] });
+      setActionDialogOpen(false);
+      setSelectedMensalidade(null);
+      setActionType(null);
+    },
+    onError: (error: Error) => {
+      toast.error('Erro: ' + error.message);
     },
   });
 
@@ -426,6 +490,23 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
     if (itemToDelete) {
       deleteMutation.mutate(itemToDelete);
     }
+  };
+
+  const openAction = (mensalidade: MensalidadeItem, action: 'pagar' | 'isentar') => {
+    setSelectedMensalidade(mensalidade);
+    setActionType(action);
+    setActionDialogOpen(true);
+  };
+
+  const handleActionConfirm = async (data: { dataPagamento?: string; valorPago?: number; observacao?: string }) => {
+    if (!selectedMensalidade || !actionType) return;
+    await updateMutation.mutateAsync({
+      id: selectedMensalidade.id,
+      status: actionType === 'pagar' ? 'pago' : 'isento',
+      dataPagamento: data.dataPagamento,
+      valorPago: data.valorPago,
+      observacao: data.observacao,
+    });
   };
 
   if (isLoading) {
@@ -474,6 +555,8 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
             
             const isPago = item.status?.toLowerCase() === 'pago' || item.status?.toLowerCase() === 'confirmado';
             const isRecusado = item.status?.toLowerCase() === 'recusado';
+            const isIsento = item.status?.toLowerCase() === 'isento';
+            const isPendente = !isPago && !isRecusado && !isIsento && item.status?.toLowerCase() !== 'cancelado';
             const displayValue = getItemDisplayValue(item);
             
             return (
@@ -550,19 +633,73 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {getStatusBadge(item.status, eventoItem?.isento)}
-                    {canDelete && item.tipo !== 'matricula' && item.tipo !== 'pedido_loja' && (
+                    {canDelete && item.tipo !== 'matricula' && item.tipo !== 'pedido_loja' && !isPago && !isIsento && (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDeleteClick(item)}
-                        title="Excluir registro"
+                        title="Cancelar registro"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     )}
                   </div>
                 </div>
+
+                {/* Action buttons for mensalidades - same as MonthlyBillingReport */}
+                {canDelete && isMensalidade && mensalidadeItem && isPendente && (
+                  <div className="flex items-center gap-1 justify-end mt-2 pt-2 border-t border-border/30">
+                    {/* QR Code / PIX link */}
+                    {mensalidadeItem.asaas_pix_url && (
+                      <Button size="sm" variant="outline" className="h-8 w-8 p-0" asChild>
+                        <a
+                          href={mensalidadeItem.asaas_pix_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Abrir link PIX"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                        </a>
+                      </Button>
+                    )}
+                    {/* Regenerate PIX */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => regeneratePixMutation.mutate(mensalidadeItem.id)}
+                      disabled={regeneratingId === mensalidadeItem.id}
+                      title={mensalidadeItem.asaas_pix_url ? "Regenerar PIX" : "Gerar PIX"}
+                    >
+                      {regeneratingId === mensalidadeItem.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                    {/* Mark as paid */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => openAction(mensalidadeItem, 'pagar')}
+                      title="Dar baixa manual"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                    </Button>
+                    {/* Mark as exempt */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => openAction(mensalidadeItem, 'isentar')}
+                      title="Marcar como Isento"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
                 
                 {/* Enrollment breakdown */}
                 {matriculaItem && isPago && (
@@ -638,9 +775,9 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="z-[200]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Registro</AlertDialogTitle>
+            <AlertDialogTitle>Cancelar Registro</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o registro{' '}
+              Tem certeza que deseja cancelar o registro{' '}
               <strong>{itemToDelete?.descricao}</strong>
               {(() => {
                 const value = itemToDelete ? getItemDisplayValue(itemToDelete) : null;
@@ -670,12 +807,31 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
                   Excluindo...
                 </>
               ) : (
-                'Excluir'
+                'Confirmar'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Action Dialog for baixa/isentar */}
+      {canDelete && (
+        <MensalidadeActionsDialog
+          open={actionDialogOpen}
+          onOpenChange={setActionDialogOpen}
+          mensalidade={selectedMensalidade ? {
+            id: selectedMensalidade.id,
+            crianca_nome: childName || '',
+            mes_referencia: selectedMensalidade.sortDate,
+            valor: selectedMensalidade.valor,
+            status: selectedMensalidade.status,
+            asaas_payment_id: selectedMensalidade.asaas_payment_id,
+          } : null}
+          action={actionType}
+          onConfirm={handleActionConfirm}
+          isLoading={updateMutation.isPending}
+        />
+      )}
     </>
   );
 };
