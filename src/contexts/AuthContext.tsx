@@ -1,6 +1,10 @@
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+
+// Use the same constants from the client file (these are public/anon keys)
+const SUPABASE_URL = "https://vxzktyklzkfqitptzctk.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4emt0eWtsemtmcWl0cHR6Y3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MzE0MTcsImV4cCI6MjA4ODUwNzQxN30.XUgZRd_p8y-80zMYEjIsG5CiEYf8f-pmWCRkp64lElo";
 import type { UserRole } from '@/types';
 import { AuthContext, type AuthContextType, type AuthUser } from './auth-context';
 import { useQueryClient } from '@tanstack/react-query';
