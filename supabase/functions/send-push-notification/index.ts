@@ -394,7 +394,7 @@ Deno.serve(async (req) => {
         sent++;
 
         if (tipo) {
-          await supabase.from('push_notifications_log').insert({
+          await adminSupabase.from('push_notifications_log').insert({
             user_id: sub.user_id,
             escolinha_id: escolinha_id || null,
             tipo,
