@@ -37,17 +37,26 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
     }
 
     setIsLoading(true);
-    const result = await changePassword(password);
-    setIsLoading(false);
-
-    if (result.success) {
-      toast.success('Senha alterada com sucesso!');
-      setOpen(false);
-      setPassword('');
-      setConfirmPassword('');
-    } else {
-      toast.error(result.error || 'Erro ao alterar senha');
+    console.log('[ChangePasswordDialog] Calling changePassword...');
+    
+    try {
+      const result = await changePassword(password);
+      console.log('[ChangePasswordDialog] Result:', result);
+      
+      if (result.success) {
+        toast.success('Senha alterada com sucesso!');
+        setOpen(false);
+        setPassword('');
+        setConfirmPassword('');
+      } else {
+        toast.error(result.error || 'Erro ao alterar senha');
+      }
+    } catch (err) {
+      console.error('[ChangePasswordDialog] Error:', err);
+      toast.error('Erro de conexão. Verifique sua internet.');
     }
+    
+    setIsLoading(false);
   };
 
   return (
