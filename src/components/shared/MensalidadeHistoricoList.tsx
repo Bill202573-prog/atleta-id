@@ -21,28 +21,38 @@ import {
   Receipt,
   Loader2,
   School,
-  QrCode
+  QrCode,
+  CreditCard,
+  Ban,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { logAdminAction } from '@/contexts/AdminSchoolContext';
+import MensalidadeActionsDialog from '@/components/school/MensalidadeActionsDialog';
 
 interface MensalidadeHistoricoListProps {
   criancaId: string;
   canDelete?: boolean;
+  showActions?: boolean;
 }
 
 interface Mensalidade {
   id: string;
   mes_referencia: string;
   valor: number;
+  valor_pago: number | null;
   data_vencimento: string;
   data_pagamento: string | null;
   status: string;
   forma_pagamento: string | null;
   asaas_pix_url: string | null;
   asaas_payment_id: string | null;
+  observacoes: string | null;
   escolinha: {
     nome: string;
   } | null;
@@ -71,10 +81,17 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeHistoricoListProps) => {
+const MensalidadeHistoricoList = ({ criancaId, canDelete = false, showActions = false }: MensalidadeHistoricoListProps) => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mensalidadeToDelete, setMensalidadeToDelete] = useState<Mensalidade | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  
+  // Action dialog state for baixa/isentar
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [selectedMensalidade, setSelectedMensalidade] = useState<Mensalidade | null>(null);
+  const [actionType, setActionType] = useState<'pagar' | 'isentar' | null>(null);
 
   // Fetch all mensalidades for the child - exclude cancelled ones
   const { data: mensalidades = [], isLoading } = useQuery({
@@ -86,16 +103,18 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
           id,
           mes_referencia,
           valor,
+          valor_pago,
           data_vencimento,
           data_pagamento,
           status,
           forma_pagamento,
+          observacoes,
           asaas_pix_url,
           asaas_payment_id,
           escolinha:escolinhas!mensalidades_escolinha_id_fkey(nome)
         `)
         .eq('crianca_id', criancaId)
-        .neq('status', 'cancelado') // Don't show cancelled mensalidades
+        .neq('status', 'cancelado')
         .order('mes_referencia', { ascending: false });
 
       if (error) throw error;
@@ -104,29 +123,115 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
     enabled: !!criancaId,
   });
 
-  // Cancel mutation - cancels in Asaas and updates status to 'cancelado'
+  // Cancel mutation
   const deleteMutation = useMutation({
     mutationFn: async (mensalidadeId: string) => {
       const { data, error } = await supabase.functions.invoke('cancel-mensalidade-payment', {
         body: { mensalidadeId },
       });
-
       if (error) throw error;
       if (!data.success) throw new Error(data.error || 'Erro ao cancelar cobrança');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, mensalidadeId) => {
       toast.success('Cobrança cancelada com sucesso');
+      if (user?.id && user?.escolinhaId) {
+        const m = mensalidades.find(x => x.id === mensalidadeId);
+        logAdminAction(user.id, user.escolinhaId, 'cancelar_mensalidade_ficha', {
+          mensalidade_id: mensalidadeId,
+          mes_referencia: m?.mes_referencia,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['mensalidades-historico', criancaId] });
       queryClient.invalidateQueries({ queryKey: ['guardian-mensalidades', criancaId] });
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
       setDeleteDialogOpen(false);
       setMensalidadeToDelete(null);
     },
     onError: (error: Error) => {
-      console.error('Error cancelling mensalidade:', error);
       toast.error('Erro ao cancelar cobrança: ' + error.message);
+    },
+  });
+
+  // Regenerate PIX mutation
+  const regeneratePixMutation = useMutation({
+    mutationFn: async (mensalidadeId: string) => {
+      setRegeneratingId(mensalidadeId);
+      const { data, error } = await supabase.functions.invoke('generate-mensalidade-pix', {
+        body: { mensalidade_id: mensalidadeId },
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Erro ao gerar PIX');
+      return data;
+    },
+    onSuccess: (_, mensalidadeId) => {
+      toast.success('PIX gerado com sucesso!');
+      if (user?.id && user?.escolinhaId) {
+        logAdminAction(user.id, user.escolinhaId, 'regenerar_pix_ficha', {
+          mensalidade_id: mensalidadeId,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['mensalidades-historico', criancaId] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      setRegeneratingId(null);
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao gerar PIX: ' + error.message);
+      setRegeneratingId(null);
+    },
+  });
+
+  // Update mensalidade mutation (baixa manual / isentar)
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, status, dataPagamento, valorPago, observacao }: {
+      id: string; status: string; dataPagamento?: string; valorPago?: number; observacao?: string;
+    }) => {
+      // If marking as paid and has Asaas payment, cancel it first
+      if (status === 'pago') {
+        const m = mensalidades.find(x => x.id === id);
+        if (m?.asaas_payment_id) {
+          try {
+            await supabase.functions.invoke('cancel-asaas-payment-only', { body: { mensalidadeId: id } });
+          } catch (e) {
+            console.warn('Could not cancel Asaas payment:', e);
+          }
+        }
+      }
+
+      const updateData: Record<string, unknown> = { status };
+      if (status === 'pago') {
+        updateData.data_pagamento = dataPagamento;
+        updateData.valor_pago = valorPago;
+        updateData.forma_pagamento = 'manual';
+        updateData.asaas_payment_id = null;
+        updateData.asaas_pix_url = null;
+      }
+      if (observacao) updateData.observacoes = observacao;
+
+      const { error } = await supabase.from('mensalidades').update(updateData).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(variables.status === 'pago' ? 'Baixa realizada com sucesso!' : 'Mensalidade marcada como isenta');
+      if (user?.id && user?.escolinhaId) {
+        logAdminAction(user.id, user.escolinhaId, variables.status === 'pago' ? 'baixa_manual_ficha' : 'isentar_ficha', {
+          mensalidade_id: variables.id,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['mensalidades-historico', criancaId] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      queryClient.invalidateQueries({ queryKey: ['school-growth-data'] });
+      queryClient.invalidateQueries({ queryKey: ['financeiro-historico-unificado'] });
+      setActionDialogOpen(false);
+      setSelectedMensalidade(null);
+      setActionType(null);
+    },
+    onError: (error: Error) => {
+      toast.error('Erro: ' + error.message);
     },
   });
 
@@ -139,6 +244,23 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
     if (mensalidadeToDelete) {
       deleteMutation.mutate(mensalidadeToDelete.id);
     }
+  };
+
+  const openAction = (mensalidade: Mensalidade, action: 'pagar' | 'isentar') => {
+    setSelectedMensalidade(mensalidade);
+    setActionType(action);
+    setActionDialogOpen(true);
+  };
+
+  const handleActionConfirm = async (data: { dataPagamento?: string; valorPago?: number; observacao?: string }) => {
+    if (!selectedMensalidade || !actionType) return;
+    await updateMutation.mutateAsync({
+      id: selectedMensalidade.id,
+      status: actionType === 'pagar' ? 'pago' : 'isento',
+      dataPagamento: data.dataPagamento,
+      valorPago: data.valorPago,
+      observacao: data.observacao,
+    });
   };
 
   if (isLoading) {
@@ -162,6 +284,8 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
     );
   }
 
+  const canAct = showActions || canDelete;
+
   return (
     <>
       <Card>
@@ -172,72 +296,129 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {mensalidades.map((mensalidade) => (
-            <div
-              key={mensalidade.id}
-              className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className={`p-2 rounded-full shrink-0 relative ${
-                  mensalidade.status?.toLowerCase() === 'pago'
-                    ? 'bg-emerald-500/10'
-                    : mensalidade.status?.toLowerCase() === 'atrasado'
-                    ? 'bg-destructive/10'
-                    : 'bg-muted'
-                }`}>
-                  {mensalidade.status?.toLowerCase() === 'pago' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  ) : mensalidade.status?.toLowerCase() === 'atrasado' ? (
-                    <AlertCircle className="w-4 h-4 text-destructive" />
-                  ) : (
-                    <Clock className="w-4 h-4 text-blue-500" />
-                  )}
-                  {/* PIX indicator */}
-                  {mensalidade.asaas_pix_url && mensalidade.status?.toLowerCase() !== 'pago' && (
-                    <QrCode className="w-3 h-3 text-primary absolute -bottom-0.5 -right-0.5" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm">
-                      {formatMesReferencia(mensalidade.mes_referencia)}
-                    </p>
-                    {mensalidade.escolinha?.nome && (
-                      <Badge variant="outline" className="text-xs gap-1">
-                        <School className="w-3 h-3" />
-                        {mensalidade.escolinha.nome}
-                      </Badge>
-                    )}
+          {mensalidades.map((mensalidade) => {
+            const isPendente = mensalidade.status !== 'pago' && mensalidade.status !== 'isento';
+
+            return (
+              <div
+                key={mensalidade.id}
+                className="flex flex-col gap-2 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                {/* Top row: info + value/status */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`p-2 rounded-full shrink-0 relative ${
+                      mensalidade.status?.toLowerCase() === 'pago'
+                        ? 'bg-emerald-500/10'
+                        : mensalidade.status?.toLowerCase() === 'atrasado'
+                        ? 'bg-destructive/10'
+                        : 'bg-muted'
+                    }`}>
+                      {mensalidade.status?.toLowerCase() === 'pago' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      ) : mensalidade.status?.toLowerCase() === 'atrasado' ? (
+                        <AlertCircle className="w-4 h-4 text-destructive" />
+                      ) : (
+                        <Clock className="w-4 h-4 text-blue-500" />
+                      )}
+                      {mensalidade.asaas_pix_url && mensalidade.status?.toLowerCase() !== 'pago' && (
+                        <QrCode className="w-3 h-3 text-primary absolute -bottom-0.5 -right-0.5" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-sm">
+                          {formatMesReferencia(mensalidade.mes_referencia)}
+                        </p>
+                        {mensalidade.escolinha?.nome && (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <School className="w-3 h-3" />
+                            {mensalidade.escolinha.nome}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Venc: {format(parseISO(mensalidade.data_vencimento), "dd/MM/yyyy")}
+                        {mensalidade.data_pagamento && (
+                          <> • Pago em {format(parseISO(mensalidade.data_pagamento), "dd/MM/yyyy")}</>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Venc: {format(parseISO(mensalidade.data_vencimento), "dd/MM/yyyy")}
-                    {mensalidade.data_pagamento && (
-                      <> • Pago em {format(parseISO(mensalidade.data_pagamento), "dd/MM/yyyy")}</>
+                  <div className="text-right shrink-0">
+                    <p className="font-semibold text-sm">
+                      R$ {mensalidade.valor.toFixed(2).replace('.', ',')}
+                    </p>
+                    {getStatusBadge(mensalidade.status)}
+                  </div>
+                </div>
+
+                {/* Action buttons row - only for pending mensalidades when showActions */}
+                {canAct && isPendente && (
+                  <div className="flex items-center gap-1 justify-end pt-1 border-t border-border/30">
+                    {/* QR Code / PIX link */}
+                    {mensalidade.asaas_pix_url && (
+                      <Button size="sm" variant="outline" className="h-8 w-8 p-0" asChild>
+                        <a
+                          href={mensalidade.asaas_pix_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Abrir link de pagamento PIX"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                        </a>
+                      </Button>
                     )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="text-right">
-                  <p className="font-semibold text-sm">
-                    R$ {mensalidade.valor.toFixed(2).replace('.', ',')}
-                  </p>
-                  {getStatusBadge(mensalidade.status)}
-                </div>
-                {canDelete && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDeleteClick(mensalidade)}
-                    title="Excluir cobrança"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                    {/* Regenerate PIX */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => regeneratePixMutation.mutate(mensalidade.id)}
+                      disabled={regeneratingId === mensalidade.id}
+                      title={mensalidade.asaas_pix_url ? "Regenerar PIX" : "Gerar PIX"}
+                    >
+                      {regeneratingId === mensalidade.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                    {/* Mark as paid */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => openAction(mensalidade, 'pagar')}
+                      title="Dar baixa manual"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                    </Button>
+                    {/* Mark as exempt */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                      onClick={() => openAction(mensalidade, 'isentar')}
+                      title="Marcar como Isento"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                    </Button>
+                    {/* Delete */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteClick(mensalidade)}
+                      title="Cancelar cobrança"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -245,9 +426,9 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Cobrança</AlertDialogTitle>
+            <AlertDialogTitle>Cancelar Cobrança</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a cobrança de{' '}
+              Tem certeza que deseja cancelar a cobrança de{' '}
               <strong>{mensalidadeToDelete && formatMesReferencia(mensalidadeToDelete.mes_referencia)}</strong>
               {' '}no valor de{' '}
               <strong>R$ {mensalidadeToDelete?.valor.toFixed(2).replace('.', ',')}</strong>?
@@ -256,26 +437,38 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false }: MensalidadeH
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>
-              Cancelar
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={deleteMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Excluindo...
-                </>
-              ) : (
-                'Excluir'
-              )}
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Excluindo...</>
+              ) : 'Confirmar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Action Dialog for baixa/isentar */}
+      {showActions && (
+        <MensalidadeActionsDialog
+          open={actionDialogOpen}
+          onOpenChange={setActionDialogOpen}
+          mensalidade={selectedMensalidade ? {
+            id: selectedMensalidade.id,
+            crianca_nome: '',
+            mes_referencia: selectedMensalidade.mes_referencia,
+            valor: selectedMensalidade.valor,
+            status: selectedMensalidade.status,
+            asaas_payment_id: selectedMensalidade.asaas_payment_id,
+          } : null}
+          action={actionType}
+          onConfirm={handleActionConfirm}
+          isLoading={updateMutation.isPending}
+        />
+      )}
     </>
   );
 };

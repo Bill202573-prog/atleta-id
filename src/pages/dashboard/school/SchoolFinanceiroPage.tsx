@@ -750,17 +750,17 @@ const SchoolFinanceiroPage = () => {
         </div>
       </div>
 
-      {/* Report cards grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Report cards grid - tighter on desktop */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {reportMenuItems.map((item) => (
           <Card
             key={item.id}
             className={`bg-gradient-to-br ${item.color} cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
             onClick={() => setActiveView(item.id)}
           >
-            <CardContent className="p-5">
-              <div className="flex items-start gap-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-background/60 text-foreground shrink-0">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-background/60 text-foreground shrink-0">
                   {item.icon}
                 </div>
                 <div className="min-w-0 flex-1">
