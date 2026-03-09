@@ -44,6 +44,7 @@ import FinancialReportSection from '@/components/school/FinancialReportSection';
 import MonthlyBillingReport from '@/components/school/MonthlyBillingReport';
 import { ClipboardList } from 'lucide-react';
 import { useStudentRegistration } from '@/contexts/StudentRegistrationContext';
+import { logAdminAction } from '@/contexts/AdminSchoolContext';
 
 interface MensalidadeDetail {
   id: string;
@@ -512,6 +513,18 @@ const SchoolFinanceiroPage = () => {
       valorPago: data.valorPago,
       observacao: data.observacao,
     });
+
+    // Audit log
+    if (user?.id && user?.escolinhaId) {
+      logAdminAction(user.id, user.escolinhaId, actionType === 'pagar' ? 'baixa_manual_mensalidade' : 'isentar_mensalidade', {
+        mensalidade_id: selectedMensalidade.id,
+        mes_referencia: selectedMensalidade.mes_referencia,
+        crianca_nome: selectedMensalidade.crianca_nome,
+        valor: selectedMensalidade.valor,
+        valor_pago: data.valorPago,
+        observacao: data.observacao,
+      });
+    }
 
     setActionDialogOpen(false);
     setSelectedMensalidade(null);

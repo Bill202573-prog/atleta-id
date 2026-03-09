@@ -186,8 +186,12 @@ const MonthlyBillingReport = () => {
         toast.error(data.error);
         throw new Error(data.error);
       }
+      // Invalidate all related queries to refresh data including "disponível no celular"
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children'] });
+      queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
+      queryClient.invalidateQueries({ queryKey: ['school-cobrancas-entrada-month'] });
     },
     onError: (error: Error) => {
       if (!error.message.includes('já existe') && !error.message.includes('elegível')) {
@@ -256,7 +260,20 @@ const MonthlyBillingReport = () => {
       } else if (status === 'atrasado') {
         billingStatus = 'emitida_atrasada';
       } else {
-        billingStatus = 'emitida_pendente';
+        // Check if due date has passed - if so, mark as overdue even if DB says 'a_vencer'
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (mensalidade.data_vencimento) {
+          const [y, m, d] = mensalidade.data_vencimento.split('-').map(Number);
+          const dueDate = new Date(y, m - 1, d);
+          if (dueDate < today) {
+            billingStatus = 'emitida_atrasada';
+          } else {
+            billingStatus = 'emitida_pendente';
+          }
+        } else {
+          billingStatus = 'emitida_pendente';
+        }
       }
 
       // A cobrança está disponível no celular se tem asaas_payment_id (PIX gerado via Asaas)
@@ -686,14 +703,14 @@ const MonthlyBillingReport = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Celular</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Pagamento</TableHead>
-                    <TableHead className="text-center">Ação</TableHead>
+                        <TableHead className="min-w-[180px]">Aluno</TableHead>
+                    <TableHead className="w-[80px] text-center">Tipo</TableHead>
+                    <TableHead className="w-[100px] text-right">Valor</TableHead>
+                    <TableHead className="w-[110px] text-center">Status</TableHead>
+                    <TableHead className="w-[110px] text-center">Celular</TableHead>
+                    <TableHead className="w-[100px] text-center">Vencimento</TableHead>
+                    <TableHead className="w-[100px] text-center">Pagamento</TableHead>
+                    <TableHead className="w-[90px] text-center">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -732,10 +749,10 @@ const MonthlyBillingReport = () => {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>{getStatusBadge(student.status)}</TableCell>
-                        <TableCell>{getDisponivelBadge(student)}</TableCell>
-                        <TableCell>{formatDate(student.dataVencimento)}</TableCell>
-                        <TableCell>{formatDate(student.dataPagamento)}</TableCell>
+                        <TableCell className="text-center">{getStatusBadge(student.status)}</TableCell>
+                        <TableCell className="text-center">{getDisponivelBadge(student)}</TableCell>
+                        <TableCell className="text-center text-sm">{formatDate(student.dataVencimento)}</TableCell>
+                        <TableCell className="text-center text-sm">{formatDate(student.dataPagamento)}</TableCell>
                         <TableCell className="text-center">
                           {canGenerate ? (
                             <Button

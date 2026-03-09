@@ -50,6 +50,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { logAdminAction } from '@/contexts/AdminSchoolContext';
 
 interface MensalidadeDetail {
   id: string;
@@ -243,8 +244,17 @@ const AlunoFinanceiroHistorico = ({
       if (!data.success) throw new Error(data.error || 'Erro ao cancelar cobrança');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, mensalidadeId) => {
       toast.success('Cobrança cancelada com sucesso');
+      // Audit log
+      if (user?.id && user?.escolinhaId) {
+        const m = mensalidades.find(x => x.id === mensalidadeId);
+        logAdminAction(user.id, user.escolinhaId, 'cancelar_mensalidade', {
+          mensalidade_id: mensalidadeId,
+          mes_referencia: m?.mes_referencia,
+          crianca_nome: m?.crianca_nome,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
       queryClient.invalidateQueries({ queryKey: ['guardian-mensalidades'] });
@@ -270,9 +280,19 @@ const AlunoFinanceiroHistorico = ({
       if (!data.success) throw new Error(data.error || 'Erro ao gerar PIX');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, mensalidadeId) => {
       toast.success('PIX gerado com sucesso! Link disponível.');
+      // Audit log
+      if (user?.id && user?.escolinhaId) {
+        const m = mensalidades.find(x => x.id === mensalidadeId);
+        logAdminAction(user.id, user.escolinhaId, 'regenerar_pix', {
+          mensalidade_id: mensalidadeId,
+          mes_referencia: m?.mes_referencia,
+          crianca_nome: m?.crianca_nome,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       setRegeneratingId(null);
     },
     onError: (error: Error) => {
