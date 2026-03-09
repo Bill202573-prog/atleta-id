@@ -506,9 +506,74 @@ const MonthlyBillingReport = () => {
     },
   });
 
+  // Calculate billingStatusByMonth for the dialog
+  const billingStatusByMonth = useMemo(() => {
+    const now = new Date();
+    const currentM = now.getMonth() + 1;
+    const currentY = now.getFullYear();
+    const nextM = currentM === 12 ? 1 : currentM + 1;
+    const nextY = currentM === 12 ? currentY + 1 : currentY;
+    const currentRef = `${currentY}-${String(currentM).padStart(2, '0')}-01`;
+    const nextRef = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+
+    const statusMap: Record<string, { total: number; pending: number; paid: number }> = {};
+    [currentRef, nextRef].forEach(mes => {
+      const mesMensalidades = mensalidades.filter((m: any) => m.mes_referencia === mes);
+      const paid = mesMensalidades.filter((m: any) => m.status === 'pago').length;
+      const pending = mesMensalidades.filter((m: any) => m.status !== 'pago' && m.status !== 'isento').length;
+      statusMap[mes] = { total: mesMensalidades.length, pending, paid };
+    });
+    return statusMap;
+  }, [mensalidades]);
+
+  // Also fetch mensalidades for both months (current + next) for the dialog status
+  const { data: allMensalidadesForDialog = [] } = useQuery({
+    queryKey: ['school-mensalidades-dialog-status', user?.escolinhaId],
+    queryFn: async () => {
+      if (!user?.escolinhaId) return [];
+      const now = new Date();
+      const currentM = now.getMonth() + 1;
+      const currentY = now.getFullYear();
+      const nextM = currentM === 12 ? 1 : currentM + 1;
+      const nextY = currentM === 12 ? currentY + 1 : currentY;
+      const currentRef = `${currentY}-${String(currentM).padStart(2, '0')}-01`;
+      const nextRef = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+
+      const { data, error } = await supabase
+        .from('mensalidades')
+        .select('id, mes_referencia, status')
+        .eq('escolinha_id', user.escolinhaId)
+        .in('mes_referencia', [currentRef, nextRef])
+        .neq('status', 'cancelado');
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.escolinhaId,
+  });
+
+  const dialogBillingStatus = useMemo(() => {
+    const now = new Date();
+    const currentM = now.getMonth() + 1;
+    const currentY = now.getFullYear();
+    const nextM = currentM === 12 ? 1 : currentM + 1;
+    const nextY = currentM === 12 ? currentY + 1 : currentY;
+    const currentRef = `${currentY}-${String(currentM).padStart(2, '0')}-01`;
+    const nextRef = `${nextY}-${String(nextM).padStart(2, '0')}-01`;
+
+    const statusMap: Record<string, { total: number; pending: number; paid: number }> = {};
+    [currentRef, nextRef].forEach(mes => {
+      const mesMensalidades = allMensalidadesForDialog.filter((m: any) => m.mes_referencia === mes);
+      const paid = mesMensalidades.filter((m: any) => m.status === 'pago').length;
+      const pending = mesMensalidades.filter((m: any) => m.status !== 'pago' && m.status !== 'isento').length;
+      statusMap[mes] = { total: mesMensalidades.length, pending, paid };
+    });
+    return statusMap;
+  }, [allMensalidadesForDialog]);
+
   return (
     <div className="space-y-3">
-      {/* Header with Month Selector + Generate Button */}
+      {/* Header with Month Selector */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-3">
@@ -540,23 +605,25 @@ const MonthlyBillingReport = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                onClick={() => setBulkDialogOpen(true)}
-                disabled={generateBulkBillingMutation.isPending}
-                className="gap-2 shrink-0 font-semibold"
-                size={isMobile ? 'default' : 'sm'}
-              >
-                {generateBulkBillingMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                Gerar
-              </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
+
+      {/* Prominent Generate Button */}
+      <Button
+        onClick={() => setBulkDialogOpen(true)}
+        disabled={generateBulkBillingMutation.isPending}
+        className="w-full gap-2 font-semibold text-base h-12 shadow-md"
+        size="lg"
+      >
+        {generateBulkBillingMutation.isPending ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <Plus className="w-5 h-5" />
+        )}
+        Gerar Cobrança Mensalidades
+      </Button>
 
       {/* Summary Cards - 2x2 on mobile, 5 cols on desktop */}
       <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
