@@ -750,8 +750,8 @@ const SchoolFinanceiroPage = () => {
         </div>
       </div>
 
-      {/* Report cards grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Report cards grid - tighter on desktop */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {reportMenuItems.map((item) => (
           <Card
             key={item.id}
