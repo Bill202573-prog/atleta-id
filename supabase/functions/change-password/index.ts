@@ -13,16 +13,10 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.error('[change-password] No authorization header')
       return new Response(JSON.stringify({ error: 'No authorization header' }), {
         status: 401,
@@ -30,9 +24,15 @@ Deno.serve(async (req) => {
       })
     }
 
+    // User context client - validates the JWT
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false }
+    })
+
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-    
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
+
     if (authError || !user) {
       console.error('[change-password] Auth error:', authError?.message || 'No user')
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
@@ -52,6 +52,11 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+
+    // Service role client - bypasses RLS for admin operations
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    })
 
     // Update user password
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
