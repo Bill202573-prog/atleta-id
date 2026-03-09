@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, User } from 'lucide-react';
 import { z } from 'zod';
 import logoAtletaId from '@/assets/logo-atleta-id.png';
 import PwaInstallButton from '@/components/shared/PwaInstallButton';
+import PasswordInput from '@/components/shared/PasswordInput';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalido'),
