@@ -44,7 +44,7 @@ export default function CarreiraConexoesPage() {
       <div className="h-1 w-full bg-[hsl(25_95%_55%)]" />
       <header className="sticky top-0 z-50 bg-[hsl(0_0%_0%/0.97)] border-b border-[hsl(25_95%_55%/0.4)]">
         <div className="container flex items-center h-14 px-4 max-w-2xl">
-          <Link to={carreiraPath('/explorar')} className="flex items-center gap-2 shrink-0">
+          <Link to={carreiraPath('/feed')} className="flex items-center gap-2 shrink-0">
             <img src={logoCarreira} alt="Carreira" className="h-16 lg:h-20" />
           </Link>
           <h1 className="ml-4 text-lg font-semibold text-foreground">Conexões</h1>

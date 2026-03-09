@@ -64,7 +64,7 @@ const App = () => (
                   <Route path="/" element={<CarreiraLandingV2Page />} />
                   <Route path="/cadastro" element={<CarreiraCadastroPage />} />
                   <Route path="/minha" element={<CarreiraLinkedinPage />} />
-                  <Route path="/explorar" element={<CarreiraExplorarPage />} />
+                  <Route path="/feed" element={<CarreiraExplorarPage />} />
                   <Route path="/conexoes" element={<CarreiraConexoesPage />} />
                   <Route path="/termos" element={<TermosPage />} />
                   <Route path="/privacidade" element={<PrivacidadePage />} />
