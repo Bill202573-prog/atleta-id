@@ -256,7 +256,20 @@ const MonthlyBillingReport = () => {
       } else if (status === 'atrasado') {
         billingStatus = 'emitida_atrasada';
       } else {
-        billingStatus = 'emitida_pendente';
+        // Check if due date has passed - if so, mark as overdue even if DB says 'a_vencer'
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (mensalidade.data_vencimento) {
+          const [y, m, d] = mensalidade.data_vencimento.split('-').map(Number);
+          const dueDate = new Date(y, m - 1, d);
+          if (dueDate < today) {
+            billingStatus = 'emitida_atrasada';
+          } else {
+            billingStatus = 'emitida_pendente';
+          }
+        } else {
+          billingStatus = 'emitida_pendente';
+        }
       }
 
       // A cobrança está disponível no celular se tem asaas_payment_id (PIX gerado via Asaas)
