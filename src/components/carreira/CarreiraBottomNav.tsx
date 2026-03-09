@@ -53,15 +53,15 @@ export function CarreiraBottomNav({ currentUserId, profileSlug }: CarreiraBottom
     }
   };
 
-  const feedPath = carreiraPath('/feed');
+  const explorarPath = carreiraPath('/explorar');
   const conexoesPath = carreiraPath('/conexoes');
 
   const items = [
     {
       icon: Home,
-      label: 'Feed',
-      onClick: () => navigate(feedPath),
-      active: location.pathname === feedPath,
+      label: 'Início',
+      onClick: () => navigate(explorarPath),
+      active: location.pathname === explorarPath || location.pathname === carreiraPath('/explorar'),
       badge: 0,
     },
     {
