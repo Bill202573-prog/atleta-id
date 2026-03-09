@@ -30,10 +30,13 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     
     const validation = passwordSchema.safeParse({ password, confirmPassword });
     if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
+      const msg = validation.error.errors[0].message;
+      toast.error(msg);
+      setErrorMsg(msg);
       return;
     }
 
@@ -47,17 +50,19 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
       if (result.success) {
         setSuccess(true);
         toast.success('Senha alterada com sucesso!');
-        // The dialog will close automatically when refreshUser updates passwordNeedsChange
-        // But as a fallback, reload after a brief delay
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        toast.error(result.error || 'Erro ao alterar senha. Tente novamente.');
+        const errText = result.error || 'Erro ao alterar senha. Tente novamente.';
+        toast.error(errText);
+        setErrorMsg(errText);
       }
     } catch (err) {
       console.error('[ForcePasswordChange] Error:', err);
-      toast.error('Erro de conexão. Verifique sua internet e tente novamente.');
+      const errText = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      toast.error(errText);
+      setErrorMsg(errText);
     }
     
     setIsLoading(false);
