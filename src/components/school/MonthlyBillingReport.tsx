@@ -186,8 +186,12 @@ const MonthlyBillingReport = () => {
         toast.error(data.error);
         throw new Error(data.error);
       }
+      // Invalidate all related queries to refresh data including "disponível no celular"
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children'] });
+      queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
+      queryClient.invalidateQueries({ queryKey: ['school-cobrancas-entrada-month'] });
     },
     onError: (error: Error) => {
       if (!error.message.includes('já existe') && !error.message.includes('elegível')) {
