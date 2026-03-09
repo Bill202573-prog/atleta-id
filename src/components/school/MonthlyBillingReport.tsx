@@ -82,7 +82,6 @@ const MonthlyBillingReport = () => {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [bulkSuccessOpen, setBulkSuccessOpen] = useState(false);
   const [bulkResult, setBulkResult] = useState<{ created: number; already_exists: number; skipped: number; errors: number } | null>(null);
-  const [selectedStudentForBilling, setSelectedStudentForBilling] = useState<{ id: string; name: string } | null>(null);
 
   // Calculate month options: previous, current, next
   const monthOptions = useMemo(() => {
