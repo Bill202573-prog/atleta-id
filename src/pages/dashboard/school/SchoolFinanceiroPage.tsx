@@ -44,6 +44,7 @@ import FinancialReportSection from '@/components/school/FinancialReportSection';
 import MonthlyBillingReport from '@/components/school/MonthlyBillingReport';
 import { ClipboardList } from 'lucide-react';
 import { useStudentRegistration } from '@/contexts/StudentRegistrationContext';
+import { logAdminAction } from '@/contexts/AdminSchoolContext';
 
 interface MensalidadeDetail {
   id: string;
