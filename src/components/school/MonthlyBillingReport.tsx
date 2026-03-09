@@ -492,19 +492,49 @@ const MonthlyBillingReport = () => {
     );
   };
 
+  // Bulk generate billing mutation
+  const generateBulkBillingMutation = useMutation({
+    mutationFn: async (mesReferencia: string) => {
+      const { data, error } = await supabase.functions.invoke('generate-student-billing-asaas', {
+        body: { 
+          escolinha_id: user?.escolinhaId, 
+          mes_referencia: mesReferencia
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
+      if (data?.summary) {
+        const { created, already_exists, skipped, errors } = data.summary;
+        toast.success(`Cobranças geradas: ${created} novas, ${already_exists} já existentes, ${skipped} ignoradas, ${errors} erros`);
+      } else {
+        toast.success('Cobranças geradas com sucesso!');
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao gerar cobranças: ${error.message}`);
+    }
+  });
+
   return (
-    <div className="space-y-4">
-      {/* Header with Month Selector */}
+    <div className="space-y-3">
+      {/* Header with Month Selector + Generate Button */}
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-3">
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/20 shrink-0">
-                <FileText className="w-4 h-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <CardTitle className="text-base">Relatório de Cobranças</CardTitle>
-                <CardDescription className="text-xs">Status das cobranças por aluno</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/20 shrink-0">
+                  <FileText className="w-4 h-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <CardTitle className="text-base">Cobranças por Mês</CardTitle>
+                  <CardDescription className="text-xs">Status e ações por aluno</CardDescription>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -524,6 +554,20 @@ const MonthlyBillingReport = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                onClick={() => generateBulkBillingMutation.mutate(selectedMonth)}
+                disabled={generateBulkBillingMutation.isPending}
+                className="gap-1.5 shrink-0"
+                size="sm"
+              >
+                {generateBulkBillingMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Gerar Cobranças</span>
+                <span className="sm:hidden">Gerar</span>
+              </Button>
             </div>
           </div>
         </CardHeader>
