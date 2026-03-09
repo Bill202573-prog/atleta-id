@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Lock, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Loader2, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
+import PasswordInput from '@/components/shared/PasswordInput';
 
 const passwordSchema = z.object({
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
