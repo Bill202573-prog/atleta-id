@@ -327,21 +327,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('[AuthContext] changePassword: getting session...');
       const { data: { session: currentSession } } = await supabase.auth.getSession();
 
       if (!currentSession) {
-        return { success: false, error: 'Sessão expirada' };
+        console.error('[AuthContext] changePassword: no session');
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
       }
 
-      // Use a direct fetch to get proper status/error messages (invoke hides the body on non-2xx)
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
       const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
       if (!supabaseUrl || !publishableKey) {
+        console.error('[AuthContext] changePassword: missing env vars', { supabaseUrl: !!supabaseUrl, publishableKey: !!publishableKey });
         return { success: false, error: 'Configuração do app incompleta' };
       }
 
-      const res = await fetch(`${supabaseUrl}/functions/v1/change-password`, {
+      const url = `${supabaseUrl}/functions/v1/change-password`;
+      console.log('[AuthContext] changePassword: calling edge function at', url);
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -351,25 +356,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ new_password: newPassword }),
       });
 
+      console.log('[AuthContext] changePassword: response status', res.status);
+
       let payload: any = null;
       try {
         payload = await res.json();
+        console.log('[AuthContext] changePassword: response payload', payload);
       } catch {
+        console.error('[AuthContext] changePassword: failed to parse response');
         payload = null;
       }
 
       if (!res.ok) {
         const message = payload?.error || payload?.message || `Erro (${res.status}) ao alterar senha`;
+        console.error('[AuthContext] changePassword: error', message);
         return { success: false, error: message };
       }
 
       // Refresh user data to update passwordNeedsChange
+      console.log('[AuthContext] changePassword: success, refreshing user...');
       await refreshUser();
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao alterar senha:', error);
-      return { success: false, error: 'Erro ao alterar senha' };
+      console.error('[AuthContext] changePassword: exception', error);
+      return { success: false, error: 'Erro ao alterar senha. Verifique sua conexão.' };
     }
   };
 
