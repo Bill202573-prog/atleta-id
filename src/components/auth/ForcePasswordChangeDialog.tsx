@@ -26,13 +26,17 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     
     const validation = passwordSchema.safeParse({ password, confirmPassword });
     if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
+      const msg = validation.error.errors[0].message;
+      toast.error(msg);
+      setErrorMsg(msg);
       return;
     }
 
@@ -46,17 +50,19 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
       if (result.success) {
         setSuccess(true);
         toast.success('Senha alterada com sucesso!');
-        // The dialog will close automatically when refreshUser updates passwordNeedsChange
-        // But as a fallback, reload after a brief delay
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        toast.error(result.error || 'Erro ao alterar senha. Tente novamente.');
+        const errText = result.error || 'Erro ao alterar senha. Tente novamente.';
+        toast.error(errText);
+        setErrorMsg(errText);
       }
     } catch (err) {
       console.error('[ForcePasswordChange] Error:', err);
-      toast.error('Erro de conexão. Verifique sua internet e tente novamente.');
+      const errText = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      toast.error(errText);
+      setErrorMsg(errText);
     }
     
     setIsLoading(false);
@@ -138,6 +144,12 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
           <p className="text-xs text-muted-foreground">
             A senha deve ter pelo menos 6 caracteres
           </p>
+
+          {errorMsg && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+              <p className="text-sm text-destructive font-medium">{errorMsg}</p>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <Button

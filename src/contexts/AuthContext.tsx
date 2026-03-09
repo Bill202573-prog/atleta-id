@@ -1,6 +1,10 @@
 import { useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+
+// Use the same constants from the client file (these are public/anon keys)
+const SUPABASE_URL = "https://vxzktyklzkfqitptzctk.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4emt0eWtsemtmcWl0cHR6Y3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MzE0MTcsImV4cCI6MjA4ODUwNzQxN30.XUgZRd_p8y-80zMYEjIsG5CiEYf8f-pmWCRkp64lElo";
 import type { UserRole } from '@/types';
 import { AuthContext, type AuthContextType, type AuthUser } from './auth-context';
 import { useQueryClient } from '@tanstack/react-query';
@@ -327,7 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('[AuthContext] changePassword: getting session...');
+      console.log('[AuthContext] changePassword: starting...');
       const { data: { session: currentSession } } = await supabase.auth.getSession();
 
       if (!currentSession) {
@@ -335,33 +339,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Sessão expirada. Faça login novamente.' };
       }
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-      const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-
-      if (!supabaseUrl || !publishableKey) {
-        console.error('[AuthContext] changePassword: missing env vars', { supabaseUrl: !!supabaseUrl, publishableKey: !!publishableKey });
-        return { success: false, error: 'Configuração do app incompleta' };
-      }
-
-      const url = `${supabaseUrl}/functions/v1/change-password`;
-      console.log('[AuthContext] changePassword: calling edge function at', url);
+      const url = `${SUPABASE_URL}/functions/v1/change-password`;
+      console.log('[AuthContext] changePassword: calling', url);
 
       const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: publishableKey,
+          apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${currentSession.access_token}`,
         },
         body: JSON.stringify({ new_password: newPassword }),
       });
 
-      console.log('[AuthContext] changePassword: response status', res.status);
+      console.log('[AuthContext] changePassword: status', res.status);
 
       let payload: any = null;
       try {
         payload = await res.json();
-        console.log('[AuthContext] changePassword: response payload', payload);
+        console.log('[AuthContext] changePassword: payload', payload);
       } catch {
         console.error('[AuthContext] changePassword: failed to parse response');
         payload = null;
