@@ -50,6 +50,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { logAdminAction } from '@/contexts/AdminSchoolContext';
 
 interface MensalidadeDetail {
   id: string;
