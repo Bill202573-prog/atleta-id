@@ -33,8 +33,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSchoolChildrenWithRelations } from '@/hooks/useSchoolData';
 import { toast } from 'sonner';
 import GenerateIndividualBillingDialog from './GenerateIndividualBillingDialog';
+import GenerateBillingDialog from './GenerateBillingDialog';
 import { useStudentRegistration } from '@/contexts/StudentRegistrationContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -67,6 +77,11 @@ const MonthlyBillingReport = () => {
   // Individual billing dialog state
   const [billingDialogOpen, setBillingDialogOpen] = useState(false);
   const [selectedStudentForBilling, setSelectedStudentForBilling] = useState<{ id: string; name: string } | null>(null);
+
+  // Bulk billing dialog state
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkSuccessOpen, setBulkSuccessOpen] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ created: number; already_exists: number; skipped: number; errors: number } | null>(null);
 
   // Calculate month options: previous, current, next
   const monthOptions = useMemo(() => {
@@ -478,16 +493,17 @@ const MonthlyBillingReport = () => {
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
+      setBulkDialogOpen(false);
       if (data?.summary) {
-        const { created, already_exists, skipped, errors } = data.summary;
-        toast.success(`Cobranças geradas: ${created} novas, ${already_exists} já existentes, ${skipped} ignoradas, ${errors} erros`);
+        setBulkResult(data.summary);
+        setBulkSuccessOpen(true);
       } else {
         toast.success('Cobranças geradas com sucesso!');
       }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao gerar cobranças: ${error.message}`);
-    }
+    },
   });
 
   return (
@@ -525,18 +541,17 @@ const MonthlyBillingReport = () => {
                 </SelectContent>
               </Select>
               <Button
-                onClick={() => generateBulkBillingMutation.mutate(selectedMonth)}
+                onClick={() => setBulkDialogOpen(true)}
                 disabled={generateBulkBillingMutation.isPending}
-                className="gap-1.5 shrink-0"
-                size="sm"
+                className="gap-2 shrink-0 font-semibold"
+                size={isMobile ? 'default' : 'sm'}
               >
                 {generateBulkBillingMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Plus className="w-4 h-4" />
                 )}
-                <span className="hidden sm:inline">Gerar Cobranças</span>
-                <span className="sm:hidden">Gerar</span>
+                Gerar
               </Button>
             </div>
           </div>
@@ -808,6 +823,62 @@ const MonthlyBillingReport = () => {
         isLoading={generateBillingMutation.isPending}
         studentName={selectedStudentForBilling?.name || ''}
       />
+
+      {/* Bulk Billing Dialog */}
+      <GenerateBillingDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        onConfirm={async (mesReferencia) => {
+          await generateBulkBillingMutation.mutateAsync(mesReferencia);
+        }}
+        isLoading={generateBulkBillingMutation.isPending}
+        billingStatusByMonth={{}}
+      />
+
+      {/* Bulk Success Dialog */}
+      <AlertDialog open={bulkSuccessOpen} onOpenChange={setBulkSuccessOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="w-5 h-5" />
+              Cobranças Geradas com Sucesso
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2">
+                <p>Veja o resumo da geração de cobranças:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <p className="text-2xl font-bold text-emerald-600">{bulkResult?.created || 0}</p>
+                    <p className="text-xs text-emerald-700">Novas cobranças</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{bulkResult?.already_exists || 0}</p>
+                    <p className="text-xs text-blue-700">Já existentes</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                    <p className="text-2xl font-bold text-amber-600">{bulkResult?.skipped || 0}</p>
+                    <p className="text-xs text-amber-700">Ignoradas (isentos)</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
+                    <p className="text-2xl font-bold text-destructive">{bulkResult?.errors || 0}</p>
+                    <p className="text-xs text-destructive">Erros</p>
+                  </div>
+                </div>
+                {(bulkResult?.created || 0) > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    As cobranças PIX já estão disponíveis no celular dos responsáveis.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBulkSuccessOpen(false)}>
+              Fechar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
