@@ -185,19 +185,35 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
+                <PasswordInput
+                  id="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                  <PasswordInput
+                    id="confirmPassword"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setPasswordMismatch(false);
+                    }}
                     disabled={isLoading}
                   />
+                  {passwordMismatch && (
+                    <p className="text-sm text-destructive font-medium">
+                      As senhas não coincidem. Verifique e tente novamente.
+                    </p>
+                  )}
                 </div>
-              </div>
+              )}
 
               <Button 
                 type="submit" 
