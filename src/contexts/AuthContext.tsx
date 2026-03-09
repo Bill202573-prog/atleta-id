@@ -331,7 +331,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      console.log('[AuthContext] changePassword: getting session...');
+      console.log('[AuthContext] changePassword: starting...');
       const { data: { session: currentSession } } = await supabase.auth.getSession();
 
       if (!currentSession) {
@@ -339,33 +339,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'Sessão expirada. Faça login novamente.' };
       }
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-      const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-
-      if (!supabaseUrl || !publishableKey) {
-        console.error('[AuthContext] changePassword: missing env vars', { supabaseUrl: !!supabaseUrl, publishableKey: !!publishableKey });
-        return { success: false, error: 'Configuração do app incompleta' };
-      }
-
-      const url = `${supabaseUrl}/functions/v1/change-password`;
-      console.log('[AuthContext] changePassword: calling edge function at', url);
+      const url = `${SUPABASE_URL}/functions/v1/change-password`;
+      console.log('[AuthContext] changePassword: calling', url);
 
       const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: publishableKey,
+          apikey: SUPABASE_ANON_KEY,
           Authorization: `Bearer ${currentSession.access_token}`,
         },
         body: JSON.stringify({ new_password: newPassword }),
       });
 
-      console.log('[AuthContext] changePassword: response status', res.status);
+      console.log('[AuthContext] changePassword: status', res.status);
 
       let payload: any = null;
       try {
         payload = await res.json();
-        console.log('[AuthContext] changePassword: response payload', payload);
+        console.log('[AuthContext] changePassword: payload', payload);
       } catch {
         console.error('[AuthContext] changePassword: failed to parse response');
         payload = null;
