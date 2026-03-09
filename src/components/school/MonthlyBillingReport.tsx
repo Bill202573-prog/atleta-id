@@ -493,15 +493,17 @@ const MonthlyBillingReport = () => {
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
+      setBulkDialogOpen(false);
       if (data?.summary) {
-        const { created, already_exists, skipped, errors } = data.summary;
-        toast.success(`Cobranças geradas: ${created} novas, ${already_exists} já existentes, ${skipped} ignoradas, ${errors} erros`);
+        setBulkResult(data.summary);
+        setBulkSuccessOpen(true);
       } else {
         toast.success('Cobranças geradas com sucesso!');
       }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao gerar cobranças: ${error.message}`);
+    }
     }
   });
 
