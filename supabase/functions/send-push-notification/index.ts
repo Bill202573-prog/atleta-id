@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
 
     let isSystemCall = false;
     let requesterUserId: string | null = null;
-    let userSupabase: ReturnType<typeof createClient> | null = null;
+    let userSupabase: any = null;
 
     // System/cron calls use the service role key directly
     if (token && token === supabaseServiceKey) {
