@@ -244,8 +244,17 @@ const AlunoFinanceiroHistorico = ({
       if (!data.success) throw new Error(data.error || 'Erro ao cancelar cobrança');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, mensalidadeId) => {
       toast.success('Cobrança cancelada com sucesso');
+      // Audit log
+      if (user?.id && user?.escolinhaId) {
+        const m = mensalidades.find(x => x.id === mensalidadeId);
+        logAdminAction(user.id, user.escolinhaId, 'cancelar_mensalidade', {
+          mensalidade_id: mensalidadeId,
+          mes_referencia: m?.mes_referencia,
+          crianca_nome: m?.crianca_nome,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
       queryClient.invalidateQueries({ queryKey: ['guardian-mensalidades'] });
