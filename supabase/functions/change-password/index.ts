@@ -91,27 +91,27 @@ Deno.serve(async (req) => {
     await supabaseAdmin
       .from('responsaveis')
       .update({ senha_temporaria: null, senha_temporaria_ativa: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     // 2. Professores
     await supabaseAdmin
       .from('professores')
       .update({ senha_temporaria: null, senha_temporaria_ativa: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     // 3. Escolinhas (admin principal)
     await supabaseAdmin
       .from('escolinhas')
       .update({ senha_temporaria: null, senha_temporaria_ativa: false })
-      .eq('admin_user_id', user.id)
+      .eq('admin_user_id', userId)
 
     // 4. Escolinhas (sócio)
     await supabaseAdmin
       .from('escolinhas')
       .update({ senha_temporaria_socio: null, senha_temporaria_socio_ativa: false })
-      .eq('socio_user_id', user.id)
+      .eq('socio_user_id', userId)
 
-    console.log('[change-password] All cleanup done for user:', user.email)
+    console.log('[change-password] All cleanup done for user:', userEmail)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
