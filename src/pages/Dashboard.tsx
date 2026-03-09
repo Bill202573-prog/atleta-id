@@ -4,6 +4,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { SchoolDashboardLayout } from '@/components/layout/SchoolDashboardLayout';
 import { AdminSchoolProvider } from '@/contexts/AdminSchoolContext';
 import AdminDashboard from './dashboard/AdminDashboard';
+import AdminUsersPage from './dashboard/admin/AdminUsersPage';
 import SchoolDashboard from './dashboard/SchoolDashboard';
 import TeacherDashboard from './dashboard/TeacherDashboard';
 import ChildrenManagement from './dashboard/school/ChildrenManagement';
@@ -113,6 +114,7 @@ const Dashboard = () => {
       if (path === '/dashboard/comunicados') return <ComunicadosManagement />;
       if (path === '/dashboard/atividades-externas') return <AtividadesExternasAdminPage />;
       if (path === '/dashboard/rede-social') return <AdminRedeSocialPage />;
+      if (path === '/dashboard/users') return <AdminUsersPage />;
     }
     
     // School-specific routes
