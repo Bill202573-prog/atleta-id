@@ -101,6 +101,7 @@ const Auth = () => {
           });
           setIsLogin(true);
           setPassword('');
+          setConfirmPassword('');
         } else {
           toast({
             title: 'Erro ao criar conta',
