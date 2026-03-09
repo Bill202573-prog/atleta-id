@@ -166,6 +166,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         fetchingRef.current = true;
         setTimeout(() => {
+          // Re-check fetchingRef inside setTimeout — login() may have already completed
+          if (fetchingRef.current) {
+            console.log('[AuthContext] onAuthStateChange setTimeout: already fetched by login(), skipping');
+            setIsLoading(false);
+            fetchingRef.current = false;
+            return;
+          }
+          fetchingRef.current = true;
           fetchUserData(nextSession.user.id).then(userData => {
             console.log('[AuthContext] onAuthStateChange fetchUserData result:', userData?.role);
             setUser(userData);
