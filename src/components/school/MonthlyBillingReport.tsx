@@ -823,6 +823,62 @@ const MonthlyBillingReport = () => {
         isLoading={generateBillingMutation.isPending}
         studentName={selectedStudentForBilling?.name || ''}
       />
+
+      {/* Bulk Billing Dialog */}
+      <GenerateBillingDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        onConfirm={async (mesReferencia) => {
+          await generateBulkBillingMutation.mutateAsync(mesReferencia);
+        }}
+        isLoading={generateBulkBillingMutation.isPending}
+        billingStatusByMonth={{}}
+      />
+
+      {/* Bulk Success Dialog */}
+      <AlertDialog open={bulkSuccessOpen} onOpenChange={setBulkSuccessOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle2 className="w-5 h-5" />
+              Cobranças Geradas com Sucesso
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2">
+                <p>Veja o resumo da geração de cobranças:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <p className="text-2xl font-bold text-emerald-600">{bulkResult?.created || 0}</p>
+                    <p className="text-xs text-emerald-700">Novas cobranças</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{bulkResult?.already_exists || 0}</p>
+                    <p className="text-xs text-blue-700">Já existentes</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
+                    <p className="text-2xl font-bold text-amber-600">{bulkResult?.skipped || 0}</p>
+                    <p className="text-xs text-amber-700">Ignoradas (isentos)</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-center">
+                    <p className="text-2xl font-bold text-destructive">{bulkResult?.errors || 0}</p>
+                    <p className="text-xs text-destructive">Erros</p>
+                  </div>
+                </div>
+                {(bulkResult?.created || 0) > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    As cobranças PIX já estão disponíveis no celular dos responsáveis.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setBulkSuccessOpen(false)}>
+              Fechar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
