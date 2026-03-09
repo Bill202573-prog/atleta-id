@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Mail, Lock, User } from 'lucide-react';
+import { Loader2, Mail, User } from 'lucide-react';
 import { z } from 'zod';
 import logoAtletaId from '@/assets/logo-atleta-id.png';
 import PwaInstallButton from '@/components/shared/PwaInstallButton';
+import PasswordInput from '@/components/shared/PasswordInput';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalido'),
@@ -26,6 +27,8 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
   const [nome, setNome] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, signup, user } = useAuth();
@@ -40,6 +43,13 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPasswordMismatch(false);
+
+    if (!isLogin && password !== confirmPassword) {
+      setPasswordMismatch(true);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -91,6 +101,7 @@ const Auth = () => {
           });
           setIsLogin(true);
           setPassword('');
+          setConfirmPassword('');
         } else {
           toast({
             title: 'Erro ao criar conta',
@@ -174,19 +185,35 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
+                <PasswordInput
+                  id="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                  <PasswordInput
+                    id="confirmPassword"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setPasswordMismatch(false);
+                    }}
                     disabled={isLoading}
                   />
+                  {passwordMismatch && (
+                    <p className="text-sm text-destructive font-medium">
+                      As senhas não coincidem. Verifique e tente novamente.
+                    </p>
+                  )}
                 </div>
-              </div>
+              )}
 
               <Button 
                 type="submit" 
