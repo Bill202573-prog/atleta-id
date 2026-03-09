@@ -27,6 +27,8 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
   const [nome, setNome] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, signup, user } = useAuth();
