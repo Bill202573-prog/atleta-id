@@ -493,6 +493,7 @@ const MonthlyBillingReport = () => {
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
       queryClient.invalidateQueries({ queryKey: ['school-children-relations'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-dialog-status'] });
       setBulkDialogOpen(false);
       if (data?.summary) {
         setBulkResult(data.summary);
