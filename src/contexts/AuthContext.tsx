@@ -166,6 +166,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         fetchingRef.current = true;
         setTimeout(() => {
+          // Re-check fetchingRef inside setTimeout — login() may have already completed
+          if (fetchingRef.current) {
+            console.log('[AuthContext] onAuthStateChange setTimeout: already fetched by login(), skipping');
+            setIsLoading(false);
+            fetchingRef.current = false;
+            return;
+          }
+          fetchingRef.current = true;
           fetchUserData(nextSession.user.id).then(userData => {
             console.log('[AuthContext] onAuthStateChange fetchUserData result:', userData?.role);
             setUser(userData);
@@ -252,12 +260,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchingRef.current = true;
         setIsLoading(true);
         
+        // Atualizar sessão imediatamente para que sessionRef fique atualizado
+        setSession(data.session);
+        sessionRef.current = data.session;
+        
         try {
-          const userData = await fetchUserData(userId);
+          // Timeout de segurança: se fetchUserData demorar mais de 8s, continua sem travar
+          const userData = await Promise.race([
+            fetchUserData(userId),
+            new Promise<null>((resolve) => {
+              setTimeout(() => {
+                console.warn('[AuthContext] login: fetchUserData timeout after 8s');
+                resolve(null);
+              }, 8000);
+            }),
+          ]);
           console.log('[AuthContext] login: user data loaded:', userData?.role);
           setUser(userData);
-          setSession(data.session);
-          sessionRef.current = data.session;
           setIsLoading(false);
           fetchingRef.current = false;
           
