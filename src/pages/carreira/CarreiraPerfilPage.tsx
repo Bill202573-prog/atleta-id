@@ -379,7 +379,7 @@ export default function CarreiraPerfilPage() {
       <header className={`sticky top-0 z-50 backdrop-blur-sm shadow-sm ${isDarkTheme ? 'bg-[hsl(0_0%_0%/0.97)] border-b border-[hsl(25_95%_55%/0.4)]' : 'bg-background/95 border-b border-border'}`}>
         {/* Row 1: Logo + Search (desktop inline) + Actions */}
         <div className="container flex items-center justify-between h-14 lg:h-16 px-4 max-w-6xl">
-          <Link to={carreiraPath('/explorar')} className="flex items-center gap-2 shrink-0">
+          <Link to={carreiraPath('/feed')} className="flex items-center gap-2 shrink-0">
             <img src={logoCarreira} alt="Carreira" className="h-16 lg:h-20" />
           </Link>
 
