@@ -24,24 +24,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    // User context client - validates the JWT
+    // Validate JWT using getClaims
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token)
 
-    if (authError || !user) {
-      console.error('[change-password] Auth error:', authError?.message || 'No user')
+    if (claimsError || !claimsData?.claims) {
+      console.error('[change-password] Claims error:', claimsError?.message || 'No claims')
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    console.log('[change-password] Processing for user:', user.id, user.email)
+    const userId = claimsData.claims.sub as string
+    const userEmail = claimsData.claims.email as string
+    console.log('[change-password] Processing for user:', userId, userEmail)
 
     const { new_password } = await req.json()
 
