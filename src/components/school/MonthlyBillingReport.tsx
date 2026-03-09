@@ -745,10 +745,10 @@ const MonthlyBillingReport = () => {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell>{getStatusBadge(student.status)}</TableCell>
-                        <TableCell>{getDisponivelBadge(student)}</TableCell>
-                        <TableCell>{formatDate(student.dataVencimento)}</TableCell>
-                        <TableCell>{formatDate(student.dataPagamento)}</TableCell>
+                        <TableCell className="text-center">{getStatusBadge(student.status)}</TableCell>
+                        <TableCell className="text-center">{getDisponivelBadge(student)}</TableCell>
+                        <TableCell className="text-center text-sm">{formatDate(student.dataVencimento)}</TableCell>
+                        <TableCell className="text-center text-sm">{formatDate(student.dataPagamento)}</TableCell>
                         <TableCell className="text-center">
                           {canGenerate ? (
                             <Button
