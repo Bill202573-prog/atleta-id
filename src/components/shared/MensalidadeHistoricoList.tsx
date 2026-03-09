@@ -458,17 +458,10 @@ const MensalidadeHistoricoList = ({ criancaId, canDelete = false, showActions = 
           onOpenChange={setActionDialogOpen}
           mensalidade={selectedMensalidade ? {
             id: selectedMensalidade.id,
-            crianca_id: criancaId,
             crianca_nome: '',
             mes_referencia: selectedMensalidade.mes_referencia,
             valor: selectedMensalidade.valor,
-            valor_pago: selectedMensalidade.valor_pago,
             status: selectedMensalidade.status,
-            data_vencimento: selectedMensalidade.data_vencimento,
-            data_pagamento: selectedMensalidade.data_pagamento,
-            forma_pagamento: selectedMensalidade.forma_pagamento,
-            observacoes: selectedMensalidade.observacoes,
-            asaas_pix_url: selectedMensalidade.asaas_pix_url,
             asaas_payment_id: selectedMensalidade.asaas_payment_id,
           } : null}
           action={actionType}
