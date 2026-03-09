@@ -759,7 +759,7 @@ const SchoolFinanceiroPage = () => {
             onClick={() => setActiveView(item.id)}
           >
             <CardContent className="p-4">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-3">
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-background/60 text-foreground shrink-0">
                   {item.icon}
                 </div>
