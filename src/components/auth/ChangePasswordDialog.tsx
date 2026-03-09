@@ -26,13 +26,17 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     
     const validation = passwordSchema.safeParse({ password, confirmPassword });
     if (!validation.success) {
-      toast.error(validation.error.errors[0].message);
+      const msg = validation.error.errors[0].message;
+      setErrorMsg(msg);
+      toast.error(msg);
       return;
     }
 
