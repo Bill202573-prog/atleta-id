@@ -514,6 +514,18 @@ const SchoolFinanceiroPage = () => {
       observacao: data.observacao,
     });
 
+    // Audit log
+    if (user?.id && user?.escolinhaId) {
+      logAdminAction(user.id, user.escolinhaId, actionType === 'pagar' ? 'baixa_manual_mensalidade' : 'isentar_mensalidade', {
+        mensalidade_id: selectedMensalidade.id,
+        mes_referencia: selectedMensalidade.mes_referencia,
+        crianca_nome: selectedMensalidade.crianca_nome,
+        valor: selectedMensalidade.valor,
+        valor_pago: data.valorPago,
+        observacao: data.observacao,
+      });
+    }
+
     setActionDialogOpen(false);
     setSelectedMensalidade(null);
     setActionType(null);
