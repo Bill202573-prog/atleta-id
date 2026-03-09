@@ -420,7 +420,7 @@ Deno.serve(async (req) => {
     }
 
     if (expiredEndpoints.length > 0) {
-      await supabase
+      await adminSupabase
         .from('push_subscriptions')
         .delete()
         .in('endpoint', expiredEndpoints);
