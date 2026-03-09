@@ -414,81 +414,51 @@ const MonthlyBillingReport = () => {
     const isGenerating = generateBillingMutation.isPending;
 
     return (
-      <Card key={student.criancaId} className="border-border/60">
-        <CardContent className="p-4 space-y-3">
-          {/* Top row: Name + Status */}
-          <div className="flex items-start justify-between gap-2">
-            <button
-              type="button"
-              className="text-left font-semibold text-sm hover:text-primary hover:underline transition-colors cursor-pointer"
-              onClick={() => {
-                const child = children.find(c => c.id === student.criancaId);
-                if (child) openEditDialog(child as any, user?.escolinhaId, 'financeiro');
-              }}
-            >
-              {student.nome}
-            </button>
-            {getStatusBadge(student.status)}
-          </div>
+      <div key={student.criancaId} className="p-3 rounded-lg border bg-card shadow-sm">
+        {/* Name + Status */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <button
+            type="button"
+            className="text-left font-semibold text-sm hover:text-primary transition-colors cursor-pointer truncate"
+            onClick={() => {
+              const child = children.find(c => c.id === student.criancaId);
+              if (child) openEditDialog(child as any, user?.escolinhaId, 'financeiro');
+            }}
+          >
+            {student.nome}
+          </button>
+          {getStatusBadge(student.status)}
+        </div>
 
-          {/* Info grid */}
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="text-xs text-muted-foreground">Tipo</span>
-              <div className="mt-0.5">
-                {student.statusFinanceiro === 'isento' ? (
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">Isento</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-xs">Pagante</Badge>
-                )}
-              </div>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Valor</span>
-              <p className="font-semibold mt-0.5">
-                {student.statusFinanceiro === 'isento' ? '-' : (
-                  <span className={valorDivergente ? 'text-amber-600' : ''}>
-                    R$ {(student.valor ?? student.valorCadastrado ?? 170).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    {valorDivergente && ' ⚠'}
-                  </span>
-                )}
-              </p>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Vencimento</span>
-              <p className="mt-0.5">{formatDate(student.dataVencimento)}</p>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground">Pagamento</span>
-              <p className="mt-0.5">{formatDate(student.dataPagamento)}</p>
-            </div>
+        {/* Compact info row */}
+        <div className="flex items-center justify-between text-sm mb-2">
+          <div className="flex items-center gap-3">
+            {student.statusFinanceiro === 'isento' ? (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-[10px]">Isento</Badge>
+            ) : (
+              <span className={`font-semibold ${valorDivergente ? 'text-amber-600' : ''}`}>
+                R$ {(student.valor ?? student.valorCadastrado ?? 170).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">{formatDate(student.dataVencimento)}</span>
           </div>
+          {getDisponivelBadge(student)}
+        </div>
 
-          {/* Disponível no celular */}
-          <div className="flex items-center justify-between pt-2 border-t border-border/40">
-            <span className="text-xs text-muted-foreground">No celular do responsável</span>
-            {getDisponivelBadge(student)}
-          </div>
-
-          {/* Action button */}
-          {canGenerate && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full gap-1.5 h-9"
-              disabled={isGenerating}
-              onClick={() => handleOpenBillingDialog(student.criancaId, student.nome)}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Plus className="w-3.5 h-3.5" />
-              )}
-              Gerar Cobrança
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+        {/* Action */}
+        {canGenerate && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full gap-1.5 h-8 text-xs"
+            disabled={isGenerating}
+            onClick={() => handleOpenBillingDialog(student.criancaId, student.nome)}
+          >
+            {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+            Gerar Cobrança
+          </Button>
+        )}
+      </div>
     );
   };
 
