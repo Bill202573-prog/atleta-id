@@ -267,7 +267,7 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
 
       // Fetch pedidos da loja
       let pedidosQuery = supabase
-        .from('pedidos_loja')
+        .from('pedidos')
         .select(`
           id,
           numero_pedido,
@@ -276,7 +276,7 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
           data_pagamento,
           created_at,
           escolinha_id,
-          escolinha:escolinhas!pedidos_loja_escolinha_id_fkey(nome)
+          escolinha:escolinhas!pedidos_escolinha_id_fkey(nome)
         `)
         .eq('crianca_id', criancaId);
 
