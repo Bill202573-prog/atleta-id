@@ -541,18 +541,17 @@ const MonthlyBillingReport = () => {
                 </SelectContent>
               </Select>
               <Button
-                onClick={() => generateBulkBillingMutation.mutate(selectedMonth)}
+                onClick={() => setBulkDialogOpen(true)}
                 disabled={generateBulkBillingMutation.isPending}
-                className="gap-1.5 shrink-0"
-                size="sm"
+                className="gap-2 shrink-0 font-semibold"
+                size={isMobile ? 'default' : 'sm'}
               >
                 {generateBulkBillingMutation.isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <Plus className="w-4 h-4" />
                 )}
-                <span className="hidden sm:inline">Gerar Cobranças</span>
-                <span className="sm:hidden">Gerar</span>
+                Gerar
               </Button>
             </div>
           </div>
