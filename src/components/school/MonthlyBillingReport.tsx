@@ -33,8 +33,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSchoolChildrenWithRelations } from '@/hooks/useSchoolData';
 import { toast } from 'sonner';
 import GenerateIndividualBillingDialog from './GenerateIndividualBillingDialog';
+import GenerateBillingDialog from './GenerateBillingDialog';
 import { useStudentRegistration } from '@/contexts/StudentRegistrationContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
