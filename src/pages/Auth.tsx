@@ -43,6 +43,13 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPasswordMismatch(false);
+
+    if (!isLogin && password !== confirmPassword) {
+      setPasswordMismatch(true);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
