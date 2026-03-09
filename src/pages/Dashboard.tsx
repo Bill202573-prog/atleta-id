@@ -114,6 +114,7 @@ const Dashboard = () => {
       if (path === '/dashboard/comunicados') return <ComunicadosManagement />;
       if (path === '/dashboard/atividades-externas') return <AtividadesExternasAdminPage />;
       if (path === '/dashboard/rede-social') return <AdminRedeSocialPage />;
+      if (path === '/dashboard/users') return <AdminUsersPage />;
     }
     
     // School-specific routes
