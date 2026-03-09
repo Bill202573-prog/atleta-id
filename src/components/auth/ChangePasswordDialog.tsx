@@ -84,43 +84,39 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="new-password">Nova Senha</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="new-password"
-                type="password"
-                placeholder="Digite sua nova senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                disabled={isLoading}
-                minLength={6}
-                required
-              />
-            </div>
+            <PasswordInput
+              id="new-password"
+              placeholder="Digite sua nova senha"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setErrorMsg(null); }}
+              disabled={isLoading}
+              minLength={6}
+              required
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="confirm-password">Confirmar Senha</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="confirm-password"
-                type="password"
-                placeholder="Confirme sua nova senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-10"
-                disabled={isLoading}
-                minLength={6}
-                required
-              />
-            </div>
+            <PasswordInput
+              id="confirm-password"
+              placeholder="Confirme sua nova senha"
+              value={confirmPassword}
+              onChange={(e) => { setConfirmPassword(e.target.value); setErrorMsg(null); }}
+              disabled={isLoading}
+              minLength={6}
+              required
+            />
           </div>
 
           <p className="text-xs text-muted-foreground">
             A senha deve ter pelo menos 6 caracteres
           </p>
+
+          {errorMsg && (
+            <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
+              <p className="text-sm text-destructive font-medium">{errorMsg}</p>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
