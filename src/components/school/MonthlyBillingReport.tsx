@@ -503,8 +503,7 @@ const MonthlyBillingReport = () => {
     },
     onError: (error: Error) => {
       toast.error(`Erro ao gerar cobranças: ${error.message}`);
-    }
-    }
+    },
   });
 
   return (
