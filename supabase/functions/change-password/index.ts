@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     // Update user password
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
+      userId,
       { password: new_password }
     )
 
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ password_needs_change: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     if (profileError) {
       console.error('[change-password] Profile update error:', profileError.message)
