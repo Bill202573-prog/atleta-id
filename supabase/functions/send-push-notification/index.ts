@@ -244,30 +244,124 @@ Deno.serve(async (req) => {
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
 
+    const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const authHeader = req.headers.get('Authorization') || '';
-    const bearerToken = authHeader.replace('Bearer ', '').trim();
-    if (bearerToken !== supabaseServiceKey) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
+
+    let isSystemCall = false;
+    let requesterUserId: string | null = null;
+    let userSupabase: any = null;
+
+    // System/cron calls use the service role key directly
+    if (token && token === supabaseServiceKey) {
+      isSystemCall = true;
+    } else {
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+      if (!token) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
       });
+
+      const { data: claimsData, error: claimsError } = await userSupabase.auth.getClaims(token);
+      if (claimsError || !claimsData?.claims?.sub) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      requesterUserId = claimsData.claims.sub;
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const requestBody = await req.json();
+    const { user_ids, title, body, url, tag, tipo, referencia_id, dias_antes, escolinha_id } = requestBody ?? {};
 
-    const { user_ids, title, body, url, tag, tipo, referencia_id, dias_antes, escolinha_id } = await req.json();
+    async function getGuardianUserIdsForEscolinha(escolinhaId: string): Promise<string[]> {
+      const { data: criancas, error: criancasError } = await adminSupabase
+        .from('crianca_escolinha')
+        .select('crianca_id')
+        .eq('escolinha_id', escolinhaId)
+        .eq('ativo', true);
+      if (criancasError) throw criancasError;
 
-    if (!user_ids || !Array.isArray(user_ids) || user_ids.length === 0) {
+      const criancaIds = [...new Set((criancas || []).map((c: any) => c.crianca_id).filter(Boolean))];
+      if (criancaIds.length === 0) return [];
+
+      const { data: links, error: linksError } = await adminSupabase
+        .from('crianca_responsavel')
+        .select('responsavel_id')
+        .in('crianca_id', criancaIds);
+      if (linksError) throw linksError;
+
+      const responsavelIds = [...new Set((links || []).map((l: any) => l.responsavel_id).filter(Boolean))];
+      if (responsavelIds.length === 0) return [];
+
+      const { data: responsaveis, error: responsaveisError } = await adminSupabase
+        .from('responsaveis')
+        .select('user_id')
+        .in('id', responsavelIds);
+      if (responsaveisError) throw responsaveisError;
+
+      return [...new Set((responsaveis || []).map((r: any) => r.user_id).filter(Boolean))];
+    }
+
+    let targetUserIds: string[] = Array.isArray(user_ids) ? user_ids.filter(Boolean) : [];
+
+    if (!isSystemCall) {
+      const { data: isGlobalAdmin, error: roleError } = await adminSupabase.rpc('has_role', {
+        _user_id: requesterUserId,
+        _role: 'admin',
+      });
+      if (roleError) throw roleError;
+
+      if (!isGlobalAdmin) {
+        if (!escolinha_id) {
+          return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const { data: isSchoolAdmin, error: schoolAdminError } = await userSupabase!.rpc('is_admin_of_escolinha', {
+          _escolinha_id: escolinha_id,
+        });
+        if (schoolAdminError) throw schoolAdminError;
+        if (!isSchoolAdmin) {
+          return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const allowedUserIds = await getGuardianUserIdsForEscolinha(escolinha_id);
+        const allowedSet = new Set(allowedUserIds);
+
+        // School admins can only message guardians from their own school
+        targetUserIds = targetUserIds.length > 0
+          ? targetUserIds.filter((id) => allowedSet.has(id))
+          : allowedUserIds;
+      }
+    }
+
+    if (!targetUserIds || targetUserIds.length === 0) {
       return new Response(JSON.stringify({ error: 'user_ids required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { data: subscriptions, error: subError } = await supabase
+    const { data: subscriptions, error: subError } = await adminSupabase
       .from('push_subscriptions')
       .select('*')
-      .in('user_id', user_ids);
+      .in('user_id', targetUserIds);
 
     if (subError) throw subError;
     if (!subscriptions || subscriptions.length === 0) {
@@ -300,7 +394,7 @@ Deno.serve(async (req) => {
         sent++;
 
         if (tipo) {
-          await supabase.from('push_notifications_log').insert({
+          await adminSupabase.from('push_notifications_log').insert({
             user_id: sub.user_id,
             escolinha_id: escolinha_id || null,
             tipo,
@@ -326,7 +420,7 @@ Deno.serve(async (req) => {
     }
 
     if (expiredEndpoints.length > 0) {
-      await supabase
+      await adminSupabase
         .from('push_subscriptions')
         .delete()
         .in('endpoint', expiredEndpoints);
