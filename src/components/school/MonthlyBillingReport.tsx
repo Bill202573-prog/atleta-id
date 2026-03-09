@@ -22,7 +22,10 @@ import {
   FileText,
   Users,
   Loader2,
-  Plus
+  Plus,
+  Smartphone,
+  SmartphoneNfc,
+  X
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,6 +34,7 @@ import { useSchoolChildrenWithRelations } from '@/hooks/useSchoolData';
 import { toast } from 'sonner';
 import GenerateIndividualBillingDialog from './GenerateIndividualBillingDialog';
 import { useStudentRegistration } from '@/contexts/StudentRegistrationContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const monthNames = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -45,15 +49,20 @@ interface StudentBillingStatus {
   valor?: number;
   dataVencimento?: string;
   dataPagamento?: string;
+  asaasPaymentId?: string | null;
+  asaasPixUrl?: string | null;
+  disponivelCelular: boolean;
 }
 
 const MonthlyBillingReport = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { data: children = [], isLoading: loadingChildren } = useSchoolChildrenWithRelations(undefined, true);
   const { openEditDialog } = useStudentRegistration();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterFinanceiro, setFilterFinanceiro] = useState<string>('all');
+  const [filterDisponivel, setFilterDisponivel] = useState<string>('all');
   
   // Individual billing dialog state
   const [billingDialogOpen, setBillingDialogOpen] = useState(false);
@@ -85,11 +94,11 @@ const MonthlyBillingReport = () => {
     return options;
   }, []);
 
-  const [selectedMonth, setSelectedMonth] = useState(monthOptions[1]?.value || ''); // Default to current month
+  const [selectedMonth, setSelectedMonth] = useState(monthOptions[1]?.value || '');
 
   const queryClient = useQueryClient();
 
-  // Fetch mensalidades for the selected month
+  // Fetch mensalidades for the selected month - include Asaas fields
   const { data: mensalidades = [], isLoading: loadingMensalidades } = useQuery({
     queryKey: ['school-mensalidades-month-report', user?.escolinhaId, selectedMonth],
     queryFn: async () => {
@@ -104,11 +113,13 @@ const MonthlyBillingReport = () => {
           valor,
           status,
           data_vencimento,
-          data_pagamento
+          data_pagamento,
+          asaas_payment_id,
+          asaas_pix_url
         `)
         .eq('escolinha_id', user.escolinhaId)
         .eq('mes_referencia', selectedMonth)
-        .neq('status', 'cancelado'); // Exclude cancelled
+        .neq('status', 'cancelado');
 
       if (error) throw error;
       return data || [];
@@ -138,37 +149,31 @@ const MonthlyBillingReport = () => {
   // Mutation for generating individual billing
   const generateBillingMutation = useMutation({
     mutationFn: async ({ criancaId, mesReferencia }: { criancaId: string; mesReferencia: string }) => {
-      console.log('Gerando cobrança individual:', { escolinha_id: user?.escolinhaId, mes_referencia: mesReferencia, crianca_id: criancaId });
       const { data, error } = await supabase.functions.invoke('generate-student-billing-asaas', {
         body: { 
           escolinha_id: user?.escolinhaId, 
           mes_referencia: mesReferencia,
-          crianca_id: criancaId // Pass specific student ID
+          crianca_id: criancaId
         }
       });
       if (error) throw error;
       return data;
     },
     onSuccess: (data, variables) => {
-      console.log('Resultado da geração:', data);
       if (data?.results?.length > 0) {
-        // Find the result for this specific student
         const result = data.results.find((r: any) => r.crianca_id === variables.criancaId);
         if (result) {
-          if (result.status === 'created') {
-            // Success is handled by the dialog
-          } else if (result.status === 'already_exists') {
+          if (result.status === 'already_exists') {
             toast.info('Mensalidade já existe para este mês');
             throw new Error('Mensalidade já existe para este mês');
           } else if (result.status === 'skipped') {
             toast.info(result.message || 'Aluno não elegível para cobrança');
             throw new Error(result.message || 'Aluno não elegível para cobrança');
-          } else {
+          } else if (result.status !== 'created') {
             toast.error(result.message || 'Erro ao gerar cobrança');
             throw new Error(result.message || 'Erro ao gerar cobrança');
           }
         } else {
-          // No result for this student - check summary
           if (data.summary?.skipped > 0) {
             toast.info('Aluno não elegível para cobrança neste mês');
             throw new Error('Aluno não elegível para cobrança neste mês');
@@ -185,21 +190,17 @@ const MonthlyBillingReport = () => {
       queryClient.invalidateQueries({ queryKey: ['school-children'] });
     },
     onError: (error: Error) => {
-      console.error('Erro ao gerar cobrança:', error);
-      // Only show toast for actual errors, not for handled rejections
       if (!error.message.includes('já existe') && !error.message.includes('elegível')) {
         toast.error(`Erro ao gerar cobrança: ${error.message}`);
       }
     }
   });
 
-  // Handler for opening the billing dialog
   const handleOpenBillingDialog = (studentId: string, studentName: string) => {
     setSelectedStudentForBilling({ id: studentId, name: studentName });
     setBillingDialogOpen(true);
   };
 
-  // Handler for confirming billing generation
   const handleConfirmBilling = async (mesReferencia: string) => {
     if (!selectedStudentForBilling) return;
     await generateBillingMutation.mutateAsync({
@@ -210,10 +211,8 @@ const MonthlyBillingReport = () => {
 
   // Build student billing status list
   const studentBillingData = useMemo((): StudentBillingStatus[] => {
-    // Include all active students (including isentos)
     const activeChildren = children.filter(c => c.ativo);
 
-    // Create a set of crianca_ids that have paid via cobrancas_entrada for this month
     const paidViaEntradaSet = new Set(
       cobrancasEntrada.map(ce => ce.crianca_id)
     );
@@ -224,7 +223,6 @@ const MonthlyBillingReport = () => {
       const valorCadastrado = child.valor_mensalidade ?? 170;
       const paidViaEntrada = paidViaEntradaSet.has(child.id);
 
-      // If paid via entrada (enrollment charge includes this month's tuition)
       if (paidViaEntrada && !mensalidade) {
         const entrada = cobrancasEntrada.find(ce => ce.crianca_id === child.id);
         return {
@@ -234,7 +232,8 @@ const MonthlyBillingReport = () => {
           statusFinanceiro,
           valorCadastrado,
           valor: valorCadastrado,
-          dataPagamento: entrada?.data_pagamento?.split('T')[0]
+          dataPagamento: entrada?.data_pagamento?.split('T')[0],
+          disponivelCelular: true, // paid via entrada = was available
         };
       }
 
@@ -244,7 +243,8 @@ const MonthlyBillingReport = () => {
           nome: child.nome,
           status: 'nao_emitida' as const,
           statusFinanceiro,
-          valorCadastrado
+          valorCadastrado,
+          disponivelCelular: false,
         };
       }
 
@@ -259,6 +259,9 @@ const MonthlyBillingReport = () => {
         billingStatus = 'emitida_pendente';
       }
 
+      // A cobrança está disponível no celular se tem asaas_payment_id (PIX gerado via Asaas)
+      const disponivelCelular = !!mensalidade.asaas_payment_id;
+
       return {
         criancaId: child.id,
         nome: child.nome,
@@ -268,7 +271,10 @@ const MonthlyBillingReport = () => {
         mensalidadeId: mensalidade.id,
         valor: mensalidade.valor,
         dataVencimento: mensalidade.data_vencimento,
-        dataPagamento: mensalidade.data_pagamento
+        dataPagamento: mensalidade.data_pagamento,
+        asaasPaymentId: mensalidade.asaas_payment_id,
+        asaasPixUrl: mensalidade.asaas_pix_url,
+        disponivelCelular,
       };
     });
   }, [children, mensalidades, cobrancasEntrada]);
@@ -281,9 +287,12 @@ const MonthlyBillingReport = () => {
       const matchesFinanceiro = filterFinanceiro === 'all' || 
         (filterFinanceiro === 'isento' && student.statusFinanceiro === 'isento') ||
         (filterFinanceiro === 'pagante' && student.statusFinanceiro !== 'isento');
-      return matchesSearch && matchesStatus && matchesFinanceiro;
+      const matchesDisponivel = filterDisponivel === 'all' ||
+        (filterDisponivel === 'sim' && student.disponivelCelular) ||
+        (filterDisponivel === 'nao' && !student.disponivelCelular && student.statusFinanceiro !== 'isento');
+      return matchesSearch && matchesStatus && matchesFinanceiro && matchesDisponivel;
     });
-  }, [studentBillingData, searchTerm, filterStatus, filterFinanceiro]);
+  }, [studentBillingData, searchTerm, filterStatus, filterFinanceiro, filterDisponivel]);
 
   // Summary counts
   const summary = useMemo(() => {
@@ -294,6 +303,7 @@ const MonthlyBillingReport = () => {
     const emitidaAtrasada = pagantes.filter(s => s.status === 'emitida_atrasada').length;
     const naoEmitida = pagantes.filter(s => s.status === 'nao_emitida').length;
     const totalEmitida = emitidaPaga + emitidaPendente + emitidaAtrasada;
+    const disponivelCelularCount = pagantes.filter(s => s.disponivelCelular && s.status !== 'nao_emitida').length;
 
     return {
       emitidaPaga,
@@ -303,7 +313,8 @@ const MonthlyBillingReport = () => {
       totalEmitida,
       totalPagantes: pagantes.length,
       totalIsentos: isentos.length,
-      total: studentBillingData.length
+      total: studentBillingData.length,
+      disponivelCelular: disponivelCelularCount,
     };
   }, [studentBillingData]);
 
@@ -311,28 +322,28 @@ const MonthlyBillingReport = () => {
     switch (status) {
       case 'emitida_paga':
         return (
-          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">
             <CheckCircle2 className="w-3 h-3 mr-1" />
             Paga
           </Badge>
         );
       case 'emitida_pendente':
         return (
-          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs">
             <Clock className="w-3 h-3 mr-1" />
             Pendente
           </Badge>
         );
       case 'emitida_atrasada':
         return (
-          <Badge className="bg-destructive/10 text-destructive border-destructive/20">
+          <Badge className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
             <AlertCircle className="w-3 h-3 mr-1" />
             Atrasada
           </Badge>
         );
       case 'nao_emitida':
         return (
-          <Badge variant="outline" className="text-muted-foreground">
+          <Badge variant="outline" className="text-muted-foreground text-xs">
             <Ban className="w-3 h-3 mr-1" />
             Não Emitida
           </Badge>
@@ -340,9 +351,36 @@ const MonthlyBillingReport = () => {
     }
   };
 
+  const getDisponivelBadge = (student: StudentBillingStatus) => {
+    if (student.statusFinanceiro === 'isento') {
+      return <span className="text-xs text-muted-foreground">-</span>;
+    }
+    if (student.status === 'nao_emitida') {
+      return (
+        <Badge variant="outline" className="text-muted-foreground text-xs gap-1">
+          <X className="w-3 h-3" />
+          Não gerada
+        </Badge>
+      );
+    }
+    if (student.disponivelCelular) {
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs gap-1">
+          <SmartphoneNfc className="w-3 h-3" />
+          Disponível
+        </Badge>
+      );
+    }
+    return (
+      <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs gap-1">
+        <Smartphone className="w-3 h-3" />
+        Sem PIX
+      </Badge>
+    );
+  };
+
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return '-';
-    // Handle both date-only (YYYY-MM-DD) and timestamp formats
     const dateOnly = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
     const [year, month, day] = dateOnly.split('-').map(Number);
     if (!year || !month || !day) return '-';
@@ -352,25 +390,110 @@ const MonthlyBillingReport = () => {
 
   const isLoading = loadingChildren || loadingMensalidades;
 
+  // Mobile card renderer for each student
+  const renderStudentCard = (student: StudentBillingStatus) => {
+    const valorDivergente = student.valor && student.valorCadastrado && student.valor !== student.valorCadastrado;
+    const canGenerate = student.status === 'nao_emitida' && student.statusFinanceiro !== 'isento';
+    const isGenerating = generateBillingMutation.isPending;
+
+    return (
+      <Card key={student.criancaId} className="border-border/60">
+        <CardContent className="p-4 space-y-3">
+          {/* Top row: Name + Status */}
+          <div className="flex items-start justify-between gap-2">
+            <button
+              type="button"
+              className="text-left font-semibold text-sm hover:text-primary hover:underline transition-colors cursor-pointer"
+              onClick={() => {
+                const child = children.find(c => c.id === student.criancaId);
+                if (child) openEditDialog(child as any, user?.escolinhaId, 'financeiro');
+              }}
+            >
+              {student.nome}
+            </button>
+            {getStatusBadge(student.status)}
+          </div>
+
+          {/* Info grid */}
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-xs text-muted-foreground">Tipo</span>
+              <div className="mt-0.5">
+                {student.statusFinanceiro === 'isento' ? (
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">Isento</Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs">Pagante</Badge>
+                )}
+              </div>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Valor</span>
+              <p className="font-semibold mt-0.5">
+                {student.statusFinanceiro === 'isento' ? '-' : (
+                  <span className={valorDivergente ? 'text-amber-600' : ''}>
+                    R$ {(student.valor ?? student.valorCadastrado ?? 170).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    {valorDivergente && ' ⚠'}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Vencimento</span>
+              <p className="mt-0.5">{formatDate(student.dataVencimento)}</p>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground">Pagamento</span>
+              <p className="mt-0.5">{formatDate(student.dataPagamento)}</p>
+            </div>
+          </div>
+
+          {/* Disponível no celular */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/40">
+            <span className="text-xs text-muted-foreground">No celular do responsável</span>
+            {getDisponivelBadge(student)}
+          </div>
+
+          {/* Action button */}
+          {canGenerate && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1.5 h-9"
+              disabled={isGenerating}
+              onClick={() => handleOpenBillingDialog(student.criancaId, student.nome)}
+            >
+              {isGenerating ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5" />
+              )}
+              Gerar Cobrança
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header with Month Selector */}
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/20">
-                <FileText className="w-5 h-5 text-primary" />
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/20 shrink-0">
+                <FileText className="w-4 h-4 text-primary" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <CardTitle className="text-base">Relatório de Cobranças</CardTitle>
-                <CardDescription>Status das cobranças por aluno</CardDescription>
+                <CardDescription className="text-xs">Status das cobranças por aluno</CardDescription>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Selecione o mês" />
                 </SelectTrigger>
                 <SelectContent>
@@ -389,18 +512,18 @@ const MonthlyBillingReport = () => {
         </CardHeader>
       </Card>
 
-      {/* Summary Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+      {/* Summary Cards - 2x2 on mobile, 5 cols on desktop */}
+      <div className="grid gap-2 grid-cols-2 sm:grid-cols-5">
         <Card 
           className={`cursor-pointer transition-all ${filterStatus === 'emitida_paga' ? 'ring-2 ring-emerald-500' : ''}`}
           onClick={() => setFilterStatus(filterStatus === 'emitida_paga' ? 'all' : 'emitida_paga')}
         >
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Pagas</p>
-                <p className="text-xl font-bold text-emerald-600">{summary.emitidaPaga}</p>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground leading-tight">Pagas</p>
+                <p className="text-lg font-bold text-emerald-600">{summary.emitidaPaga}</p>
               </div>
             </div>
           </CardContent>
@@ -410,12 +533,12 @@ const MonthlyBillingReport = () => {
           className={`cursor-pointer transition-all ${filterStatus === 'emitida_pendente' ? 'ring-2 ring-blue-500' : ''}`}
           onClick={() => setFilterStatus(filterStatus === 'emitida_pendente' ? 'all' : 'emitida_pendente')}
         >
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-xs text-muted-foreground">Pendentes</p>
-                <p className="text-xl font-bold text-blue-600">{summary.emitidaPendente}</p>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground leading-tight">Pendentes</p>
+                <p className="text-lg font-bold text-blue-600">{summary.emitidaPendente}</p>
               </div>
             </div>
           </CardContent>
@@ -425,12 +548,12 @@ const MonthlyBillingReport = () => {
           className={`cursor-pointer transition-all ${filterStatus === 'emitida_atrasada' ? 'ring-2 ring-destructive' : ''}`}
           onClick={() => setFilterStatus(filterStatus === 'emitida_atrasada' ? 'all' : 'emitida_atrasada')}
         >
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-destructive" />
-              <div>
-                <p className="text-xs text-muted-foreground">Atrasadas</p>
-                <p className="text-xl font-bold text-destructive">{summary.emitidaAtrasada}</p>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground leading-tight">Atrasadas</p>
+                <p className="text-lg font-bold text-destructive">{summary.emitidaAtrasada}</p>
               </div>
             </div>
           </CardContent>
@@ -440,12 +563,27 @@ const MonthlyBillingReport = () => {
           className={`cursor-pointer transition-all ${filterStatus === 'nao_emitida' ? 'ring-2 ring-muted-foreground' : ''}`}
           onClick={() => setFilterStatus(filterStatus === 'nao_emitida' ? 'all' : 'nao_emitida')}
         >
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <Ban className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="text-xs text-muted-foreground">Não Emitidas</p>
-                <p className="text-xl font-bold text-muted-foreground">{summary.naoEmitida}</p>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <Ban className="w-4 h-4 text-muted-foreground shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground leading-tight">Não Emitidas</p>
+                <p className="text-lg font-bold text-muted-foreground">{summary.naoEmitida}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className={`cursor-pointer transition-all col-span-2 sm:col-span-1 ${filterDisponivel === 'sim' ? 'ring-2 ring-emerald-500' : ''}`}
+          onClick={() => setFilterDisponivel(filterDisponivel === 'sim' ? 'all' : 'sim')}
+        >
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2">
+              <SmartphoneNfc className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground leading-tight">No Celular</p>
+                <p className="text-lg font-bold text-emerald-600">{summary.disponivelCelular}</p>
               </div>
             </div>
           </CardContent>
@@ -454,22 +592,22 @@ const MonthlyBillingReport = () => {
 
       {/* Summary Info */}
       <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex gap-4 text-sm text-muted-foreground">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex gap-3 text-xs text-muted-foreground">
               <span>{summary.totalPagantes} pagantes</span>
               <span className="text-primary font-medium">{summary.totalIsentos} isentos</span>
             </div>
           </div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">
-              {summary.totalEmitida} de {summary.totalPagantes} cobranças emitidas (pagantes)
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-muted-foreground">
+              {summary.totalEmitida} de {summary.totalPagantes} cobranças emitidas
             </span>
-            <span className="text-sm font-medium">
+            <span className="text-xs font-medium">
               {summary.totalPagantes > 0 ? Math.round((summary.totalEmitida / summary.totalPagantes) * 100) : 0}%
             </span>
           </div>
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all"
               style={{ width: `${summary.totalPagantes > 0 ? (summary.totalEmitida / summary.totalPagantes) * 100 : 0}%` }}
@@ -478,11 +616,11 @@ const MonthlyBillingReport = () => {
         </CardContent>
       </Card>
 
-      {/* Filter and Table */}
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col gap-2">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar aluno..."
@@ -491,31 +629,43 @@ const MonthlyBillingReport = () => {
                 className="pl-9"
               />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Filtrar por status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="emitida_paga">Pagas</SelectItem>
-                <SelectItem value="emitida_pendente">Pendentes</SelectItem>
-                <SelectItem value="emitida_atrasada">Atrasadas</SelectItem>
-                <SelectItem value="nao_emitida">Não Emitidas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterFinanceiro} onValueChange={setFilterFinanceiro}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <SelectValue placeholder="Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="pagante">Pagantes</SelectItem>
-                <SelectItem value="isento">Isentos</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="emitida_paga">Pagas</SelectItem>
+                  <SelectItem value="emitida_pendente">Pendentes</SelectItem>
+                  <SelectItem value="emitida_atrasada">Atrasadas</SelectItem>
+                  <SelectItem value="nao_emitida">Não Emitidas</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterFinanceiro} onValueChange={setFilterFinanceiro}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pagante">Pagantes</SelectItem>
+                  <SelectItem value="isento">Isentos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterDisponivel} onValueChange={setFilterDisponivel}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Celular" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="sim">No celular</SelectItem>
+                  <SelectItem value="nao">Sem PIX</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -523,18 +673,24 @@ const MonthlyBillingReport = () => {
           ) : filteredData.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Nenhum aluno encontrado</p>
+              <p className="text-sm">Nenhum aluno encontrado</p>
+            </div>
+          ) : isMobile ? (
+            /* Mobile: Card layout */
+            <div className="space-y-3">
+              {filteredData.map(student => renderStudentCard(student))}
             </div>
           ) : (
+            /* Desktop: Table layout */
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Aluno</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Valor Cadastrado</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Valor Cobrado</TableHead>
+                    <TableHead>Celular</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Pagamento</TableHead>
                     <TableHead className="text-center">Ação</TableHead>
@@ -561,31 +717,23 @@ const MonthlyBillingReport = () => {
                         </TableCell>
                         <TableCell>
                           {student.statusFinanceiro === 'isento' ? (
-                            <Badge variant="secondary" className="bg-purple-100 text-purple-700">Isento</Badge>
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">Isento</Badge>
                           ) : (
-                            <Badge variant="outline">Pagante</Badge>
+                            <Badge variant="outline" className="text-xs">Pagante</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
                           {student.statusFinanceiro === 'isento' ? (
                             <span className="text-muted-foreground">-</span>
                           ) : (
-                            <span className="font-medium">
-                              R$ {(student.valorCadastrado ?? 170).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            <span className={`font-medium ${valorDivergente ? 'text-amber-600' : ''}`}>
+                              R$ {(student.valor ?? student.valorCadastrado ?? 170).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              {valorDivergente && <span className="ml-1 text-xs">⚠</span>}
                             </span>
                           )}
                         </TableCell>
                         <TableCell>{getStatusBadge(student.status)}</TableCell>
-                        <TableCell className="text-right">
-                          {student.valor ? (
-                            <span className={valorDivergente ? 'text-amber-600 font-semibold' : ''}>
-                              R$ {student.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              {valorDivergente && <span className="ml-1 text-xs">⚠</span>}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
+                        <TableCell>{getDisponivelBadge(student)}</TableCell>
                         <TableCell>{formatDate(student.dataVencimento)}</TableCell>
                         <TableCell>{formatDate(student.dataPagamento)}</TableCell>
                         <TableCell className="text-center">
