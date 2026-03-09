@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Lock, ShieldAlert } from 'lucide-react';
+import { Loader2, Lock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
 
 const passwordSchema = z.object({
@@ -25,6 +25,7 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,19 +37,49 @@ const ForcePasswordChangeDialog = ({ open }: ForcePasswordChangeDialogProps) => 
     }
 
     setIsLoading(true);
-    const result = await changePassword(password);
-    setIsLoading(false);
-
-    if (result.success) {
-      toast.success('Senha alterada com sucesso!');
-    } else {
-      toast.error(result.error || 'Erro ao alterar senha');
+    console.log('[ForcePasswordChange] Calling changePassword...');
+    
+    try {
+      const result = await changePassword(password);
+      console.log('[ForcePasswordChange] Result:', result);
+      
+      if (result.success) {
+        setSuccess(true);
+        toast.success('Senha alterada com sucesso!');
+        // The dialog will close automatically when refreshUser updates passwordNeedsChange
+        // But as a fallback, reload after a brief delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        toast.error(result.error || 'Erro ao alterar senha. Tente novamente.');
+      }
+    } catch (err) {
+      console.error('[ForcePasswordChange] Error:', err);
+      toast.error('Erro de conexão. Verifique sua internet e tente novamente.');
     }
+    
+    setIsLoading(false);
   };
 
   const handleLogout = async () => {
     await logout();
   };
+
+  if (success) {
+    return (
+      <Dialog open={open} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+          <div className="text-center py-6">
+            <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">Senha alterada com sucesso!</h3>
+            <p className="text-sm text-muted-foreground">Recarregando o sistema...</p>
+            <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto mt-4" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
