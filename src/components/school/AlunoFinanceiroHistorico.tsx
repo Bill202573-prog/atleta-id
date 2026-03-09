@@ -280,9 +280,19 @@ const AlunoFinanceiroHistorico = ({
       if (!data.success) throw new Error(data.error || 'Erro ao gerar PIX');
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, mensalidadeId) => {
       toast.success('PIX gerado com sucesso! Link disponível.');
+      // Audit log
+      if (user?.id && user?.escolinhaId) {
+        const m = mensalidades.find(x => x.id === mensalidadeId);
+        logAdminAction(user.id, user.escolinhaId, 'regenerar_pix', {
+          mensalidade_id: mensalidadeId,
+          mes_referencia: m?.mes_referencia,
+          crianca_nome: m?.crianca_nome,
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-month-report'] });
       setRegeneratingId(null);
     },
     onError: (error: Error) => {
