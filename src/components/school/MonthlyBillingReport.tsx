@@ -699,14 +699,14 @@ const MonthlyBillingReport = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Celular</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Pagamento</TableHead>
-                    <TableHead className="text-center">Ação</TableHead>
+                        <TableHead className="min-w-[180px]">Aluno</TableHead>
+                    <TableHead className="w-[80px] text-center">Tipo</TableHead>
+                    <TableHead className="w-[100px] text-right">Valor</TableHead>
+                    <TableHead className="w-[110px] text-center">Status</TableHead>
+                    <TableHead className="w-[110px] text-center">Celular</TableHead>
+                    <TableHead className="w-[100px] text-center">Vencimento</TableHead>
+                    <TableHead className="w-[100px] text-center">Pagamento</TableHead>
+                    <TableHead className="w-[90px] text-center">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
