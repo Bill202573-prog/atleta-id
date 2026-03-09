@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.push-vapid-public-key]
 verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
