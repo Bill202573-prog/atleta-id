@@ -24,24 +24,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    // User context client - validates the JWT
+    // Validate JWT using getClaims
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await userClient.auth.getUser(token)
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token)
 
-    if (authError || !user) {
-      console.error('[change-password] Auth error:', authError?.message || 'No user')
+    if (claimsError || !claimsData?.claims) {
+      console.error('[change-password] Claims error:', claimsError?.message || 'No claims')
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    console.log('[change-password] Processing for user:', user.id, user.email)
+    const userId = claimsData.claims.sub as string
+    const userEmail = claimsData.claims.email as string
+    console.log('[change-password] Processing for user:', userId, userEmail)
 
     const { new_password } = await req.json()
 
@@ -60,7 +62,7 @@ Deno.serve(async (req) => {
 
     // Update user password
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      user.id,
+      userId,
       { password: new_password }
     )
 
@@ -78,7 +80,7 @@ Deno.serve(async (req) => {
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ password_needs_change: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     if (profileError) {
       console.error('[change-password] Profile update error:', profileError.message)
@@ -89,27 +91,27 @@ Deno.serve(async (req) => {
     await supabaseAdmin
       .from('responsaveis')
       .update({ senha_temporaria: null, senha_temporaria_ativa: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     // 2. Professores
     await supabaseAdmin
       .from('professores')
       .update({ senha_temporaria: null, senha_temporaria_ativa: false })
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     // 3. Escolinhas (admin principal)
     await supabaseAdmin
       .from('escolinhas')
       .update({ senha_temporaria: null, senha_temporaria_ativa: false })
-      .eq('admin_user_id', user.id)
+      .eq('admin_user_id', userId)
 
     // 4. Escolinhas (sócio)
     await supabaseAdmin
       .from('escolinhas')
       .update({ senha_temporaria_socio: null, senha_temporaria_socio_ativa: false })
-      .eq('socio_user_id', user.id)
+      .eq('socio_user_id', userId)
 
-    console.log('[change-password] All cleanup done for user:', user.email)
+    console.log('[change-password] All cleanup done for user:', userEmail)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
