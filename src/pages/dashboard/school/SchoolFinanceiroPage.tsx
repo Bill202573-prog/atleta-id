@@ -758,7 +758,7 @@ const SchoolFinanceiroPage = () => {
             className={`bg-gradient-to-br ${item.color} cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]`}
             onClick={() => setActiveView(item.id)}
           >
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-start gap-4">
                 <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-background/60 text-foreground shrink-0">
                   {item.icon}
