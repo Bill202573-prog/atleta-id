@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { differenceInYears } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { syncToCarreira } from './useSyncToCarreira';
 
 export interface CampeonatoConvocacao {
   id: string;
