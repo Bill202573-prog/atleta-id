@@ -201,5 +201,13 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+
+    <CarreiraIdSyncDialog
+      open={carreiraDialogOpen}
+      onOpenChange={setCarreiraDialogOpen}
+      criancaId={child?.id || null}
+      criancaNome={child?.nome || 'Atleta'}
+    />
+  </>
   );
 }
