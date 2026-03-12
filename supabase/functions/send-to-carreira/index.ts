@@ -11,6 +11,8 @@ type SyncType =
   | 'evento_premiacao'
   | 'conquista_coletiva'
   | 'evento_esportivo'
+  | 'amistoso_convocacao'
+  | 'campeonato_convocacao'
 
 type SyncAction = 'create' | 'update' | 'delete'
 

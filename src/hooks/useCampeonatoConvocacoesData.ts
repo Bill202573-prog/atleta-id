@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { differenceInYears } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { syncToCarreira } from './useSyncToCarreira';
 
 export interface CampeonatoConvocacao {
   id: string;
@@ -315,6 +316,8 @@ export function useUpsertConvocacoes() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['campeonato-convocacoes', variables.campeonatoId] });
       queryClient.invalidateQueries({ queryKey: ['guardian-campeonato-convocacoes'] });
+      // Sync to Carreira ID
+      syncCampeonatoConvocacoesToCarreira(variables.campeonatoId, variables.convocacoes);
     },
   });
 }
@@ -549,4 +552,53 @@ export function useConfirmCampeonatoExemptParticipation() {
       queryClient.invalidateQueries({ queryKey: ['aluno-historico'] });
     },
   });
+}
+
+/**
+ * After upsert, fetch campeonato details and sync each convocation to Carreira ID.
+ */
+async function syncCampeonatoConvocacoesToCarreira(
+  campeonatoId: string,
+  convocacoes: CreateConvocacaoInput[]
+) {
+  try {
+    // Fetch campeonato details
+    const { data: campeonato } = await supabase
+      .from('campeonatos')
+      .select('id, nome, ano, categoria, status, nome_time, escolinha:escolinhas(id, nome)')
+      .eq('id', campeonatoId)
+      .single();
+
+    if (!campeonato) return;
+
+    const escolinha = Array.isArray(campeonato.escolinha) ? campeonato.escolinha[0] : campeonato.escolinha;
+
+    // Fetch current convocations from DB to get IDs
+    const { data: currentConvs } = await supabase
+      .from('campeonato_convocacoes')
+      .select('id, crianca_id, status')
+      .eq('campeonato_id', campeonatoId);
+
+    if (!currentConvs?.length) return;
+
+    for (const conv of currentConvs) {
+      syncToCarreira({
+        type: 'campeonato_convocacao',
+        action: 'create',
+        criancaId: conv.crianca_id,
+        data: {
+          id: conv.id,
+          campeonato_nome: campeonato.nome,
+          campeonato_ano: campeonato.ano,
+          campeonato_categoria: campeonato.categoria,
+          campeonato_status: campeonato.status,
+          campeonato_nome_time: campeonato.nome_time,
+          escolinha_nome: escolinha?.nome || null,
+          status: conv.status,
+        },
+      });
+    }
+  } catch (err) {
+    console.warn('[syncCampeonatoConvocacoes] Failed:', err);
+  }
 }
