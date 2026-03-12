@@ -58,6 +58,7 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [carreiraDialogOpen, setCarreiraDialogOpen] = useState(false);
   
   const isCollapsed = state === 'collapsed';
   
