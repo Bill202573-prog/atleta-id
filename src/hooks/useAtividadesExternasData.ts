@@ -214,7 +214,7 @@ export const useCreateAtividadeExterna = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', variables.crianca_id] 
       });
@@ -223,6 +223,12 @@ export const useCreateAtividadeExterna = () => {
       });
       queryClient.invalidateQueries({ 
         queryKey: ['carreira-atividade-limit'] 
+      });
+      syncToCarreira({
+        type: 'atividade_externa',
+        action: 'create',
+        criancaId: variables.crianca_id,
+        data,
       });
     },
   });
