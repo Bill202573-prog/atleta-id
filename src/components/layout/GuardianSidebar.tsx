@@ -154,6 +154,20 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
                   </SidebarMenuItem>
                 );
               })}
+              {/* Carreira ID - dialog trigger */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Carreira ID"
+                  onClick={() => {
+                    setCarreiraDialogOpen(true);
+                    setOpenMobile(false);
+                  }}
+                  className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 rounded-lg mx-2 my-0.5 transition-all cursor-pointer"
+                >
+                  <RefreshCw className="w-5 h-5 shrink-0" />
+                  <span className="truncate">Carreira ID</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
