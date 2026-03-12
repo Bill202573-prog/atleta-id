@@ -70,8 +70,14 @@ export function useCreateEventoGol() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['evento-gols', variables.eventoId] });
+      syncToCarreira({
+        type: 'evento_gol',
+        action: 'create',
+        criancaId: variables.criancaId,
+        data: { ...data, evento_id: variables.eventoId, time_id: variables.timeId },
+      });
     },
   });
 }

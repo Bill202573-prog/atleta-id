@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { syncToCarreira } from './useSyncToCarreira';
 
 export const COLOCACOES = [
   { value: 'campeao', label: 'Campeão', emoji: '🥇' },
