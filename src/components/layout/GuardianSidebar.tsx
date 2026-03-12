@@ -83,6 +83,7 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
   };
 
   return (
+    <>
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="border-b border-border bg-primary text-primary-foreground">
         <div className={`flex items-center gap-3 p-3 ${isCollapsed ? 'justify-center' : ''}`}>
