@@ -232,7 +232,7 @@ export function CarreiraIdSyncTab({ perfil }: CarreiraIdSyncTabProps) {
           className={
             syncResult.total_errors > 0 && syncResult.total_sent === 0
               ? 'border-destructive/50'
-              : 'border-green-500/50'
+              : 'border-primary/50'
           }
         >
           <CardContent className="pt-4 space-y-3">
