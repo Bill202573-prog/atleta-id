@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { syncToCarreira } from './useSyncToCarreira';
 
 // Tipos para atividades externas
 export type AtividadeExternaTipo = 
@@ -213,7 +214,7 @@ export const useCreateAtividadeExterna = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', variables.crianca_id] 
       });
@@ -222,6 +223,12 @@ export const useCreateAtividadeExterna = () => {
       });
       queryClient.invalidateQueries({ 
         queryKey: ['carreira-atividade-limit'] 
+      });
+      syncToCarreira({
+        type: 'atividade_externa',
+        action: 'create',
+        criancaId: variables.crianca_id,
+        data,
       });
     },
   });
@@ -268,21 +275,23 @@ export const useUpdateAtividadeExterna = () => {
       return { data, crianca_id, tornarPublicoChanged: typeof updates.tornar_publico === 'boolean' };
     },
     onSuccess: (result) => {
-      // Always invalidate the child's activities
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', result.crianca_id] 
       });
-      
-      // If tornar_publico was changed, invalidate public activities queries for Carreira
       if (result.tornarPublicoChanged) {
         queryClient.invalidateQueries({ 
           queryKey: ['atividades-publicas', result.crianca_id] 
         });
-        // Also invalidate any posts-atleta queries that may show activities
         queryClient.invalidateQueries({ 
           queryKey: ['posts-atleta'] 
         });
       }
+      syncToCarreira({
+        type: 'atividade_externa',
+        action: 'update',
+        criancaId: result.crianca_id,
+        data: result.data,
+      });
     },
   });
 };
@@ -327,7 +336,7 @@ export const useDeleteAtividadeExterna = () => {
         queryClient.setQueryData(['atividades-publicas', context.crianca_id], context.prevPublicas);
       }
     },
-    onSettled: (_data, _err, vars) => {
+    onSettled: (data, _err, vars) => {
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', vars.crianca_id] 
       });
@@ -337,6 +346,14 @@ export const useDeleteAtividadeExterna = () => {
       queryClient.invalidateQueries({ 
         queryKey: ['carreira-atividade-limit'] 
       });
+      if (data) {
+        syncToCarreira({
+          type: 'atividade_externa',
+          action: 'delete',
+          criancaId: vars.crianca_id,
+          data: { id: vars.id },
+        });
+      }
     },
   });
 };

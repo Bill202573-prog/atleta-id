@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { syncToCarreira } from './useSyncToCarreira';
 
 export const TIPOS_PREMIACAO = [
   { value: 'melhor_jogador', label: 'Melhor Jogador' },
@@ -71,8 +72,14 @@ export function useCreateEventoPremiacao() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['evento-premiacoes', variables.eventoId] });
+      syncToCarreira({
+        type: 'evento_premiacao',
+        action: 'create',
+        criancaId: variables.criancaId,
+        data: { ...data, evento_id: variables.eventoId },
+      });
     },
   });
 }

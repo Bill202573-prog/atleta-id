@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.change-password]
 verify_jwt = false
+
+[functions.send-to-carreira]
+verify_jwt = false
