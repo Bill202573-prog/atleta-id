@@ -78,7 +78,15 @@ export function MobileGuardianLayout({
           {children}
         </main>
 
-        <MobileBottomNav />
+        <MobileBottomNav onCarreiraClick={() => setCarreiraDialogOpen(true)} />
+
+        {/* Carreira ID Sync Dialog */}
+        <CarreiraIdSyncDialog
+          open={carreiraDialogOpen}
+          onOpenChange={setCarreiraDialogOpen}
+          criancaId={currentChild?.id || null}
+          criancaNome={currentChild?.nome || 'Atleta'}
+        />
 
         {/* Auto-subscribe guardian to push notifications */}
         <PushAutoSubscribe />
