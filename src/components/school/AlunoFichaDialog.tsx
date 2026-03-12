@@ -33,7 +33,8 @@ import {
   School,
   QrCode,
   GraduationCap,
-  Send
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import { format, differenceInMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
