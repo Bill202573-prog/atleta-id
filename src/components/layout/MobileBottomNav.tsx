@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Calendar, Wallet, Trophy, Swords } from 'lucide-react';
+import { Home, Calendar, Wallet, Trophy, Swords, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGuardianNotifications } from '@/hooks/useGuardianNotifications';
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
-  href: string;
+  href?: string;
+  action?: string;
   badgeKey?: 'games' | 'payments' | 'messages';
 }
 
@@ -16,9 +18,14 @@ const navItems: NavItem[] = [
   { icon: Swords, label: 'Jogos', href: '/dashboard/convocacoes', badgeKey: 'games' },
   { icon: Wallet, label: 'Pagar', href: '/dashboard/financeiro', badgeKey: 'payments' },
   { icon: Trophy, label: 'Jornada', href: '/dashboard/jornada' },
+  { icon: RefreshCw, label: 'Carreira', action: 'carreira' },
 ];
 
-export function MobileBottomNav() {
+interface MobileBottomNavProps {
+  onCarreiraClick?: () => void;
+}
+
+export function MobileBottomNav({ onCarreiraClick }: MobileBottomNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { pendingGames, pendingPayments, unreadMessages } = useGuardianNotifications();
@@ -37,15 +44,23 @@ export function MobileBottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.href || 
-            (item.href !== '/dashboard/inicio' && location.pathname.startsWith(item.href));
+          const isActive = item.href && (
+            location.pathname === item.href || 
+            (item.href !== '/dashboard/inicio' && location.pathname.startsWith(item.href))
+          );
           const Icon = item.icon;
           const badgeCount = getBadgeCount(item.badgeKey);
           
           return (
             <button
-              key={item.href}
-              onClick={() => navigate(item.href)}
+              key={item.label}
+              onClick={() => {
+                if (item.action === 'carreira') {
+                  onCarreiraClick?.();
+                } else if (item.href) {
+                  navigate(item.href);
+                }
+              }}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors relative",
                 "touch-manipulation active:scale-95",
