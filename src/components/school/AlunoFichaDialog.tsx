@@ -33,7 +33,8 @@ import {
   School,
   QrCode,
   GraduationCap,
-  Send
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import { format, differenceInMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -197,6 +198,10 @@ const AlunoFichaDialog = ({ open, onOpenChange, student, escolinhaId: propEscoli
   const [billingDialogOpen, setBillingDialogOpen] = useState(false);
   const [generatingBilling, setGeneratingBilling] = useState(false);
   
+  // Sync to Carreira ID state
+  const [syncingToCarreira, setSyncingToCarreira] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ total_sent: number; total_errors: number } | null>(null);
+
   // Close confirmation dialog
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
@@ -1456,6 +1461,66 @@ const AlunoFichaDialog = ({ open, onOpenChange, student, escolinhaId: propEscoli
                   )}
                 </CardContent>
               </Card>
+
+              {/* Sync to Carreira ID - only for existing students */}
+              {!isNewStudent && student && (
+                <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/20">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          Sincronizar com Carreira ID
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Envia todos os dados deste atleta (gols, premiações, amistosos, campeonatos, atividades) para o Carreira ID.
+                        </p>
+                        {syncResult && (
+                          <p className={`text-xs mt-1 ${syncResult.total_errors > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            ✓ {syncResult.total_sent} registro(s) enviado(s)
+                            {syncResult.total_errors > 0 && ` · ${syncResult.total_errors} erro(s)`}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                        disabled={syncingToCarreira}
+                        onClick={async () => {
+                          setSyncingToCarreira(true);
+                          setSyncResult(null);
+                          try {
+                            const { data, error } = await supabase.functions.invoke('sync-all-to-carreira', {
+                              body: { crianca_id: student.id },
+                            });
+                            if (error) throw error;
+                            setSyncResult({ total_sent: data.total_sent, total_errors: data.total_errors });
+                            if (data.total_errors > 0) {
+                              toast.warning(`Sync parcial: ${data.total_sent} enviados, ${data.total_errors} erros`);
+                            } else if (data.total_sent === 0) {
+                              toast.info('Nenhum dado encontrado para sincronizar');
+                            } else {
+                              toast.success(`${data.total_sent} registro(s) sincronizados com o Carreira ID!`);
+                            }
+                          } catch (err: any) {
+                            toast.error(err.message || 'Erro ao sincronizar');
+                          } finally {
+                            setSyncingToCarreira(false);
+                          }
+                        }}
+                      >
+                        {syncingToCarreira ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4" />
+                        )}
+                        <span className="ml-2">{syncingToCarreira ? 'Sincronizando...' : 'Sincronizar'}</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Responsável */}
               {isNewStudent ? (
