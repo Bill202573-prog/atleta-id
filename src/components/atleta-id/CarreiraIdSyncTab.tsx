@@ -162,9 +162,9 @@ export function CarreiraIdSyncTab({ perfil }: CarreiraIdSyncTabProps) {
       </Card>
 
       {/* Alert: precisa ter perfil no Carreira */}
-      <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
-        <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800 dark:text-amber-200">
+      <Alert className="border-warning bg-warning/10">
+        <AlertCircle className="h-4 w-4 text-warning" />
+        <AlertDescription>
           Para sincronizar, o atleta precisa ter um perfil criado no{' '}
           <a
             href="https://carreira-id.lovable.app"
