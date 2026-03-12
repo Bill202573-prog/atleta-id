@@ -198,6 +198,10 @@ const AlunoFichaDialog = ({ open, onOpenChange, student, escolinhaId: propEscoli
   const [billingDialogOpen, setBillingDialogOpen] = useState(false);
   const [generatingBilling, setGeneratingBilling] = useState(false);
   
+  // Sync to Carreira ID state
+  const [syncingToCarreira, setSyncingToCarreira] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ total_sent: number; total_errors: number } | null>(null);
+
   // Close confirmation dialog
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
