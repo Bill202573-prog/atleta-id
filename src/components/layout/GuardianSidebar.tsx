@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -27,8 +28,10 @@ import {
   BarChart3,
   ShoppingBag,
   IdCard,
+  RefreshCw,
 } from 'lucide-react';
 import ChangePasswordDialog from '@/components/auth/ChangePasswordDialog';
+import { CarreiraIdSyncDialog } from '@/components/guardian/CarreiraIdSyncDialog';
 
 interface GuardianSidebarProps {
   child: {
