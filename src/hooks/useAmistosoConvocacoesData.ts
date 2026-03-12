@@ -247,3 +247,53 @@ export function useEventosConvocacoesCounts(eventoIds: string[]) {
     enabled: eventoIds.length > 0,
   });
 }
+
+/**
+ * After upsert, fetch evento details and sync each convocation to Carreira ID.
+ */
+async function syncAmistosoConvocacoesToCarreira(
+  eventoId: string,
+  convocacoes: CreateAmistosoConvocacaoInput[]
+) {
+  try {
+    // Fetch evento details for enriched sync
+    const { data: evento } = await supabase
+      .from('eventos_esportivos')
+      .select('id, nome, data, tipo, adversario, local, placar_time1, placar_time2, status')
+      .eq('id', eventoId)
+      .single();
+
+    if (!evento) return;
+
+    // Fetch current convocations from DB to get IDs
+    const { data: currentConvs } = await supabase
+      .from('amistoso_convocacoes')
+      .select('id, crianca_id, status, presente')
+      .eq('evento_id', eventoId);
+
+    if (!currentConvs?.length) return;
+
+    for (const conv of currentConvs) {
+      syncToCarreira({
+        type: 'amistoso_convocacao',
+        action: 'create',
+        criancaId: conv.crianca_id,
+        data: {
+          id: conv.id,
+          evento_nome: evento.nome,
+          evento_data: evento.data,
+          evento_tipo: evento.tipo,
+          evento_adversario: evento.adversario,
+          evento_local: evento.local,
+          evento_placar_time1: evento.placar_time1,
+          evento_placar_time2: evento.placar_time2,
+          evento_status: evento.status,
+          status: conv.status,
+          presente: conv.presente,
+        },
+      });
+    }
+  } catch (err) {
+    console.warn('[syncAmistosoConvocacoes] Failed:', err);
+  }
+}
