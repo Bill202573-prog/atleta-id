@@ -90,9 +90,11 @@ export function useCreateConquista() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['conquista-evento', variables.eventoId] });
       queryClient.invalidateQueries({ queryKey: ['conquistas-escolinha', variables.escolinhaId] });
+      // Sync to all children linked to this escolinha
+      syncConquistaToAllChildren(variables.escolinhaId, 'create', data);
     },
   });
 }
@@ -119,9 +121,10 @@ export function useUpdateConquista() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['conquista-evento', variables.eventoId] });
       queryClient.invalidateQueries({ queryKey: ['conquistas-escolinha', variables.escolinhaId] });
+      syncConquistaToAllChildren(variables.escolinhaId, 'update', data);
     },
   });
 }
@@ -143,10 +146,40 @@ export function useDeleteConquista() {
         .eq('id', id);
 
       if (error) throw error;
+      return id;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (deletedId, variables) => {
       queryClient.invalidateQueries({ queryKey: ['conquista-evento', variables.eventoId] });
       queryClient.invalidateQueries({ queryKey: ['conquistas-escolinha', variables.escolinhaId] });
+      syncConquistaToAllChildren(variables.escolinhaId, 'delete', { id: deletedId });
     },
   });
+}
+
+/**
+ * Conquistas coletivas affect ALL children in the escolinha.
+ * We fetch children linked to the school and sync to each one.
+ */
+async function syncConquistaToAllChildren(escolinhaId: string, action: 'create' | 'update' | 'delete', data: any) {
+  try {
+    const { data: vinculos } = await supabase
+      .from('crianca_escolinha')
+      .select('crianca_id')
+      .eq('escolinha_id', escolinhaId)
+      .eq('ativo', true);
+
+    if (!vinculos?.length) return;
+
+    // Fire sync for each child (fire-and-forget)
+    for (const v of vinculos) {
+      syncToCarreira({
+        type: 'conquista_coletiva',
+        action,
+        criancaId: v.crianca_id,
+        data,
+      });
+    }
+  } catch (err) {
+    console.warn('[syncConquista] Failed:', err);
+  }
 }
