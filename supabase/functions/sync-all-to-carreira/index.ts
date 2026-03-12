@@ -109,12 +109,22 @@ Deno.serve(async (req) => {
         matching,
         payload: { type, action: 'create', atleta_id_crianca_id: crianca_id, data },
       }
-      const resp = await fetch(carreiraEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-sync-secret': carreiraSyncSecret! },
-        body: JSON.stringify(envelope),
-      })
-      return resp.ok
+      try {
+        console.log(`[sync] Sending ${type} to ${carreiraEndpoint}`)
+        const resp = await fetch(carreiraEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-sync-secret': carreiraSyncSecret! },
+          body: JSON.stringify(envelope),
+        })
+        if (!resp.ok) {
+          const body = await resp.text()
+          console.error(`[sync] ${type} failed: ${resp.status} - ${body}`)
+        }
+        return resp.ok
+      } catch (fetchErr) {
+        console.error(`[sync] ${type} fetch error:`, fetchErr)
+        return false
+      }
     }
 
     function shouldSync(type: string): boolean {
