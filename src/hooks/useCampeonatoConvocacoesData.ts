@@ -316,6 +316,8 @@ export function useUpsertConvocacoes() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['campeonato-convocacoes', variables.campeonatoId] });
       queryClient.invalidateQueries({ queryKey: ['guardian-campeonato-convocacoes'] });
+      // Sync to Carreira ID
+      syncCampeonatoConvocacoesToCarreira(variables.campeonatoId, variables.convocacoes);
     },
   });
 }
