@@ -1,10 +1,11 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { MobileHeader } from './MobileHeader';
 import { MobileBottomNav } from './MobileBottomNav';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
 import { PushAutoSubscribe } from '@/components/guardian/PushAutoSubscribe';
 import EnrollmentPaymentBlocker from '@/components/guardian/EnrollmentPaymentBlocker';
+import { CarreiraIdSyncDialog } from '@/components/guardian/CarreiraIdSyncDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuardianChildren, useGuardianProfile } from '@/hooks/useSchoolData';
 import { useGuardianPendingEnrollment } from '@/hooks/useEnrollmentData';
@@ -24,6 +25,7 @@ export function MobileGuardianLayout({
   const { data: childrenData = [] } = useGuardianChildren();
   const { data: guardian } = useGuardianProfile();
   const { data: pendingEnrollments, isLoading: loadingEnrollments } = useGuardianPendingEnrollment();
+  const [carreiraDialogOpen, setCarreiraDialogOpen] = useState(false);
 
   const currentChild = selectedChildId 
     ? childrenData.find(c => c.id === selectedChildId) 
@@ -76,7 +78,15 @@ export function MobileGuardianLayout({
           {children}
         </main>
 
-        <MobileBottomNav />
+        <MobileBottomNav onCarreiraClick={() => setCarreiraDialogOpen(true)} />
+
+        {/* Carreira ID Sync Dialog */}
+        <CarreiraIdSyncDialog
+          open={carreiraDialogOpen}
+          onOpenChange={setCarreiraDialogOpen}
+          criancaId={currentChild?.id || null}
+          criancaNome={currentChild?.nome || 'Atleta'}
+        />
 
         {/* Auto-subscribe guardian to push notifications */}
         <PushAutoSubscribe />

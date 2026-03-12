@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -27,8 +28,10 @@ import {
   BarChart3,
   ShoppingBag,
   IdCard,
+  RefreshCw,
 } from 'lucide-react';
 import ChangePasswordDialog from '@/components/auth/ChangePasswordDialog';
+import { CarreiraIdSyncDialog } from '@/components/guardian/CarreiraIdSyncDialog';
 
 interface GuardianSidebarProps {
   child: {
@@ -55,6 +58,7 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [carreiraDialogOpen, setCarreiraDialogOpen] = useState(false);
   
   const isCollapsed = state === 'collapsed';
   
@@ -79,6 +83,7 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
   };
 
   return (
+    <>
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="border-b border-border bg-primary text-primary-foreground">
         <div className={`flex items-center gap-3 p-3 ${isCollapsed ? 'justify-center' : ''}`}>
@@ -150,6 +155,20 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
                   </SidebarMenuItem>
                 );
               })}
+              {/* Carreira ID - dialog trigger */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Carreira ID"
+                  onClick={() => {
+                    setCarreiraDialogOpen(true);
+                    setOpenMobile(false);
+                  }}
+                  className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 rounded-lg mx-2 my-0.5 transition-all cursor-pointer"
+                >
+                  <RefreshCw className="w-5 h-5 shrink-0" />
+                  <span className="truncate">Carreira ID</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -183,5 +202,13 @@ export function GuardianSidebar({ child, guardianName }: GuardianSidebarProps) {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+
+    <CarreiraIdSyncDialog
+      open={carreiraDialogOpen}
+      onOpenChange={setCarreiraDialogOpen}
+      criancaId={child?.id || null}
+      criancaNome={child?.nome || 'Atleta'}
+    />
+  </>
   );
 }
