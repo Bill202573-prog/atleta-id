@@ -103,8 +103,17 @@ export function useUpdateEventoGol() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['evento-gols', variables.eventoId] });
+      // Update sync: need criancaId from the original data
+      if (data?.crianca_id) {
+        syncToCarreira({
+          type: 'evento_gol',
+          action: 'update',
+          criancaId: data.crianca_id,
+          data: { ...data, evento_id: variables.eventoId },
+        });
+      }
     },
   });
 }
@@ -112,6 +121,7 @@ export function useUpdateEventoGol() {
 export interface DeleteGolInput {
   id: string;
   eventoId: string;
+  criancaId?: string;
 }
 
 export function useDeleteEventoGol() {
@@ -128,6 +138,14 @@ export function useDeleteEventoGol() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['evento-gols', variables.eventoId] });
+      if (variables.criancaId) {
+        syncToCarreira({
+          type: 'evento_gol',
+          action: 'delete',
+          criancaId: variables.criancaId,
+          data: { id: variables.id },
+        });
+      }
     },
   });
 }

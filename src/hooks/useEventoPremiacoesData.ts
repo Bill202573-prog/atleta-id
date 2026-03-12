@@ -105,8 +105,16 @@ export function useUpdateEventoPremiacao() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['evento-premiacoes', variables.eventoId] });
+      if (data?.crianca_id) {
+        syncToCarreira({
+          type: 'evento_premiacao',
+          action: 'update',
+          criancaId: data.crianca_id,
+          data: { ...data, evento_id: variables.eventoId },
+        });
+      }
     },
   });
 }
@@ -114,6 +122,7 @@ export function useUpdateEventoPremiacao() {
 export interface DeletePremiacaoInput {
   id: string;
   eventoId: string;
+  criancaId?: string;
 }
 
 export function useDeleteEventoPremiacao() {
@@ -130,6 +139,14 @@ export function useDeleteEventoPremiacao() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['evento-premiacoes', variables.eventoId] });
+      if (variables.criancaId) {
+        syncToCarreira({
+          type: 'evento_premiacao',
+          action: 'delete',
+          criancaId: variables.criancaId,
+          data: { id: variables.id },
+        });
+      }
     },
   });
 }

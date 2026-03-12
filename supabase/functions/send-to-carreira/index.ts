@@ -128,7 +128,6 @@ Deno.serve(async (req) => {
 
     // 4. Build envelope and send to Carreira ID
     const envelope = {
-      sync_secret: carreiraSyncSecret,
       matching: {
         email_responsavel: authUser.user.email,
         nome_crianca: crianca.nome,
@@ -147,7 +146,10 @@ Deno.serve(async (req) => {
 
     const response = await fetch(carreiraEndpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-sync-secret': carreiraSyncSecret,
+      },
       body: JSON.stringify(envelope),
     })
 
