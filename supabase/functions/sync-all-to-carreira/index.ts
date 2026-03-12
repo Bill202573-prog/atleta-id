@@ -37,20 +37,24 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     })
-    const token = authHeader.replace('Bearer ', '')
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token)
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { crianca_id } = await req.json()
+    const { crianca_id, data_types } = await req.json()
     if (!crianca_id) {
       return new Response(JSON.stringify({ error: 'Missing crianca_id' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    // Optional filter: which data types to sync
+    const allowedTypes: Set<string> | null = data_types && Array.isArray(data_types)
+      ? new Set(data_types as string[])
+      : null
 
     const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
@@ -100,7 +104,6 @@ Deno.serve(async (req) => {
     const carreiraEndpoint = `${carreiraUrl}/functions/v1/receive-atleta-data`
     const results: { type: string; count: number; errors: number }[] = []
 
-    // Helper to send a batch of items
     async function sendItem(type: string, data: Record<string, unknown>) {
       const envelope = {
         matching,
@@ -114,145 +117,142 @@ Deno.serve(async (req) => {
       return resp.ok
     }
 
+    function shouldSync(type: string): boolean {
+      return !allowedTypes || allowedTypes.has(type)
+    }
+
     // 1. Atividades Externas
-    const { data: atividades } = await serviceClient
-      .from('atividades_externas')
-      .select('*')
-      .eq('crianca_id', crianca_id)
-
-    if (atividades?.length) {
-      let ok = 0, err = 0
-      for (const a of atividades) {
-        const success = await sendItem('atividade_externa', a)
-        success ? ok++ : err++
-      }
-      results.push({ type: 'atividade_externa', count: ok, errors: err })
-    }
-
-    // 2. Gols (with evento context)
-    const { data: gols } = await serviceClient
-      .from('evento_gols')
-      .select('*, evento:eventos_esportivos(nome, data, adversario, placar_time1, placar_time2), time:evento_times(nome)')
-      .eq('crianca_id', crianca_id)
-
-    if (gols?.length) {
-      let ok = 0, err = 0
-      for (const g of gols) {
-        const evento = g.evento as any
-        const time = g.time as any
-        const success = await sendItem('evento_gol', {
-          id: g.id,
-          evento_id: g.evento_id,
-          time_id: g.time_id,
-          quantidade: g.quantidade,
-          evento_nome: evento?.nome,
-          evento_data: evento?.data,
-          evento_adversario: evento?.adversario,
-          evento_placar_time1: evento?.placar_time1,
-          evento_placar_time2: evento?.placar_time2,
-          time_nome: time?.nome,
-        })
-        success ? ok++ : err++
-      }
-      results.push({ type: 'evento_gol', count: ok, errors: err })
-    }
-
-    // 3. Premiações (with evento context)
-    const { data: premiacoes } = await serviceClient
-      .from('evento_premiacoes')
-      .select('*, evento:eventos_esportivos(nome, data)')
-      .eq('crianca_id', crianca_id)
-
-    if (premiacoes?.length) {
-      let ok = 0, err = 0
-      for (const p of premiacoes) {
-        const evento = p.evento as any
-        const success = await sendItem('evento_premiacao', {
-          id: p.id,
-          evento_id: p.evento_id,
-          tipo_premiacao: p.tipo_premiacao,
-          evento_nome: evento?.nome,
-          evento_data: evento?.data,
-        })
-        success ? ok++ : err++
-      }
-      results.push({ type: 'evento_premiacao', count: ok, errors: err })
-    }
-
-    // 4. Conquistas Coletivas (via escolinha)
-    const { data: vinculos } = await serviceClient
-      .from('crianca_escolinha')
-      .select('escolinha_id')
-      .eq('crianca_id', crianca_id)
-
-    if (vinculos?.length) {
-      const escolinhaIds = vinculos.map(v => v.escolinha_id)
-      const { data: conquistas } = await serviceClient
-        .from('conquistas_coletivas')
+    if (shouldSync('atividade_externa')) {
+      const { data: atividades } = await serviceClient
+        .from('atividades_externas')
         .select('*')
-        .in('escolinha_id', escolinhaIds)
+        .eq('crianca_id', crianca_id)
 
-      if (conquistas?.length) {
+      if (atividades?.length) {
         let ok = 0, err = 0
-        for (const c of conquistas) {
-          const success = await sendItem('conquista_coletiva', c)
+        for (const a of atividades) {
+          const success = await sendItem('atividade_externa', a)
           success ? ok++ : err++
         }
-        results.push({ type: 'conquista_coletiva', count: ok, errors: err })
+        results.push({ type: 'atividade_externa', count: ok, errors: err })
       }
     }
 
-    // 5. Amistoso Convocações (with evento context)
-    const { data: amistosoConvs } = await serviceClient
-      .from('amistoso_convocacoes')
-      .select('id, evento_id, status, presente, evento:eventos_esportivos(nome, data, tipo, adversario, local, placar_time1, placar_time2, status)')
-      .eq('crianca_id', crianca_id)
+    // 2. Gols
+    if (shouldSync('evento_gol')) {
+      const { data: gols } = await serviceClient
+        .from('evento_gols')
+        .select('*, evento:eventos_esportivos(nome, data, adversario, placar_time1, placar_time2), time:evento_times(nome)')
+        .eq('crianca_id', crianca_id)
 
-    if (amistosoConvs?.length) {
-      let ok = 0, err = 0
-      for (const ac of amistosoConvs) {
-        const evento = ac.evento as any
-        const success = await sendItem('amistoso_convocacao', {
-          id: ac.id,
-          evento_nome: evento?.nome,
-          evento_data: evento?.data,
-          evento_tipo: evento?.tipo,
-          evento_adversario: evento?.adversario,
-          evento_local: evento?.local,
-          evento_placar_time1: evento?.placar_time1,
-          evento_placar_time2: evento?.placar_time2,
-          evento_status: evento?.status,
-          status: ac.status,
-          presente: ac.presente,
-        })
-        success ? ok++ : err++
+      if (gols?.length) {
+        let ok = 0, err = 0
+        for (const g of gols) {
+          const evento = g.evento as any
+          const time = g.time as any
+          const success = await sendItem('evento_gol', {
+            id: g.id, evento_id: g.evento_id, time_id: g.time_id, quantidade: g.quantidade,
+            evento_nome: evento?.nome, evento_data: evento?.data, evento_adversario: evento?.adversario,
+            evento_placar_time1: evento?.placar_time1, evento_placar_time2: evento?.placar_time2,
+            time_nome: time?.nome,
+          })
+          success ? ok++ : err++
+        }
+        results.push({ type: 'evento_gol', count: ok, errors: err })
       }
-      results.push({ type: 'amistoso_convocacao', count: ok, errors: err })
     }
 
-    // 6. Campeonato Convocações (with campeonato + escolinha context)
-    const { data: campConvs } = await serviceClient
-      .from('campeonato_convocacoes')
-      .select('id, campeonato_id, status, campeonato:campeonatos(nome, ano, categoria, status, nome_time, escolinha:escolinhas(nome))')
-      .eq('crianca_id', crianca_id)
+    // 3. Premiações
+    if (shouldSync('evento_premiacao')) {
+      const { data: premiacoes } = await serviceClient
+        .from('evento_premiacoes')
+        .select('*, evento:eventos_esportivos(nome, data)')
+        .eq('crianca_id', crianca_id)
 
-    if (campConvs?.length) {
-      let ok = 0, err = 0
-      for (const cc of campConvs) {
-        const camp = cc.campeonato as any
-        const success = await sendItem('campeonato_convocacao', {
-          id: cc.id,
-          campeonato_nome: camp?.nome,
-          campeonato_ano: camp?.ano,
-          campeonato_categoria: camp?.categoria,
-          campeonato_status: camp?.status,
-          campeonato_nome_time: camp?.nome_time,
-          escolinha_nome: camp?.escolinha?.nome,
-          status: cc.status,
-        })
-        success ? ok++ : err++
+      if (premiacoes?.length) {
+        let ok = 0, err = 0
+        for (const p of premiacoes) {
+          const evento = p.evento as any
+          const success = await sendItem('evento_premiacao', {
+            id: p.id, evento_id: p.evento_id, tipo_premiacao: p.tipo_premiacao,
+            evento_nome: evento?.nome, evento_data: evento?.data,
+          })
+          success ? ok++ : err++
+        }
+        results.push({ type: 'evento_premiacao', count: ok, errors: err })
       }
-      results.push({ type: 'campeonato_convocacao', count: ok, errors: err })
+    }
+
+    // 4. Conquistas Coletivas
+    if (shouldSync('conquista_coletiva')) {
+      const { data: vinculos } = await serviceClient
+        .from('crianca_escolinha')
+        .select('escolinha_id')
+        .eq('crianca_id', crianca_id)
+
+      if (vinculos?.length) {
+        const escolinhaIds = vinculos.map(v => v.escolinha_id)
+        const { data: conquistas } = await serviceClient
+          .from('conquistas_coletivas')
+          .select('*')
+          .in('escolinha_id', escolinhaIds)
+
+        if (conquistas?.length) {
+          let ok = 0, err = 0
+          for (const c of conquistas) {
+            const success = await sendItem('conquista_coletiva', c)
+            success ? ok++ : err++
+          }
+          results.push({ type: 'conquista_coletiva', count: ok, errors: err })
+        }
+      }
+    }
+
+    // 5. Amistoso Convocações
+    if (shouldSync('amistoso_convocacao')) {
+      const { data: amistosoConvs } = await serviceClient
+        .from('amistoso_convocacoes')
+        .select('id, evento_id, status, presente, evento:eventos_esportivos(nome, data, tipo, adversario, local, placar_time1, placar_time2, status)')
+        .eq('crianca_id', crianca_id)
+
+      if (amistosoConvs?.length) {
+        let ok = 0, err = 0
+        for (const ac of amistosoConvs) {
+          const evento = ac.evento as any
+          const success = await sendItem('amistoso_convocacao', {
+            id: ac.id, evento_nome: evento?.nome, evento_data: evento?.data,
+            evento_tipo: evento?.tipo, evento_adversario: evento?.adversario,
+            evento_local: evento?.local, evento_placar_time1: evento?.placar_time1,
+            evento_placar_time2: evento?.placar_time2, evento_status: evento?.status,
+            status: ac.status, presente: ac.presente,
+          })
+          success ? ok++ : err++
+        }
+        results.push({ type: 'amistoso_convocacao', count: ok, errors: err })
+      }
+    }
+
+    // 6. Campeonato Convocações
+    if (shouldSync('campeonato_convocacao')) {
+      const { data: campConvs } = await serviceClient
+        .from('campeonato_convocacoes')
+        .select('id, campeonato_id, status, campeonato:campeonatos(nome, ano, categoria, status, nome_time, escolinha:escolinhas(nome))')
+        .eq('crianca_id', crianca_id)
+
+      if (campConvs?.length) {
+        let ok = 0, err = 0
+        for (const cc of campConvs) {
+          const camp = cc.campeonato as any
+          const success = await sendItem('campeonato_convocacao', {
+            id: cc.id, campeonato_nome: camp?.nome, campeonato_ano: camp?.ano,
+            campeonato_categoria: camp?.categoria, campeonato_status: camp?.status,
+            campeonato_nome_time: camp?.nome_time, escolinha_nome: camp?.escolinha?.nome,
+            status: cc.status,
+          })
+          success ? ok++ : err++
+        }
+        results.push({ type: 'campeonato_convocacao', count: ok, errors: err })
+      }
     }
 
     const totalSent = results.reduce((sum, r) => sum + r.count, 0)
