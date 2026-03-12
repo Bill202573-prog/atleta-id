@@ -216,6 +216,8 @@ export function useUpsertAmistosoConvocacoes() {
       queryClient.invalidateQueries({ queryKey: ['amistoso-convocacoes-count', variables.eventoId] });
       queryClient.invalidateQueries({ queryKey: ['guardian-amistoso-convocacoes'] });
       queryClient.invalidateQueries({ queryKey: ['eventos-convocacoes-counts'] });
+      // Sync convocations to Carreira ID (fire-and-forget)
+      syncAmistosoConvocacoesToCarreira(variables.eventoId, variables.convocacoes);
     },
   });
 }
