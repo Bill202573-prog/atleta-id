@@ -336,7 +336,7 @@ export const useDeleteAtividadeExterna = () => {
         queryClient.setQueryData(['atividades-publicas', context.crianca_id], context.prevPublicas);
       }
     },
-    onSettled: (_data, _err, vars) => {
+    onSettled: (data, _err, vars) => {
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', vars.crianca_id] 
       });
@@ -346,6 +346,14 @@ export const useDeleteAtividadeExterna = () => {
       queryClient.invalidateQueries({ 
         queryKey: ['carreira-atividade-limit'] 
       });
+      if (data) {
+        syncToCarreira({
+          type: 'atividade_externa',
+          action: 'delete',
+          criancaId: vars.crianca_id,
+          data: { id: vars.id },
+        });
+      }
     },
   });
 };
