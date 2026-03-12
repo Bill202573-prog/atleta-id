@@ -25,6 +25,7 @@ export function MobileGuardianLayout({
   const { data: childrenData = [] } = useGuardianChildren();
   const { data: guardian } = useGuardianProfile();
   const { data: pendingEnrollments, isLoading: loadingEnrollments } = useGuardianPendingEnrollment();
+  const [carreiraDialogOpen, setCarreiraDialogOpen] = useState(false);
 
   const currentChild = selectedChildId 
     ? childrenData.find(c => c.id === selectedChildId) 
