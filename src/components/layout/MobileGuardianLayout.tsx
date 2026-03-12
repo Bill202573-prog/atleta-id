@@ -1,10 +1,11 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { MobileHeader } from './MobileHeader';
 import { MobileBottomNav } from './MobileBottomNav';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
 import { PushAutoSubscribe } from '@/components/guardian/PushAutoSubscribe';
 import EnrollmentPaymentBlocker from '@/components/guardian/EnrollmentPaymentBlocker';
+import { CarreiraIdSyncDialog } from '@/components/guardian/CarreiraIdSyncDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGuardianChildren, useGuardianProfile } from '@/hooks/useSchoolData';
 import { useGuardianPendingEnrollment } from '@/hooks/useEnrollmentData';
