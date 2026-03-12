@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 export interface PerfilAtleta {
   id: string;
   user_id: string;
+  crianca_id: string | null;
   slug: string;
   nome: string;
   foto_url: string | null;
