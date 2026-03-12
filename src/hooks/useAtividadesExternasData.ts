@@ -275,21 +275,23 @@ export const useUpdateAtividadeExterna = () => {
       return { data, crianca_id, tornarPublicoChanged: typeof updates.tornar_publico === 'boolean' };
     },
     onSuccess: (result) => {
-      // Always invalidate the child's activities
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', result.crianca_id] 
       });
-      
-      // If tornar_publico was changed, invalidate public activities queries for Carreira
       if (result.tornarPublicoChanged) {
         queryClient.invalidateQueries({ 
           queryKey: ['atividades-publicas', result.crianca_id] 
         });
-        // Also invalidate any posts-atleta queries that may show activities
         queryClient.invalidateQueries({ 
           queryKey: ['posts-atleta'] 
         });
       }
+      syncToCarreira({
+        type: 'atividade_externa',
+        action: 'update',
+        criancaId: result.crianca_id,
+        data: result.data,
+      });
     },
   });
 };
