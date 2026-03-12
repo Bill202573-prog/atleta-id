@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { differenceInYears } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { syncToCarreira } from './useSyncToCarreira';
 
 export interface AmistosoConvocacao {
   id: string;
