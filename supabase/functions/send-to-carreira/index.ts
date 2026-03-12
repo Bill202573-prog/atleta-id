@@ -128,20 +128,16 @@ Deno.serve(async (req) => {
       })
     }
 
-    // 4. Build envelope and send to Carreira ID
+    // 4. Build envelope and send to Carreira ID (flat format expected by receive-atleta-data)
     const envelope = {
-      matching: {
-        email_responsavel: authUser.user.email,
-        nome_crianca: crianca.nome,
-        nome_crianca_normalized: normalizeName(crianca.nome),
-        data_nascimento: crianca.data_nascimento,
-      },
-      payload: {
-        type,
-        action,
-        atleta_id_crianca_id: crianca_id,
-        data: syncData,
-      },
+      tipo: type,
+      acao: action,
+      dados: syncData,
+      email_responsavel: authUser.user.email,
+      nome_crianca: crianca.nome,
+      nome_crianca_normalized: normalizeName(crianca.nome),
+      data_nascimento: crianca.data_nascimento,
+      atleta_id_crianca_id: crianca_id,
     }
 
     const carreiraEndpoint = `${carreiraUrl}/functions/v1/receive-atleta-data`

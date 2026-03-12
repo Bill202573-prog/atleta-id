@@ -106,8 +106,14 @@ Deno.serve(async (req) => {
 
     async function sendItem(type: string, data: Record<string, unknown>) {
       const envelope = {
-        matching,
-        payload: { type, action: 'create', atleta_id_crianca_id: crianca_id, data },
+        tipo: type,
+        acao: 'create',
+        dados: data,
+        email_responsavel: matching.email_responsavel,
+        nome_crianca: matching.nome_crianca,
+        nome_crianca_normalized: matching.nome_crianca_normalized,
+        data_nascimento: matching.data_nascimento,
+        atleta_id_crianca_id: crianca_id,
       }
       try {
         console.log(`[sync] Sending ${type} to ${carreiraEndpoint}`)
