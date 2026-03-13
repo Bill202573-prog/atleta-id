@@ -44,6 +44,7 @@ interface SyncDataType {
 }
 
 const SYNC_DATA_TYPES: SyncDataType[] = [
+  { key: 'experiencia_escolinha', label: 'Histórico de Escolinhas', description: 'Escolinhas que o atleta participou', icon: <School className="w-4 h-4" /> },
   { key: 'atividade_externa', label: 'Atividades Externas', description: 'Treinos, aulas e atividades registradas', icon: <Dumbbell className="w-4 h-4" /> },
   { key: 'evento_gol', label: 'Gols', description: 'Gols marcados em eventos esportivos', icon: <Target className="w-4 h-4" /> },
   { key: 'evento_premiacao', label: 'Premiações', description: 'Prêmios individuais recebidos', icon: <Medal className="w-4 h-4" /> },
