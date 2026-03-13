@@ -13,6 +13,7 @@ type SyncType =
   | 'evento_esportivo'
   | 'amistoso_convocacao'
   | 'campeonato_convocacao'
+  | 'experiencia_escolinha'
 
 type SyncAction = 'create' | 'update' | 'delete'
 
