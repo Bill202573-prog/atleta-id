@@ -24,6 +24,7 @@ import {
   Swords,
   Flag,
   Dumbbell,
+  School,
 } from 'lucide-react';
 
 interface CarreiraIdSyncDialogProps {
