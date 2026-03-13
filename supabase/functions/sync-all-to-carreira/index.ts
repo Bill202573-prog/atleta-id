@@ -137,6 +137,35 @@ Deno.serve(async (req) => {
       return !allowedTypes || allowedTypes.has(type)
     }
 
+    // 0. Histórico de Escolinhas (experiências)
+    if (shouldSync('experiencia_escolinha')) {
+      const { data: vinculos } = await serviceClient
+        .from('crianca_escolinha')
+        .select('id, escolinha_id, data_inicio, data_fim, ativo, categoria, escolinha:escolinhas(nome, cidade, estado, bairro)')
+        .eq('crianca_id', crianca_id)
+
+      if (vinculos?.length) {
+        let ok = 0, err = 0
+        for (const v of vinculos) {
+          const escola = v.escolinha as any
+          const success = await sendItem('experiencia_escolinha', {
+            id: v.id,
+            escolinha_id: v.escolinha_id,
+            nome_escola: escola?.nome,
+            data_inicio: v.data_inicio,
+            data_fim: v.data_fim,
+            atual: v.ativo,
+            categoria: v.categoria,
+            cidade: escola?.cidade,
+            estado: escola?.estado,
+            bairro: escola?.bairro,
+          })
+          success ? ok++ : err++
+        }
+        results.push({ type: 'experiencia_escolinha', count: ok, errors: err })
+      }
+    }
+
     // 1. Atividades Externas
     if (shouldSync('atividade_externa')) {
       const { data: atividades } = await serviceClient
