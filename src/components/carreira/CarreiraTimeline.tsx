@@ -38,6 +38,7 @@ const CARREIRA_TABS = [
 export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelineProps) {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [atividadeFormOpen, setAtividadeFormOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<any>(null);
   const [experienciaFormOpen, setExperienciaFormOpen] = useState(false);
   const { data: posts, isLoading: postsLoading } = usePostsAtleta(perfil.id);
   const isPlatformProfile = perfil.modalidade === 'Plataforma' || !perfil.crianca_id;
@@ -145,11 +146,11 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
           </div>
         ) : (
           <div className="space-y-3">
-            {renderNewAtividadeButton('Nova Atividade', () => setAtividadeFormOpen(true))}
+            {renderNewAtividadeButton('Nova Atividade', () => { setEditingActivity(null); setAtividadeFormOpen(true); })}
             {(atividades?.length || 0) > 0 ? (
               atividades?.map((atv) => (
                 <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={(a) => {
-                  // Open the form dialog for editing - for now just open new form
+                  setEditingActivity(a);
                   setAtividadeFormOpen(true);
                 }} />
               ))
@@ -187,10 +188,10 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
           </div>
         ) : (
           <div className="space-y-3">
-            {renderNewAtividadeButton('Nova Atividade Extra', () => setAtividadeFormOpen(true))}
+            {renderNewAtividadeButton('Nova Atividade Extra', () => { setEditingActivity(null); setAtividadeFormOpen(true); })}
             {(atividades?.length || 0) > 0 ? (
               atividades?.map((atv) => (
-                <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={() => setAtividadeFormOpen(true)} />
+                <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={(a) => { setEditingActivity(a); setAtividadeFormOpen(true); }} />
               ))
             ) : (
               <div className="text-center py-12 text-muted-foreground">
@@ -280,9 +281,13 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
         <>
           <CarreiraAtividadeFormDialog
             open={atividadeFormOpen}
-            onOpenChange={setAtividadeFormOpen}
+            onOpenChange={(open) => {
+              setAtividadeFormOpen(open);
+              if (!open) setEditingActivity(null);
+            }}
             criancaId={perfil.crianca_id}
             childName={perfil.nome}
+            editingActivity={editingActivity}
           />
           <ExperienciaFormDialog
             open={experienciaFormOpen}
