@@ -191,7 +191,7 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
             {renderNewAtividadeButton('Nova Atividade Extra', () => setAtividadeFormOpen(true))}
             {(atividades?.length || 0) > 0 ? (
               atividades?.map((atv) => (
-                <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={() => setAtividadeFormOpen(true)} />
+                <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={(a) => { setEditingActivity(a); setAtividadeFormOpen(true); }} />
               ))
             ) : (
               <div className="text-center py-12 text-muted-foreground">
