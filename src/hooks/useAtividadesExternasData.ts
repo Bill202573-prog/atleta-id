@@ -427,7 +427,7 @@ export const getFieldsForType = (tipo: AtividadeExternaTipo) => {
     case 'competicao_torneio':
       return {
         required: ['torneio_nome', 'data', 'data_fim', 'local_atividade', 'organizador', 'torneio_abrangencia'],
-        optional: ['observacoes'],
+        optional: ['profissional_instituicao', 'observacoes'],
         hidden: ['objetivos', 'metodologia', 'frequencia_semanal', 'carga_horaria_horas', 'profissionais_envolvidos'],
       };
     case 'avaliacao':
