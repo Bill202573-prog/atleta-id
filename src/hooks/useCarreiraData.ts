@@ -151,10 +151,27 @@ export function useAtividadesPublicas(criancaId: string | null | undefined) {
       const { data, error } = await supabase
         .from('atividades_externas')
         .select(`
-          id, crianca_id, tipo, tipo_outro_descricao, data, data_fim,
-          local_atividade, profissional_instituicao,
-          torneio_nome, torneio_abrangencia, observacoes,
-          fotos_urls, created_at
+          id,
+          crianca_id,
+          tipo,
+          tipo_outro_descricao,
+          data,
+          data_fim,
+          duracao_minutos,
+          frequencia_semanal,
+          carga_horaria_horas,
+          local_atividade,
+          profissional_instituicao,
+          profissionais_envolvidos,
+          organizador,
+          torneio_nome,
+          torneio_abrangencia,
+          objetivos,
+          metodologia,
+          observacoes,
+          fotos_urls,
+          tornar_publico,
+          created_at
         `)
         .eq('crianca_id', criancaId)
         .eq('tornar_publico', true)

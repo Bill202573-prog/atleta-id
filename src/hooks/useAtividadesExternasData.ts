@@ -278,10 +278,10 @@ export const useUpdateAtividadeExterna = () => {
       queryClient.invalidateQueries({ 
         queryKey: ['atividades-externas', result.crianca_id] 
       });
+      queryClient.invalidateQueries({ 
+        queryKey: ['atividades-publicas', result.crianca_id] 
+      });
       if (result.tornarPublicoChanged) {
-        queryClient.invalidateQueries({ 
-          queryKey: ['atividades-publicas', result.crianca_id] 
-        });
         queryClient.invalidateQueries({ 
           queryKey: ['posts-atleta'] 
         });

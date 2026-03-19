@@ -163,7 +163,7 @@ export function CarreiraAtividadeFormDialog({
       setSelectedObjetivos(editingActivity.objetivos || []);
       setProfissionaisList(editingActivity.profissionais_envolvidos || []);
       setFotos(editingActivity.fotos_urls || []);
-      setTornarPublico(editingActivity.tornar_publico || false);
+      setTornarPublico(editingActivity.tornar_publico ?? true);
     }
   }, [editingActivity, open, form]);
 
