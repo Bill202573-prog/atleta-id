@@ -146,7 +146,7 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
           </div>
         ) : (
           <div className="space-y-3">
-            {renderNewAtividadeButton('Nova Atividade', () => setAtividadeFormOpen(true))}
+            {renderNewAtividadeButton('Nova Atividade', () => { setEditingActivity(null); setAtividadeFormOpen(true); })}
             {(atividades?.length || 0) > 0 ? (
               atividades?.map((atv) => (
                 <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={(a) => {
