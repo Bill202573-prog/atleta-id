@@ -150,7 +150,7 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
             {(atividades?.length || 0) > 0 ? (
               atividades?.map((atv) => (
                 <AtividadePublicaCard key={atv.id} atividade={atv} isOwner={isOwner} accentColor={accentColor} onEdit={(a) => {
-                  // Open the form dialog for editing - for now just open new form
+                  setEditingActivity(a);
                   setAtividadeFormOpen(true);
                 }} />
               ))
