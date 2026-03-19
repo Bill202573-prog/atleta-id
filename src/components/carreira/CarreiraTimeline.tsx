@@ -281,9 +281,13 @@ export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelinePr
         <>
           <CarreiraAtividadeFormDialog
             open={atividadeFormOpen}
-            onOpenChange={setAtividadeFormOpen}
+            onOpenChange={(open) => {
+              setAtividadeFormOpen(open);
+              if (!open) setEditingActivity(null);
+            }}
             criancaId={perfil.crianca_id}
             childName={perfil.nome}
+            editingActivity={editingActivity}
           />
           <ExperienciaFormDialog
             open={experienciaFormOpen}
