@@ -38,6 +38,7 @@ const CARREIRA_TABS = [
 export function CarreiraTimeline({ perfil, isOwner = false }: CarreiraTimelineProps) {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [atividadeFormOpen, setAtividadeFormOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<any>(null);
   const [experienciaFormOpen, setExperienciaFormOpen] = useState(false);
   const { data: posts, isLoading: postsLoading } = usePostsAtleta(perfil.id);
   const isPlatformProfile = perfil.modalidade === 'Plataforma' || !perfil.crianca_id;
