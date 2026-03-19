@@ -68,15 +68,23 @@ export interface AtividadeExternaPublica {
   id: string;
   crianca_id: string;
   tipo: string;
-  tipo_outro_descricao?: string;
+  tipo_outro_descricao: string | null;
   data: string;
-  data_fim?: string;
+  data_fim: string | null;
+  duracao_minutos: number;
+  frequencia_semanal: number | null;
+  carga_horaria_horas: number | null;
   local_atividade: string;
   profissional_instituicao: string;
-  torneio_nome?: string;
-  torneio_abrangencia?: string;
-  observacoes?: string;
+  profissionais_envolvidos: string[] | null;
+  organizador: string | null;
+  torneio_nome: string | null;
+  torneio_abrangencia: string | null;
+  objetivos: string[] | null;
+  metodologia: string | null;
+  observacoes: string | null;
   fotos_urls: string[];
+  tornar_publico: boolean | null;
   created_at: string;
   crianca_nome?: string;
 }
