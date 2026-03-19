@@ -134,6 +134,13 @@ export function AtividadePublicaCard({ atividade, isOwner = false, onEdit, accen
             </p>
           )}
 
+          {/* Organizador */}
+          {atividade.organizador && (
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium">Organizador:</span> {atividade.organizador}
+            </p>
+          )}
+
           {/* Observations */}
           {atividade.observacoes && (
             <p className="text-sm">{atividade.observacoes}</p>
