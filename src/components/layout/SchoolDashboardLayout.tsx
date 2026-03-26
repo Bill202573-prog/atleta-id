@@ -12,7 +12,9 @@ import { StudentRegistrationProvider, useStudentRegistration } from '@/contexts/
 import AlunoFichaDialog from '@/components/school/AlunoFichaDialog';
 import DraftManagerDialog from '@/components/school/DraftManagerDialog';
 import { Badge } from '@/components/ui/badge';
-import { Shield } from 'lucide-react';
+import { Shield, Bell } from 'lucide-react';
+import { useSchoolPendencias } from '@/hooks/useSchoolPendenciasData';
+import { useNavigate } from 'react-router-dom';
 
 interface SchoolDashboardLayoutProps {
   children: ReactNode;
@@ -24,6 +26,12 @@ function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
   const adminCtx = useAdminSchoolContext();
   const isAdminMode = !!adminCtx?.isAdminMode;
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Get escolinha ID for pendências
+  const escolinhaIdForPendencias = isAdminMode ? adminCtx?.escolinhaId : user?.escolinhaId;
+  const { data: pendencias } = useSchoolPendencias(escolinhaIdForPendencias);
+  const pendenciasCount = pendencias?.length || 0;
   const { 
     isOpen, 
     studentToEdit, 
@@ -86,6 +94,18 @@ function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="relative p-2 rounded-md hover:bg-muted transition-colors"
+              title="Pendências"
+            >
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              {pendenciasCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground px-0.5">
+                  {pendenciasCount > 9 ? '9+' : pendenciasCount}
+                </span>
+              )}
+            </button>
           </header>
 
           {/* Main content */}
