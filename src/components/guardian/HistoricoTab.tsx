@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { parseLocalDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -433,7 +434,7 @@ const HistoricoTab = ({ criancaId, childName }: HistoricoTabProps) => {
                               <p className="text-[11px] text-muted-foreground/80 font-medium">{aula.escolinha?.nome}</p>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <Calendar className="w-3 h-3" />
-                                {new Date(aula.data).toLocaleDateString('pt-BR')}
+                                {parseLocalDate(aula.data).toLocaleDateString('pt-BR')}
                                 {aula.horario_inicio && (
                                   <span>• {aula.horario_inicio.slice(0, 5)}</span>
                                 )}
