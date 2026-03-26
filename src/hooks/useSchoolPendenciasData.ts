@@ -35,7 +35,7 @@ export function useSchoolPendencias(escolinhaId: string | undefined) {
         .select('id, nome, data, status')
         .eq('escolinha_id', escolinhaId)
         .eq('tipo', 'amistoso')
-        .in('status', ['agendado', 'confirmado'])
+        .in('status', ['agendado'])
         .lte('data', todayStr)
         .order('data', { ascending: true });
 
@@ -57,7 +57,7 @@ export function useSchoolPendencias(escolinhaId: string | undefined) {
         .from('turmas')
         .select('id, nome')
         .eq('escolinha_id', escolinhaId)
-        .eq('ativa', true);
+        .eq('ativo', true);
 
       if (turmas && turmas.length > 0) {
         const turmaIds = turmas.map(t => t.id);
