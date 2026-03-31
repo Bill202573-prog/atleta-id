@@ -232,6 +232,10 @@ export function AmistosoConvocacoesDialog({
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.isento).length;
   }, [convocacoes]);
 
+  const visualizadosCount = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && a.visualizado_em).length;
+  }, [convocacoes]);
+
   const handleToggleConvocado = (criancaId: string) => {
     setConvocacoes(prev => {
       const map = new Map(prev);
