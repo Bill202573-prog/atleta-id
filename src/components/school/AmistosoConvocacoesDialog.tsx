@@ -622,14 +622,7 @@ export function AmistosoConvocacoesDialog({
             </div>
 
             {/* Mobile List */}
-            <div className="sm:hidden max-h-[350px] overflow-y-auto">
-              {/* Sticky mobile header */}
-              <div className="sticky top-0 z-10 bg-background border-b px-2 py-1.5 flex items-center text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                <span className="w-6"></span>
-                <span className="flex-1 ml-2">Atleta</span>
-                <span className="w-20 text-center">Valor</span>
-                <span className="w-16 text-right">Status</span>
-              </div>
+            <div className="sm:hidden max-h-[400px] overflow-y-auto">
               {filteredAtletas.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground text-sm">
                   {convocacoes.size === 0
@@ -637,11 +630,11 @@ export function AmistosoConvocacoesDialog({
                     : 'Nenhum atleta encontrado'}
                 </p>
               ) : (
-                <div className="divide-y divide-border/50">
+                <div className="divide-y divide-border">
                   {filteredAtletas.map(atleta => (
                     <div 
                       key={atleta.crianca_id} 
-                      className={`px-2 py-2 ${
+                      className={`px-3 py-3 ${
                         atleta.status === 'recusado' 
                           ? 'bg-red-500/10' 
                           : atleta.status === 'pago' || atleta.status === 'confirmado'
@@ -651,86 +644,102 @@ export function AmistosoConvocacoesDialog({
                               : ''
                       }`}
                     >
-                      {/* Row 1: checkbox + name + valor + status */}
-                      <div className="flex items-center gap-1.5">
+                      {/* Row 1: Checkbox + Photo + Name */}
+                      <div className="flex items-center gap-2.5">
                         <Checkbox
                           checked={atleta.convocado}
                           onCheckedChange={() => handleToggleConvocado(atleta.crianca_id)}
                           disabled={atleta.status === 'pago' || atleta.status === 'confirmado' || atleta.status === 'recusado'}
-                          className="h-4 w-4 flex-shrink-0"
+                          className="h-5 w-5 flex-shrink-0"
                         />
-                        <ChildAvatar fotoUrl={atleta.foto_url} nome={atleta.nome} className="h-7 w-7 flex-shrink-0" fallbackClassName="text-[10px]" />
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-xs leading-tight block truncate">{atleta.nome}</span>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Badge variant="outline" className="text-[9px] h-3.5 px-1 py-0">{atleta.categoria}</Badge>
-                            <span className="text-[10px] text-muted-foreground">{atleta.idade}a</span>
-                            {atleta.convocado && atleta.notificadoEm && (
-                              <div className="flex items-center gap-0.5 ml-0.5">
-                                <Mail className="w-2.5 h-2.5 text-blue-500" />
-                                {atleta.visualizado_em && <Eye className="w-2.5 h-2.5 text-purple-500" />}
+                        <ChildAvatar fotoUrl={atleta.foto_url} nome={atleta.nome} className="h-11 w-11 flex-shrink-0" fallbackClassName="text-sm" />
+                        <span className="font-semibold text-sm leading-tight flex-1 min-w-0 truncate">{atleta.nome}</span>
+                      </div>
+
+                      {/* Row 2: Category + Age + Sent + Viewed (tabulated) */}
+                      <div className="flex items-center gap-3 mt-1.5 ml-[4.25rem]">
+                        <Badge variant="outline" className="text-[11px] h-5 px-1.5 font-medium">{atleta.categoria}</Badge>
+                        <span className="text-xs text-muted-foreground w-8">{atleta.idade}a</span>
+                        {atleta.convocado && atleta.notificadoEm ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
+                              <Mail className="w-4 h-4 text-blue-500" />
+                              <span className="text-[11px] text-blue-600">Enviado</span>
+                            </div>
+                            {atleta.visualizado_em ? (
+                              <div className="flex items-center gap-1">
+                                <Eye className="w-4 h-4 text-purple-500" />
+                                <span className="text-[11px] text-purple-600">Visto</span>
                               </div>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground">Não visto</span>
                             )}
                           </div>
-                        </div>
-                        {/* Valor inline */}
-                        <div className="w-20 flex-shrink-0 flex justify-center">
-                          {atleta.convocado && !atleta.isento ? (
-                            atleta.status === 'pago' ? (
-                              <span className="text-[10px] font-medium text-emerald-600">
-                                R${(atleta.valor ?? valorPadrao ?? 0).toFixed(0)}
-                              </span>
+                        ) : atleta.convocado ? (
+                          <span className="text-[11px] text-muted-foreground">Não enviado</span>
+                        ) : null}
+                      </div>
+
+                      {/* Row 3: Value + Exempt + Status */}
+                      {atleta.convocado && (
+                        <div className="flex items-center gap-3 mt-2 ml-[4.25rem]">
+                          {/* Valor */}
+                          <div className="flex items-center gap-1.5">
+                            {!atleta.isento ? (
+                              atleta.status === 'pago' ? (
+                                <span className="text-xs font-semibold text-emerald-600">
+                                  R$ {(atleta.valor ?? valorPadrao ?? 0).toFixed(2)}
+                                </span>
+                              ) : (
+                                <Input
+                                  type="number"
+                                  placeholder={valorPadrao ? `${valorPadrao}` : '0'}
+                                  value={atleta.valor ?? ''}
+                                  onChange={(e) => handleValorChange(atleta.crianca_id, e.target.value)}
+                                  className="w-20 h-7 text-xs px-2"
+                                  step="0.01"
+                                  min="0"
+                                />
+                              )
                             ) : (
-                              <Input
-                                type="number"
-                                placeholder={valorPadrao ? `${valorPadrao}` : '0'}
-                                value={atleta.valor ?? ''}
-                                onChange={(e) => handleValorChange(atleta.crianca_id, e.target.value)}
-                                className="w-16 h-6 text-[10px] px-1.5"
-                                step="0.01"
-                                min="0"
+                              <span className="text-xs text-amber-600 font-semibold">Isento</span>
+                            )}
+                          </div>
+
+                          {/* Isentar toggle */}
+                          {atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
+                            <div className="flex items-center gap-1">
+                              <Checkbox
+                                id={`isento-m-${atleta.crianca_id}`}
+                                checked={atleta.isento}
+                                onCheckedChange={() => handleToggleIsento(atleta.crianca_id)}
+                                className="h-4 w-4"
                               />
-                            )
-                          ) : atleta.convocado && atleta.isento ? (
-                            <span className="text-[10px] text-amber-600 font-medium">Isento</span>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground">-</span>
+                              <label htmlFor={`isento-m-${atleta.crianca_id}`} className="text-[11px] text-muted-foreground">
+                                Isentar
+                              </label>
+                            </div>
                           )}
-                        </div>
-                        {/* Status inline */}
-                        <div className="w-16 flex-shrink-0 flex justify-end">
-                          {atleta.convocado ? (
-                            atleta.status === 'pago' || atleta.status === 'confirmado' ? (
-                              <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30 text-[9px] h-4 px-1">
-                                <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
-                                OK
+
+                          {/* Status badge - pushed to the right */}
+                          <div className="ml-auto">
+                            {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
+                              <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30 text-[11px] h-5 px-2">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Confirmado
                               </Badge>
                             ) : atleta.status === 'recusado' ? (
-                              <Badge className="bg-red-500/20 text-red-700 border-red-500/30 text-[9px] h-4 px-1">
-                                <XCircle className="w-2.5 h-2.5 mr-0.5" />
-                                Não
+                              <Badge className="bg-red-500/20 text-red-700 border-red-500/30 text-[11px] h-5 px-2">
+                                <XCircle className="w-3 h-3 mr-1" />
+                                Recusado
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[9px] h-4 px-1">
-                                <Clock className="w-2.5 h-2.5 mr-0.5" />
-                                Pend
+                              <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[11px] h-5 px-2">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pendente
                               </Badge>
-                            )
-                          ) : null}
-                        </div>
-                      </div>
-                      {/* Row 2: Isentar toggle - only when convocado and editable */}
-                      {atleta.convocado && atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
-                        <div className="flex items-center gap-1 ml-[3.25rem] mt-1">
-                          <Checkbox
-                            id={`isento-m-${atleta.crianca_id}`}
-                            checked={atleta.isento}
-                            onCheckedChange={() => handleToggleIsento(atleta.crianca_id)}
-                            className="h-3 w-3"
-                          />
-                          <label htmlFor={`isento-m-${atleta.crianca_id}`} className="text-[10px] text-muted-foreground">
-                            Isentar
-                          </label>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
