@@ -740,7 +740,7 @@ export function AmistosoConvocacoesDialog({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-3 border-t flex-shrink-0">
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {pendingNotifications > 0 
-                  ? `📨 ${pendingNotifications} atleta(s) ainda não notificado(s)`
+                  ? `📨 ${pendingNotifications} atleta(s) selecionado(s) sem notificação — clique "Enviar" para notificar`
                   : '✅ Todos os convocados já foram notificados'}
               </p>
               <div className="flex gap-2 w-full sm:w-auto">
