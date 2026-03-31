@@ -234,7 +234,9 @@ export function AmistosoPixCheckoutDialog({
                   <span>{formatCurrency(pixData.taxaJuiz)}</span>
                 </div>
               )}
-              <Separator className="my-2" />
+              {(pixData.taxaParticipacao > 0 || pixData.taxaJuiz > 0) && (
+                <Separator className="my-2" />
+              )}
               <div className="flex justify-between font-medium">
                 <span>Total</span>
                 <span className="text-primary">{formatCurrency(pixData.valor)}</span>
