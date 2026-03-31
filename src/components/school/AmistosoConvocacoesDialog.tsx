@@ -202,6 +202,8 @@ export function AmistosoConvocacoesDialog({
             useValorPadrao: conv.valor === null && !conv.isento,
             status: conv.status,
             dataPagamento: conv.data_pagamento,
+            notificadoEm: (conv as any).notificado_em,
+            visualizado_em: (conv as any).visualizado_em || null,
           });
         }
       });
@@ -210,6 +212,34 @@ export function AmistosoConvocacoesDialog({
     setConvocacoes(map);
     setInitialized(true);
   }, [eligibleAthletes, existingConvocacoes, categoria, initialized, open]);
+
+  // Keep tracking fields (visualizado_em, notificadoEm, status) in sync after initialization
+  useEffect(() => {
+    if (!initialized || !existingConvocacoes) return;
+    setConvocacoes(prev => {
+      const map = new Map(prev);
+      let changed = false;
+      existingConvocacoes.forEach(conv => {
+        const existing = map.get(conv.crianca_id);
+        if (existing) {
+          const newViz = (conv as any).visualizado_em || null;
+          const newNotif = (conv as any).notificado_em || null;
+          const newStatus = conv.status;
+          if (existing.visualizado_em !== newViz || existing.notificadoEm !== newNotif || existing.status !== newStatus) {
+            map.set(conv.crianca_id, {
+              ...existing,
+              visualizado_em: newViz,
+              notificadoEm: newNotif,
+              status: newStatus,
+              dataPagamento: conv.data_pagamento,
+            });
+            changed = true;
+          }
+        }
+      });
+      return changed ? map : prev;
+    });
+  }, [existingConvocacoes, initialized]);
 
   const filteredAtletas = useMemo(() => {
     const atletas = Array.from(convocacoes.values());
