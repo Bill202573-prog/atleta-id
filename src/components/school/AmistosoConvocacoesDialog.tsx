@@ -202,6 +202,8 @@ export function AmistosoConvocacoesDialog({
             useValorPadrao: conv.valor === null && !conv.isento,
             status: conv.status,
             dataPagamento: conv.data_pagamento,
+            notificadoEm: (conv as any).notificado_em,
+            visualizado_em: (conv as any).visualizado_em || null,
           });
         }
       });
@@ -210,6 +212,34 @@ export function AmistosoConvocacoesDialog({
     setConvocacoes(map);
     setInitialized(true);
   }, [eligibleAthletes, existingConvocacoes, categoria, initialized, open]);
+
+  // Keep tracking fields (visualizado_em, notificadoEm, status) in sync after initialization
+  useEffect(() => {
+    if (!initialized || !existingConvocacoes) return;
+    setConvocacoes(prev => {
+      const map = new Map(prev);
+      let changed = false;
+      existingConvocacoes.forEach(conv => {
+        const existing = map.get(conv.crianca_id);
+        if (existing) {
+          const newViz = (conv as any).visualizado_em || null;
+          const newNotif = (conv as any).notificado_em || null;
+          const newStatus = conv.status;
+          if (existing.visualizado_em !== newViz || existing.notificadoEm !== newNotif || existing.status !== newStatus) {
+            map.set(conv.crianca_id, {
+              ...existing,
+              visualizado_em: newViz,
+              notificadoEm: newNotif,
+              status: newStatus,
+              dataPagamento: conv.data_pagamento,
+            });
+            changed = true;
+          }
+        }
+      });
+      return changed ? map : prev;
+    });
+  }, [existingConvocacoes, initialized]);
 
   const filteredAtletas = useMemo(() => {
     const atletas = Array.from(convocacoes.values());
@@ -382,51 +412,39 @@ export function AmistosoConvocacoesDialog({
                 )}
               </div>
             </div>
-            {/* Stats - compact */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              <div className="p-2 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-1 text-muted-foreground text-[10px] sm:text-xs">
-                  <Users className="w-3 h-3" />
-                  Elegíveis
-                </div>
-                <p className="text-lg font-bold">{convocacoes.size}</p>
+            {/* Stats - compact inline */}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-md">
+                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Elegíveis</span>
+                <span className="text-sm font-bold">{convocacoes.size}</span>
               </div>
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <div className="flex items-center gap-1 text-primary text-[10px] sm:text-xs">
-                  <UserCheck className="w-3 h-3" />
-                  Convocados
-                </div>
-                <p className="text-lg font-bold">{convocadosCount}</p>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-md">
+                <UserCheck className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs text-primary">Convocados</span>
+                <span className="text-sm font-bold">{convocadosCount}</span>
               </div>
-              <div className="p-2 bg-purple-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-purple-600 text-[10px] sm:text-xs">
-                  <Eye className="w-3 h-3" />
-                  Visualizados
-                </div>
-                <p className="text-lg font-bold">{visualizadosCount}</p>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500/10 rounded-md">
+                <Eye className="w-3.5 h-3.5 text-purple-600" />
+                <span className="text-xs text-purple-600">Visualizados</span>
+                <span className="text-sm font-bold">{visualizadosCount}</span>
               </div>
-              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-emerald-600 text-[10px] sm:text-xs">
-                  <CheckCircle className="w-3 h-3" />
-                  Pagos
-                </div>
-                <p className="text-lg font-bold">{pagosCount}</p>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 rounded-md">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-xs text-emerald-600">Pagos</span>
+                <span className="text-sm font-bold">{pagosCount}</span>
               </div>
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-amber-600 text-[10px] sm:text-xs">
-                  <Gift className="w-3 h-3" />
-                  Isentos
-                </div>
-                <p className="text-lg font-bold">{isentosCount}</p>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/10 rounded-md">
+                <Gift className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-xs text-amber-600">Isentos</span>
+                <span className="text-sm font-bold">{isentosCount}</span>
               </div>
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-blue-600 text-[10px] sm:text-xs">
-                  <DollarSign className="w-3 h-3" />
-                  Valor Padrão
-                </div>
-                <p className="text-lg font-bold">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 rounded-md">
+                <DollarSign className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs text-blue-600">Valor Padrão</span>
+                <span className="text-sm font-bold">
                   {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
-                </p>
+                </span>
               </div>
             </div>
 
@@ -722,7 +740,7 @@ export function AmistosoConvocacoesDialog({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-3 border-t flex-shrink-0">
               <p className="text-xs sm:text-sm text-muted-foreground">
                 {pendingNotifications > 0 
-                  ? `📨 ${pendingNotifications} atleta(s) ainda não notificado(s)`
+                  ? `📨 ${pendingNotifications} atleta(s) selecionado(s) sem notificação — clique "Enviar" para notificar`
                   : '✅ Todos os convocados já foram notificados'}
               </p>
               <div className="flex gap-2 w-full sm:w-auto">
