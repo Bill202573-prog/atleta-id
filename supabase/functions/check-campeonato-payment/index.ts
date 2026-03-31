@@ -34,10 +34,10 @@ Deno.serve(async (req) => {
 
     console.log('Checking campeonato payment for convocacao:', convocacao_id);
 
-    // Fetch convocacao
+    // Fetch convocacao with campeonato -> escolinha
     const { data: convocacao, error: convocacaoError } = await supabase
       .from('campeonato_convocacoes')
-      .select('*, campeonato:campeonatos!campeonato_convocacoes_campeonato_id_fkey(escolinha:escolinhas!campeonatos_escolinha_id_fkey(escola_cadastro_bancario(asaas_account_id)))')
+      .select('*, campeonato:campeonatos!campeonato_convocacoes_campeonato_id_fkey(escolinha_id)')
       .eq('id', convocacao_id)
       .single();
 
@@ -63,25 +63,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get API key (school or master)
+    // Get API key — prefer school's subconta key from DB
     const campeonatoRaw = convocacao.campeonato as any;
-    const cadastroBancario = campeonatoRaw?.escolinha?.escola_cadastro_bancario?.[0];
+    const escolinhaId = campeonatoRaw?.escolinha_id;
     let activeApiKey = ASAAS_API_KEY;
 
-    if (cadastroBancario?.asaas_account_id && !cadastroBancario.asaas_account_id.startsWith('acc_test_')) {
-      const walletResponse = await fetch(`${ASAAS_API_URL}/accounts/${cadastroBancario.asaas_account_id}/apiKey`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'access_token': ASAAS_API_KEY,
-        },
-      });
+    if (escolinhaId) {
+      const { data: cadastro } = await supabase
+        .from('escola_cadastro_bancario')
+        .select('asaas_api_key, asaas_account_id')
+        .eq('escolinha_id', escolinhaId)
+        .single();
 
-      if (walletResponse.ok) {
-        const walletData = await walletResponse.json();
-        if (walletData.apiKey) {
-          activeApiKey = walletData.apiKey;
-        }
+      if (cadastro?.asaas_api_key) {
+        activeApiKey = cadastro.asaas_api_key;
+        console.log("Using school's Asaas API key for escolinha:", escolinhaId);
+      } else {
+        console.warn('ALERTA: Escola sem API key Asaas, usando master key. Escolinha:', escolinhaId);
       }
     }
 

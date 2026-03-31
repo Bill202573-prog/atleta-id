@@ -23,7 +23,6 @@ interface AsaasPaymentStatus {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -47,26 +46,27 @@ Deno.serve(async (req) => {
 
     console.log('Checking amistoso payment for convocacao:', convocacao_id, 'payment_id:', payment_id);
 
-    // Get convocacao data if payment_id not provided
-    let asaasPaymentId = payment_id;
-    
-    if (!asaasPaymentId) {
-      const { data: convocacao, error: convError } = await supabase
-        .from('amistoso_convocacoes')
-        .select('asaas_payment_id')
-        .eq('id', convocacao_id)
-        .single();
-      
-      if (convError || !convocacao) {
-        console.error('Convocacao not found:', convError);
-        return new Response(
-          JSON.stringify({ error: 'Convocação não encontrada' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      asaasPaymentId = convocacao.asaas_payment_id;
+    // Fetch convocacao with evento -> escolinha to get the correct API key
+    const { data: convocacao, error: convError } = await supabase
+      .from('amistoso_convocacoes')
+      .select(`
+        asaas_payment_id,
+        evento:eventos_esportivos!amistoso_convocacoes_evento_id_fkey(
+          escolinha_id
+        )
+      `)
+      .eq('id', convocacao_id)
+      .single();
+
+    if (convError || !convocacao) {
+      console.error('Convocacao not found:', convError);
+      return new Response(
+        JSON.stringify({ error: 'Convocação não encontrada' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const asaasPaymentId = payment_id || convocacao.asaas_payment_id;
 
     if (!asaasPaymentId) {
       return new Response(
@@ -75,14 +75,34 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Determine the correct API key — prefer school's subconta key
+    const eventoData = convocacao.evento as any;
+    const escolinhaId = eventoData?.escolinha_id;
+    let activeApiKey = ASAAS_API_KEY;
+
+    if (escolinhaId) {
+      const { data: cadastro } = await supabase
+        .from('escola_cadastro_bancario')
+        .select('asaas_api_key, asaas_account_id')
+        .eq('escolinha_id', escolinhaId)
+        .single();
+
+      if (cadastro?.asaas_api_key) {
+        activeApiKey = cadastro.asaas_api_key;
+        console.log("Using school's Asaas API key for escolinha:", escolinhaId);
+      } else {
+        console.warn('ALERTA: Escola sem API key Asaas, usando master key. Escolinha:', escolinhaId);
+      }
+    }
+
     console.log('Checking Asaas payment:', asaasPaymentId);
 
-    // Check payment status with Asaas
+    // Check payment status with Asaas using the correct API key
     const response = await fetch(`${ASAAS_API_URL}/payments/${asaasPaymentId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'access_token': ASAAS_API_KEY,
+        'access_token': activeApiKey,
       },
     });
 
@@ -97,17 +117,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check for paid statuses in Asaas
-    // RECEIVED = PIX received
-    // CONFIRMED = Payment confirmed
-    // RECEIVED_IN_CASH = Received in cash (manual)
     const paidStatuses = ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH'];
     const isPaid = paidStatuses.includes(paymentData.status);
 
     console.log('Payment status:', paymentData.status, 'isPaid:', isPaid);
 
     if (isPaid) {
-      // Update convocacao as paid
       const paymentDate = paymentData.confirmedDate || paymentData.paymentDate || new Date().toISOString().split('T')[0];
       
       const { error: updateError } = await supabase
