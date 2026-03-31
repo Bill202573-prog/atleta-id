@@ -412,22 +412,41 @@ export function AmistosoConvocacoesDialog({
                 )}
               </div>
             </div>
-            {/* Stats - compact */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              <div className="p-2 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-1 text-muted-foreground text-[10px] sm:text-xs">
-                  <Users className="w-3 h-3" />
-                  Elegíveis
-                </div>
-                <p className="text-lg font-bold">{convocacoes.size}</p>
+            {/* Stats - compact inline */}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-md">
+                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Elegíveis</span>
+                <span className="text-sm font-bold">{convocacoes.size}</span>
               </div>
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <div className="flex items-center gap-1 text-primary text-[10px] sm:text-xs">
-                  <UserCheck className="w-3 h-3" />
-                  Convocados
-                </div>
-                <p className="text-lg font-bold">{convocadosCount}</p>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 rounded-md">
+                <UserCheck className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs text-primary">Convocados</span>
+                <span className="text-sm font-bold">{convocadosCount}</span>
               </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-purple-500/10 rounded-md">
+                <Eye className="w-3.5 h-3.5 text-purple-600" />
+                <span className="text-xs text-purple-600">Visualizados</span>
+                <span className="text-sm font-bold">{visualizadosCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 rounded-md">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-xs text-emerald-600">Pagos</span>
+                <span className="text-sm font-bold">{pagosCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-amber-500/10 rounded-md">
+                <Gift className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-xs text-amber-600">Isentos</span>
+                <span className="text-sm font-bold">{isentosCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 rounded-md">
+                <DollarSign className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs text-blue-600">Valor Padrão</span>
+                <span className="text-sm font-bold">
+                  {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
+                </span>
+              </div>
+            </div>
               <div className="p-2 bg-purple-500/10 rounded-lg">
                 <div className="flex items-center gap-1 text-purple-600 text-[10px] sm:text-xs">
                   <Eye className="w-3 h-3" />
