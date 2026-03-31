@@ -70,14 +70,15 @@ export function AmistosoPixCheckoutDialog({
     if (open && convocacao) {
       // Check if already has PIX data
       if (convocacao.pix_br_code && convocacao.pix_qr_code_url) {
+        const convValor = convocacao.valor || 0;
         setPixData({
           pixId: convocacao.asaas_payment_id || '',
           brCode: convocacao.pix_br_code,
           qrCodeUrl: convocacao.pix_qr_code_url,
           expiresAt: convocacao.pix_expires_at || '',
-          valor: convocacao.valor || 0,
-          taxaParticipacao: convocacao.evento.cobrar_taxa_participacao ? (convocacao.evento.taxa_participacao || 0) : 0,
-          taxaJuiz: convocacao.evento.cobrar_taxa_juiz ? (convocacao.evento.taxa_juiz || 0) : 0,
+          valor: convValor,
+          taxaParticipacao: 0,
+          taxaJuiz: 0,
         });
         setStep('qrcode');
       } else {
