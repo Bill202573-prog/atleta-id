@@ -184,6 +184,7 @@ export function AmistosoConvocacoesDialog({
             dataPagamento: conv.data_pagamento,
             notificadoEm: (conv as any).notificado_em,
             visualizado_em: (conv as any).visualizado_em || null,
+          });
         } else if (conv.crianca) {
           const birthDate = new Date(conv.crianca.data_nascimento);
           const idade = differenceInYears(new Date(), birthDate);
