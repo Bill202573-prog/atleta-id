@@ -383,7 +383,7 @@ export function AmistosoConvocacoesDialog({
               </div>
             </div>
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
               <div className="p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs">
                   <Users className="w-3.5 h-3.5" />
@@ -397,6 +397,13 @@ export function AmistosoConvocacoesDialog({
                   Convocados
                 </div>
                 <p className="text-xl font-bold mt-1">{convocadosCount}</p>
+              </div>
+              <div className="p-3 bg-purple-500/10 rounded-lg">
+                <div className="flex items-center gap-2 text-purple-600 text-xs">
+                  <Eye className="w-3.5 h-3.5" />
+                  Visualizados
+                </div>
+                <p className="text-xl font-bold mt-1">{visualizadosCount}</p>
               </div>
               <div className="p-3 bg-emerald-500/10 rounded-lg">
                 <div className="flex items-center gap-2 text-emerald-600 text-xs">
