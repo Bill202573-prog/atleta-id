@@ -410,6 +410,7 @@ function ConvocacaoCard({ convocacao, onPagar, onCancelar, onConfirmar, isCancel
 
 export function ConvocacoesAmistososTab() {
   const queryClient = useQueryClient();
+  const { session } = useAuth();
   const { data: convocacoes = [], isLoading } = useGuardianAmistosoConvocacoes();
   const { data: campeonatoConvocacoes = [], isLoading: loadingCampeonato } = useGuardianCampeonatoConvocacoes();
   const cancelMutation = useCancelAmistosoParticipation();
@@ -425,6 +426,22 @@ export function ConvocacoesAmistososTab() {
   const [showCampeonatoCancelDialog, setShowCampeonatoCancelDialog] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  // Register visualization for all convocations when page loads
+  useEffect(() => {
+    if (!session?.user?.id || convocacoes.length === 0) return;
+    const userId = session.user.id;
+    // Register view for each convocation (upsert - won't duplicate)
+    convocacoes.forEach(conv => {
+      supabase
+        .from('convocacao_visualizacoes')
+        .upsert(
+          { convocacao_id: conv.id, user_id: userId },
+          { onConflict: 'convocacao_id,user_id' }
+        )
+        .then(() => {});
+    });
+  }, [session?.user?.id, convocacoes]);
 
   // Filter pending campeonato inscriptions
   const pendingCampeonatoInscricoes = campeonatoConvocacoes.filter(c => 

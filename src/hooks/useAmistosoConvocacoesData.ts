@@ -59,12 +59,21 @@ export function useAmistosoConvocacoes(eventoId: string | null) {
 
       if (criancasError) throw criancasError;
 
+      // Fetch visualizations for these convocations
+      const convocacaoIds = convocacoes.map(c => c.id);
+      const { data: visualizacoes } = await supabase
+        .from('convocacao_visualizacoes')
+        .select('convocacao_id, visualizado_em')
+        .in('convocacao_id', convocacaoIds);
+
+      const vizMap = new Map((visualizacoes || []).map(v => [v.convocacao_id, v.visualizado_em]));
       const criancaMap = new Map(criancas.map(c => [c.id, c]));
 
       return convocacoes.map(conv => ({
         ...conv,
         crianca: criancaMap.get(conv.crianca_id),
-      })) as ConvocacaoWithCrianca[];
+        visualizado_em: vizMap.get(conv.id) || null,
+      })) as (ConvocacaoWithCrianca & { visualizado_em: string | null })[];
     },
     enabled: !!eventoId,
   });

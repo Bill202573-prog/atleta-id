@@ -543,21 +543,46 @@ export function AmistosoConvocacoesDialog({
                         </TableCell>
                         <TableCell>
                           {atleta.convocado && (
-                            atleta.status === 'pago' || atleta.status === 'confirmado' ? (
-                              <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Confirmado
-                              </Badge>
-                            ) : atleta.status === 'recusado' ? (
-                              <Badge className="bg-red-500/20 text-red-700 border-red-500/30">
-                                Recusado
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Pendente
-                              </Badge>
-                            )
+                            <TooltipProvider>
+                              <div className="flex items-center gap-1.5">
+                                {/* Status badge */}
+                                {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
+                                  <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Confirmado
+                                  </Badge>
+                                ) : atleta.status === 'recusado' ? (
+                                  <Badge className="bg-red-500/20 text-red-700 border-red-500/30">
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    Recusado
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Pendente
+                                  </Badge>
+                                )}
+                                {/* Tracking icons */}
+                                {atleta.notificadoEm && atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
+                                  <div className="flex items-center gap-0.5 ml-1">
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Mail className="w-3.5 h-3.5 text-blue-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>Enviado</TooltipContent>
+                                    </Tooltip>
+                                    {(atleta as any).visualizado_em ? (
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Eye className="w-3.5 h-3.5 text-purple-500" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>Visualizado</TooltipContent>
+                                      </Tooltip>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipProvider>
                           )}
                         </TableCell>
                       </TableRow>
