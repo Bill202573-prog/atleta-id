@@ -333,13 +333,13 @@ export function AmistosoConvocacoesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             Convocação - {eventoNome}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Selecione os atletas que serão convocados para este jogo
           </DialogDescription>
         </DialogHeader>
@@ -349,14 +349,14 @@ export function AmistosoConvocacoesDialog({
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 overflow-y-auto flex-1 min-h-0">
             {/* Turma Filter */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground">Filtrar por turma:</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {activeTurmas.map(turma => {
                   const isSelected = selectedTurmaIds.includes(turma.id);
                   const categoriaLabel = getTurmaCategoriaBadge(turma);
@@ -365,7 +365,7 @@ export function AmistosoConvocacoesDialog({
                       key={turma.id}
                       variant={isSelected ? 'default' : 'outline'}
                       size="sm"
-                      className="text-xs"
+                      className="text-xs h-7"
                       onClick={() => toggleTurma(turma.id)}
                     >
                       {turma.nome}
@@ -376,55 +376,55 @@ export function AmistosoConvocacoesDialog({
                   );
                 })}
                 {selectedTurmaIds.length > 0 && (
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setSelectedTurmaIds([]); setInitialized(false); }}>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { setSelectedTurmaIds([]); setInitialized(false); }}>
                     Limpar filtro
                   </Button>
                 )}
               </div>
             </div>
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                  <Users className="w-3.5 h-3.5" />
+            {/* Stats - compact */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="p-2 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-1 text-muted-foreground text-[10px] sm:text-xs">
+                  <Users className="w-3 h-3" />
                   Elegíveis
                 </div>
-                <p className="text-xl font-bold mt-1">{convocacoes.size}</p>
+                <p className="text-lg font-bold">{convocacoes.size}</p>
               </div>
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <div className="flex items-center gap-2 text-primary text-xs">
-                  <UserCheck className="w-3.5 h-3.5" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="flex items-center gap-1 text-primary text-[10px] sm:text-xs">
+                  <UserCheck className="w-3 h-3" />
                   Convocados
                 </div>
-                <p className="text-xl font-bold mt-1">{convocadosCount}</p>
+                <p className="text-lg font-bold">{convocadosCount}</p>
               </div>
-              <div className="p-3 bg-purple-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-purple-600 text-xs">
-                  <Eye className="w-3.5 h-3.5" />
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-purple-600 text-[10px] sm:text-xs">
+                  <Eye className="w-3 h-3" />
                   Visualizados
                 </div>
-                <p className="text-xl font-bold mt-1">{visualizadosCount}</p>
+                <p className="text-lg font-bold">{visualizadosCount}</p>
               </div>
-              <div className="p-3 bg-emerald-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-emerald-600 text-xs">
-                  <CheckCircle className="w-3.5 h-3.5" />
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-emerald-600 text-[10px] sm:text-xs">
+                  <CheckCircle className="w-3 h-3" />
                   Pagos
                 </div>
-                <p className="text-xl font-bold mt-1">{pagosCount}</p>
+                <p className="text-lg font-bold">{pagosCount}</p>
               </div>
-              <div className="p-3 bg-amber-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-amber-600 text-xs">
-                  <Gift className="w-3.5 h-3.5" />
+              <div className="p-2 bg-amber-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-amber-600 text-[10px] sm:text-xs">
+                  <Gift className="w-3 h-3" />
                   Isentos
                 </div>
-                <p className="text-xl font-bold mt-1">{isentosCount}</p>
+                <p className="text-lg font-bold">{isentosCount}</p>
               </div>
-              <div className="p-3 bg-blue-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-blue-600 text-xs">
-                  <DollarSign className="w-3.5 h-3.5" />
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-blue-600 text-[10px] sm:text-xs">
+                  <DollarSign className="w-3 h-3" />
                   Valor Padrão
                 </div>
-                <p className="text-xl font-bold mt-1">
+                <p className="text-lg font-bold">
                   {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
                 </p>
               </div>
@@ -452,10 +452,10 @@ export function AmistosoConvocacoesDialog({
               )}
             </div>
 
-            {/* Table */}
-            <div className="rounded-md border overflow-x-auto max-h-[400px] overflow-y-auto">
+            {/* Table - Desktop */}
+            <div className="rounded-md border overflow-x-auto max-h-[350px] overflow-y-auto hidden sm:block">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
                     <TableHead className="w-[50px]">Convocar</TableHead>
                     <TableHead>Atleta</TableHead>
@@ -558,7 +558,6 @@ export function AmistosoConvocacoesDialog({
                           {atleta.convocado && (
                             <TooltipProvider>
                               <div className="flex items-center gap-1.5">
-                                {/* Status badge */}
                                 {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
                                   <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30">
                                     <CheckCircle className="w-3 h-3 mr-1" />
@@ -575,7 +574,6 @@ export function AmistosoConvocacoesDialog({
                                     Pendente
                                   </Badge>
                                 )}
-                                {/* Tracking icons */}
                                 {atleta.notificadoEm && atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
                                   <div className="flex items-center gap-0.5 ml-1">
                                     <Tooltip>
@@ -584,7 +582,7 @@ export function AmistosoConvocacoesDialog({
                                       </TooltipTrigger>
                                       <TooltipContent>Enviado</TooltipContent>
                                     </Tooltip>
-                                    {(atleta as any).visualizado_em ? (
+                                    {atleta.visualizado_em ? (
                                       <Tooltip>
                                         <TooltipTrigger>
                                           <Eye className="w-3.5 h-3.5 text-purple-500" />
@@ -605,29 +603,144 @@ export function AmistosoConvocacoesDialog({
               </Table>
             </div>
 
+            {/* Mobile Card List */}
+            <div className="sm:hidden space-y-2 max-h-[350px] overflow-y-auto">
+              {filteredAtletas.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground text-sm">
+                  {convocacoes.size === 0
+                    ? 'Nenhum atleta elegível'
+                    : 'Nenhum atleta encontrado'}
+                </p>
+              ) : (
+                filteredAtletas.map(atleta => (
+                  <div 
+                    key={atleta.crianca_id} 
+                    className={`p-3 rounded-lg border ${
+                      atleta.status === 'recusado' 
+                        ? 'bg-red-500/10 border-red-200' 
+                        : atleta.status === 'pago' || atleta.status === 'confirmado'
+                          ? 'bg-emerald-500/10 border-emerald-200' 
+                          : atleta.convocado 
+                            ? 'bg-primary/5 border-primary/20' 
+                            : 'border-border'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={atleta.convocado}
+                        onCheckedChange={() => handleToggleConvocado(atleta.crianca_id)}
+                        disabled={atleta.status === 'pago' || atleta.status === 'confirmado' || atleta.status === 'recusado'}
+                      />
+                      <ChildAvatar fotoUrl={atleta.foto_url} nome={atleta.nome} className="h-8 w-8" fallbackClassName="text-xs" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-sm truncate">{atleta.nome}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] h-4 px-1">{atleta.categoria}</Badge>
+                          <span className="text-[10px] text-muted-foreground">{atleta.idade} anos</span>
+                          {/* Tracking icons on mobile */}
+                          {atleta.convocado && atleta.notificadoEm && (
+                            <div className="flex items-center gap-0.5">
+                              <Mail className="w-3 h-3 text-blue-500" />
+                              {atleta.visualizado_em && <Eye className="w-3 h-3 text-purple-500" />}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Mobile: valor, isento, status row */}
+                    {atleta.convocado && (
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-2">
+                          {/* Valor */}
+                          {!atleta.isento ? (
+                            atleta.status === 'pago' ? (
+                              <span className="text-xs font-medium text-emerald-600">
+                                R$ {(atleta.valor ?? valorPadrao ?? 0).toFixed(2)}
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  placeholder={valorPadrao ? `R$${valorPadrao}` : 'Valor'}
+                                  value={atleta.valor ?? ''}
+                                  onChange={(e) => handleValorChange(atleta.crianca_id, e.target.value)}
+                                  className="w-20 h-7 text-xs"
+                                  step="0.01"
+                                  min="0"
+                                />
+                                {atleta.useValorPadrao && (
+                                  <Badge variant="secondary" className="text-[10px] h-4 px-1">Pad</Badge>
+                                )}
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-xs text-amber-600 font-medium">Isento</span>
+                          )}
+                          {/* Isentar toggle */}
+                          {atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
+                            <div className="flex items-center gap-1">
+                              <Checkbox
+                                id={`isento-m-${atleta.crianca_id}`}
+                                checked={atleta.isento}
+                                onCheckedChange={() => handleToggleIsento(atleta.crianca_id)}
+                                className="h-3.5 w-3.5"
+                              />
+                              <label htmlFor={`isento-m-${atleta.crianca_id}`} className="text-[10px] text-muted-foreground">
+                                Isentar
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        {/* Status badge */}
+                        {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30 text-[10px] h-5">
+                            <CheckCircle className="w-3 h-3 mr-0.5" />
+                            OK
+                          </Badge>
+                        ) : atleta.status === 'recusado' ? (
+                          <Badge className="bg-red-500/20 text-red-700 border-red-500/30 text-[10px] h-5">
+                            <XCircle className="w-3 h-3 mr-0.5" />
+                            Recusado
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] h-5">
+                            <Clock className="w-3 h-3 mr-0.5" />
+                            Pendente
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
             {/* Footer */}
-            <div className="flex justify-between items-center pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-3 border-t flex-shrink-0">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {pendingNotifications > 0 
                   ? `📨 ${pendingNotifications} atleta(s) ainda não notificado(s)`
                   : '✅ Todos os convocados já foram notificados'}
               </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => handleSave(false)} disabled={upsertConvocacoes.isPending}>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleSave(false)} disabled={upsertConvocacoes.isPending}>
                   {upsertConvocacoes.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                   ) : (
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="w-4 h-4 mr-1" />
                   )}
                   Salvar
                 </Button>
-                <Button onClick={() => handleSave(true)} disabled={upsertConvocacoes.isPending || pendingNotifications === 0}>
+                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => handleSave(true)} disabled={upsertConvocacoes.isPending || pendingNotifications === 0}>
                   {upsertConvocacoes.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                   ) : (
-                    <Send className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 mr-1" />
                   )}
-                  Enviar Convocações
+                  Enviar
                 </Button>
               </div>
             </div>
