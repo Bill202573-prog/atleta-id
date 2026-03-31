@@ -249,21 +249,32 @@ function ConvocacaoCard({ convocacao, onPagar, onCancelar, onConfirmar, isCancel
               </h4>
               
               <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
-                {taxaParticipacao > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Inscrição</span>
-                    <span>{formatCurrency(taxaParticipacao)}</span>
-                  </div>
-                )}
-                
-                {taxaJuiz > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Arbitragem</span>
-                    <span>{formatCurrency(taxaJuiz)}</span>
-                  </div>
-                )}
-                
-                <Separator className="my-2" />
+                {/* Only show breakdown if the sum matches the actual valor */}
+                {(() => {
+                  const somaEventoTaxas = taxaParticipacao + taxaJuiz;
+                  const showBreakdown = somaEventoTaxas === (valor || 0) && (taxaParticipacao > 0 || taxaJuiz > 0);
+                  
+                  if (showBreakdown) {
+                    return (
+                      <>
+                        {taxaParticipacao > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Inscrição</span>
+                            <span>{formatCurrency(taxaParticipacao)}</span>
+                          </div>
+                        )}
+                        {taxaJuiz > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Arbitragem</span>
+                            <span>{formatCurrency(taxaJuiz)}</span>
+                          </div>
+                        )}
+                        <Separator className="my-2" />
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
                 
                 <div className="flex justify-between font-medium">
                   <span>Total</span>

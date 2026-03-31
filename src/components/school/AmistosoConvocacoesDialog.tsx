@@ -333,13 +333,13 @@ export function AmistosoConvocacoesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             Convocação - {eventoNome}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Selecione os atletas que serão convocados para este jogo
           </DialogDescription>
         </DialogHeader>
