@@ -69,14 +69,20 @@ Deno.serve(async (req) => {
 
     // Helper to check if already sent
     async function alreadySent(userId: string, tipo: string, referenciaId: string, diasAntes: number): Promise<boolean> {
-      const { data: existing } = await supabase
+      let query = supabase
         .from('push_notifications_log')
         .select('id')
         .eq('user_id', userId)
         .eq('tipo', tipo)
         .eq('referencia_id', referenciaId)
-        .eq('dias_antes', diasAntes)
-        .limit(1);
+        .eq('dias_antes', diasAntes);
+
+      // For daily pending reminders (dias_antes = -99), only check if sent today
+      if (diasAntes === -99) {
+        query = query.gte('enviado_em', todayStr);
+      }
+
+      const { data: existing } = await query.limit(1);
       return !!(existing && existing.length > 0);
     }
 
@@ -140,7 +146,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // ========== CONVOCAÇÃO REMINDERS (Amistosos) ==========
+      // ========== CONVOCAÇÃO PRESENCE REMINDERS (for confirmed/paid) ==========
       const diasConvocacao: number[] = [];
       if (config.convocacao_2_dias_antes) diasConvocacao.push(2);
       if (config.convocacao_1_dia_antes) diasConvocacao.push(1);
@@ -151,7 +157,7 @@ Deno.serve(async (req) => {
         targetDate.setDate(targetDate.getDate() + dias);
         const targetDateStr = targetDate.toISOString().split('T')[0];
 
-        // Amistoso convocations
+        // Amistoso convocations - only confirmed/paid (presence reminder)
         const { data: convocacoes } = await supabase
           .from('amistoso_convocacoes')
           .select(`
@@ -223,6 +229,68 @@ Deno.serve(async (req) => {
               }
 
               totalSent += await sendPush(userId, '🏆 Campeonato', body, '/dashboard/convocacoes', `campeonato-${conv.id}`, 'convocacao_campeonato', conv.id, dias, config.escolinha_id);
+            }
+          }
+        }
+      }
+
+      // ========== DAILY PENDING CONVOCATION REMINDERS ==========
+      if (config.convocacao_pendente_diario !== false) {
+        // Amistoso - pending convocations (not confirmed/paid/refused) for future events
+        const { data: pendingConvocacoes } = await supabase
+          .from('amistoso_convocacoes')
+          .select(`
+            id, crianca_id, status, notificado_em,
+            eventos_esportivos!inner(id, nome, data, escolinha_id),
+            criancas!inner(nome)
+          `)
+          .eq('eventos_esportivos.escolinha_id', config.escolinha_id)
+          .gte('eventos_esportivos.data', todayStr)
+          .not('notificado_em', 'is', null)
+          .in('status', ['aguardando_pagamento']);
+
+        if (pendingConvocacoes && pendingConvocacoes.length > 0) {
+          for (const conv of pendingConvocacoes) {
+            const userIds = await getGuardianUserIds(conv.crianca_id);
+            for (const userId of userIds) {
+              // Use dias_antes = -99 as sentinel for daily pending reminder, check if sent today
+              if (await alreadySent(userId, 'convocacao_pendente', conv.id, -99)) continue;
+
+              const childName = (conv as any).criancas?.nome || 'seu filho(a)';
+              const eventoNome = (conv as any).eventos_esportivos?.nome || 'evento';
+              const eventoData = (conv as any).eventos_esportivos?.data || '';
+
+              const body = `📋 ${childName} foi convocado(a) para "${eventoNome}"${eventoData ? ` em ${eventoData.split('-').reverse().join('/')}` : ''}. Confirme a participação!`;
+
+              totalSent += await sendPush(userId, '⚽ Convocação Pendente', body, '/dashboard/convocacoes', `pendente-${conv.id}-${todayStr}`, 'convocacao_pendente', conv.id, -99, config.escolinha_id);
+            }
+          }
+        }
+
+        // Campeonato - pending convocations
+        const { data: pendingCampConvocacoes } = await supabase
+          .from('campeonato_convocacoes')
+          .select(`
+            id, crianca_id, status, notificado_em,
+            campeonatos!inner(id, nome, escolinha_id),
+            criancas!inner(nome)
+          `)
+          .eq('campeonatos.escolinha_id', config.escolinha_id)
+          .not('notificado_em', 'is', null)
+          .in('status', ['aguardando_pagamento']);
+
+        if (pendingCampConvocacoes && pendingCampConvocacoes.length > 0) {
+          for (const conv of pendingCampConvocacoes) {
+            const userIds = await getGuardianUserIds(conv.crianca_id);
+            for (const userId of userIds) {
+              if (await alreadySent(userId, 'convocacao_pendente_camp', conv.id, -99)) continue;
+
+              const childName = (conv as any).criancas?.nome || 'seu filho(a)';
+              const campNome = (conv as any).campeonatos?.nome || 'campeonato';
+
+              const body = `📋 ${childName} foi convocado(a) para "${campNome}". Confirme a participação!`;
+
+              totalSent += await sendPush(userId, '🏆 Inscrição Pendente', body, '/dashboard/convocacoes', `pendente-camp-${conv.id}-${todayStr}`, 'convocacao_pendente_camp', conv.id, -99, config.escolinha_id);
             }
           }
         }

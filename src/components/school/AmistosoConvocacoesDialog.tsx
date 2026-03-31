@@ -22,7 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Users, Loader2, Save, UserCheck, DollarSign, Gift, CheckCircle, Clock, Send, Bell, Filter } from 'lucide-react';
+import { Search, Users, Loader2, Save, UserCheck, DollarSign, Gift, CheckCircle, Clock, Send, Bell, Filter, Mail, Eye, XCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEligibleAthletes } from '@/hooks/useCampeonatoConvocacoesData';
 import {
   useAmistosoConvocacoes,
@@ -59,6 +60,7 @@ interface AtletaConvocacao {
   status?: string;
   dataPagamento?: string | null;
   notificadoEm?: string | null;
+  visualizado_em?: string | null;
 }
 
 export function AmistosoConvocacoesDialog({
@@ -181,6 +183,7 @@ export function AmistosoConvocacoesDialog({
             status: conv.status,
             dataPagamento: conv.data_pagamento,
             notificadoEm: (conv as any).notificado_em,
+            visualizado_em: (conv as any).visualizado_em || null,
           });
         } else if (conv.crianca) {
           const birthDate = new Date(conv.crianca.data_nascimento);
@@ -227,6 +230,10 @@ export function AmistosoConvocacoesDialog({
 
   const isentosCount = useMemo(() => {
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.isento).length;
+  }, [convocacoes]);
+
+  const visualizadosCount = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && a.visualizado_em).length;
   }, [convocacoes]);
 
   const handleToggleConvocado = (criancaId: string) => {
@@ -376,7 +383,7 @@ export function AmistosoConvocacoesDialog({
               </div>
             </div>
             {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
               <div className="p-3 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2 text-muted-foreground text-xs">
                   <Users className="w-3.5 h-3.5" />
@@ -390,6 +397,13 @@ export function AmistosoConvocacoesDialog({
                   Convocados
                 </div>
                 <p className="text-xl font-bold mt-1">{convocadosCount}</p>
+              </div>
+              <div className="p-3 bg-purple-500/10 rounded-lg">
+                <div className="flex items-center gap-2 text-purple-600 text-xs">
+                  <Eye className="w-3.5 h-3.5" />
+                  Visualizados
+                </div>
+                <p className="text-xl font-bold mt-1">{visualizadosCount}</p>
               </div>
               <div className="p-3 bg-emerald-500/10 rounded-lg">
                 <div className="flex items-center gap-2 text-emerald-600 text-xs">
@@ -542,21 +556,46 @@ export function AmistosoConvocacoesDialog({
                         </TableCell>
                         <TableCell>
                           {atleta.convocado && (
-                            atleta.status === 'pago' || atleta.status === 'confirmado' ? (
-                              <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Confirmado
-                              </Badge>
-                            ) : atleta.status === 'recusado' ? (
-                              <Badge className="bg-red-500/20 text-red-700 border-red-500/30">
-                                Recusado
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Pendente
-                              </Badge>
-                            )
+                            <TooltipProvider>
+                              <div className="flex items-center gap-1.5">
+                                {/* Status badge */}
+                                {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
+                                  <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Confirmado
+                                  </Badge>
+                                ) : atleta.status === 'recusado' ? (
+                                  <Badge className="bg-red-500/20 text-red-700 border-red-500/30">
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    Recusado
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Pendente
+                                  </Badge>
+                                )}
+                                {/* Tracking icons */}
+                                {atleta.notificadoEm && atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
+                                  <div className="flex items-center gap-0.5 ml-1">
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Mail className="w-3.5 h-3.5 text-blue-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>Enviado</TooltipContent>
+                                    </Tooltip>
+                                    {(atleta as any).visualizado_em ? (
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Eye className="w-3.5 h-3.5 text-purple-500" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>Visualizado</TooltipContent>
+                                      </Tooltip>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
+                            </TooltipProvider>
                           )}
                         </TableCell>
                       </TableRow>

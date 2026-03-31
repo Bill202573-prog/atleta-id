@@ -53,6 +53,7 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
         convocacao_2_dias_antes: getValue('convocacao_2_dias_antes', true),
         convocacao_1_dia_antes: getValue('convocacao_1_dia_antes', true),
         convocacao_no_dia: getValue('convocacao_no_dia', false),
+        convocacao_pendente_diario: getValue('convocacao_pendente_diario', true),
         aula_3_dias_antes: getValue('aula_3_dias_antes', true),
         aula_1_dia_antes: getValue('aula_1_dia_antes', true),
         aula_no_dia: getValue('aula_no_dia', true),
@@ -156,6 +157,23 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
                     />
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Lembrete diário para convocações pendentes */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-foreground">📋 Lembrete de Convocação Pendente</h4>
+              <p className="text-xs text-muted-foreground pl-2">
+                Enviado diariamente para responsáveis que ainda não confirmaram ou recusaram a convocação. Para de enviar quando o pai confirma, paga ou recusa.
+              </p>
+              <div className="space-y-2 pl-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Lembrete diário até confirmação</Label>
+                  <Switch
+                    checked={getValue('convocacao_pendente_diario', true)}
+                    onCheckedChange={(v) => setField('convocacao_pendente_diario', v)}
+                  />
+                </div>
               </div>
             </div>
 

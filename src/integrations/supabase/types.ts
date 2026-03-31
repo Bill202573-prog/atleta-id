@@ -1006,6 +1006,35 @@ export type Database = {
           },
         ]
       }
+      convocacao_visualizacoes: {
+        Row: {
+          convocacao_id: string
+          id: string
+          user_id: string
+          visualizado_em: string
+        }
+        Insert: {
+          convocacao_id: string
+          id?: string
+          user_id: string
+          visualizado_em?: string
+        }
+        Update: {
+          convocacao_id?: string
+          id?: string
+          user_id?: string
+          visualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convocacao_visualizacoes_convocacao_id_fkey"
+            columns: ["convocacao_id"]
+            isOneToOne: false
+            referencedRelation: "amistoso_convocacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crianca_escolinha: {
         Row: {
           ativo: boolean
@@ -1471,6 +1500,7 @@ export type Database = {
           convocacao_1_dia_antes: boolean
           convocacao_2_dias_antes: boolean
           convocacao_no_dia: boolean
+          convocacao_pendente_diario: boolean
           created_at: string
           escolinha_id: string
           id: string
@@ -1489,6 +1519,7 @@ export type Database = {
           convocacao_1_dia_antes?: boolean
           convocacao_2_dias_antes?: boolean
           convocacao_no_dia?: boolean
+          convocacao_pendente_diario?: boolean
           created_at?: string
           escolinha_id: string
           id?: string
@@ -1507,6 +1538,7 @@ export type Database = {
           convocacao_1_dia_antes?: boolean
           convocacao_2_dias_antes?: boolean
           convocacao_no_dia?: boolean
+          convocacao_pendente_diario?: boolean
           created_at?: string
           escolinha_id?: string
           id?: string
