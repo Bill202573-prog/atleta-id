@@ -719,28 +719,28 @@ export function AmistosoConvocacoesDialog({
             </div>
 
             {/* Footer */}
-            <div className="flex justify-between items-center pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pt-3 border-t flex-shrink-0">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {pendingNotifications > 0 
                   ? `📨 ${pendingNotifications} atleta(s) ainda não notificado(s)`
                   : '✅ Todos os convocados já foram notificados'}
               </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => handleSave(false)} disabled={upsertConvocacoes.isPending}>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={() => handleSave(false)} disabled={upsertConvocacoes.isPending}>
                   {upsertConvocacoes.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                   ) : (
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="w-4 h-4 mr-1" />
                   )}
                   Salvar
                 </Button>
-                <Button onClick={() => handleSave(true)} disabled={upsertConvocacoes.isPending || pendingNotifications === 0}>
+                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => handleSave(true)} disabled={upsertConvocacoes.isPending || pendingNotifications === 0}>
                   {upsertConvocacoes.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                   ) : (
-                    <Send className="w-4 h-4 mr-2" />
+                    <Send className="w-4 h-4 mr-1" />
                   )}
-                  Enviar Convocações
+                  Enviar
                 </Button>
               </div>
             </div>
