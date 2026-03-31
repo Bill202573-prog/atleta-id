@@ -145,7 +145,7 @@ export function AmistosoConvocacoesDialog({
 
   // Initialize convocacoes state from existing data and eligible athletes
   useEffect(() => {
-    if (!eligibleAthletes || initialized || !open) return;
+    if (!eligibleAthletes || loadingConvocacoes || initialized || !open) return;
 
     const map = new Map<string, AtletaConvocacao>();
 
