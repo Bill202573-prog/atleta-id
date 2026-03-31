@@ -349,14 +349,14 @@ export function AmistosoConvocacoesDialog({
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 overflow-y-auto flex-1 min-h-0">
             {/* Turma Filter */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground">Filtrar por turma:</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {activeTurmas.map(turma => {
                   const isSelected = selectedTurmaIds.includes(turma.id);
                   const categoriaLabel = getTurmaCategoriaBadge(turma);
@@ -365,7 +365,7 @@ export function AmistosoConvocacoesDialog({
                       key={turma.id}
                       variant={isSelected ? 'default' : 'outline'}
                       size="sm"
-                      className="text-xs"
+                      className="text-xs h-7"
                       onClick={() => toggleTurma(turma.id)}
                     >
                       {turma.nome}
@@ -376,55 +376,55 @@ export function AmistosoConvocacoesDialog({
                   );
                 })}
                 {selectedTurmaIds.length > 0 && (
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setSelectedTurmaIds([]); setInitialized(false); }}>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => { setSelectedTurmaIds([]); setInitialized(false); }}>
                     Limpar filtro
                   </Button>
                 )}
               </div>
             </div>
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-              <div className="p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                  <Users className="w-3.5 h-3.5" />
+            {/* Stats - compact */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="p-2 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-1 text-muted-foreground text-[10px] sm:text-xs">
+                  <Users className="w-3 h-3" />
                   Elegíveis
                 </div>
-                <p className="text-xl font-bold mt-1">{convocacoes.size}</p>
+                <p className="text-lg font-bold">{convocacoes.size}</p>
               </div>
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <div className="flex items-center gap-2 text-primary text-xs">
-                  <UserCheck className="w-3.5 h-3.5" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="flex items-center gap-1 text-primary text-[10px] sm:text-xs">
+                  <UserCheck className="w-3 h-3" />
                   Convocados
                 </div>
-                <p className="text-xl font-bold mt-1">{convocadosCount}</p>
+                <p className="text-lg font-bold">{convocadosCount}</p>
               </div>
-              <div className="p-3 bg-purple-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-purple-600 text-xs">
-                  <Eye className="w-3.5 h-3.5" />
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-purple-600 text-[10px] sm:text-xs">
+                  <Eye className="w-3 h-3" />
                   Visualizados
                 </div>
-                <p className="text-xl font-bold mt-1">{visualizadosCount}</p>
+                <p className="text-lg font-bold">{visualizadosCount}</p>
               </div>
-              <div className="p-3 bg-emerald-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-emerald-600 text-xs">
-                  <CheckCircle className="w-3.5 h-3.5" />
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-emerald-600 text-[10px] sm:text-xs">
+                  <CheckCircle className="w-3 h-3" />
                   Pagos
                 </div>
-                <p className="text-xl font-bold mt-1">{pagosCount}</p>
+                <p className="text-lg font-bold">{pagosCount}</p>
               </div>
-              <div className="p-3 bg-amber-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-amber-600 text-xs">
-                  <Gift className="w-3.5 h-3.5" />
+              <div className="p-2 bg-amber-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-amber-600 text-[10px] sm:text-xs">
+                  <Gift className="w-3 h-3" />
                   Isentos
                 </div>
-                <p className="text-xl font-bold mt-1">{isentosCount}</p>
+                <p className="text-lg font-bold">{isentosCount}</p>
               </div>
-              <div className="p-3 bg-blue-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-blue-600 text-xs">
-                  <DollarSign className="w-3.5 h-3.5" />
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <div className="flex items-center gap-1 text-blue-600 text-[10px] sm:text-xs">
+                  <DollarSign className="w-3 h-3" />
                   Valor Padrão
                 </div>
-                <p className="text-xl font-bold mt-1">
+                <p className="text-lg font-bold">
                   {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
                 </p>
               </div>
