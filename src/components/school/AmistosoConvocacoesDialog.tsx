@@ -447,37 +447,6 @@ export function AmistosoConvocacoesDialog({
                 </span>
               </div>
             </div>
-              <div className="p-2 bg-purple-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-purple-600 text-[10px] sm:text-xs">
-                  <Eye className="w-3 h-3" />
-                  Visualizados
-                </div>
-                <p className="text-lg font-bold">{visualizadosCount}</p>
-              </div>
-              <div className="p-2 bg-emerald-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-emerald-600 text-[10px] sm:text-xs">
-                  <CheckCircle className="w-3 h-3" />
-                  Pagos
-                </div>
-                <p className="text-lg font-bold">{pagosCount}</p>
-              </div>
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-amber-600 text-[10px] sm:text-xs">
-                  <Gift className="w-3 h-3" />
-                  Isentos
-                </div>
-                <p className="text-lg font-bold">{isentosCount}</p>
-              </div>
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <div className="flex items-center gap-1 text-blue-600 text-[10px] sm:text-xs">
-                  <DollarSign className="w-3 h-3" />
-                  Valor Padrão
-                </div>
-                <p className="text-lg font-bold">
-                  {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
-                </p>
-              </div>
-            </div>
 
             {/* Search + Select All */}
             <div className="flex gap-2 items-center">
