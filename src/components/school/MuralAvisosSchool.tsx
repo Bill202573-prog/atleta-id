@@ -172,7 +172,7 @@ const MuralAvisosSchool = ({ escolinhaId }: MuralAvisosSchoolProps) => {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {comunicado.mensagem}
+                        <LinkifyText text={comunicado.mensagem} />
                       </p>
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-[10px] text-muted-foreground">
