@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -10,25 +9,19 @@ interface CancelPaymentRequest {
   convocacao_id: string;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight requests
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const asaasApiKey = Deno.env.get('ASAAS_API_KEY');
-    if (!asaasApiKey) {
+    const masterApiKey = Deno.env.get('ASAAS_API_KEY');
+    if (!masterApiKey) {
       throw new Error('ASAAS_API_KEY not configured');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase configuration missing');
-    }
-
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { convocacao_id }: CancelPaymentRequest = await req.json();
@@ -42,10 +35,15 @@ serve(async (req) => {
 
     console.log(`Cancelling participation for convocacao: ${convocacao_id}`);
 
-    // Get the convocacao data
+    // Get the convocacao with evento -> escolinha for proper API key
     const { data: convocacao, error: fetchError } = await supabase
       .from('amistoso_convocacoes')
-      .select('id, asaas_payment_id, status')
+      .select(`
+        id, asaas_payment_id, status, evento_id,
+        evento:eventos_esportivos!amistoso_convocacoes_evento_id_fkey(
+          escolinha_id
+        )
+      `)
       .eq('id', convocacao_id)
       .single();
 
@@ -57,32 +55,58 @@ serve(async (req) => {
       );
     }
 
-    // If there's an Asaas payment, cancel it
+    // If there's an Asaas payment, cancel it using the correct API key
     if (convocacao.asaas_payment_id) {
+      const eventoData = convocacao.evento as any;
+      const escolinhaId = eventoData?.escolinha_id;
+
+      // Get school's API key
+      let apiKeyToUse = masterApiKey;
+      if (escolinhaId) {
+        const { data: cadastro } = await supabase
+          .from('escola_cadastro_bancario')
+          .select('asaas_api_key')
+          .eq('escolinha_id', escolinhaId)
+          .single();
+
+        if (cadastro?.asaas_api_key) {
+          apiKeyToUse = cadastro.asaas_api_key;
+          console.log("Using school's API key for cancellation");
+        }
+      }
+
       console.log(`Cancelling Asaas payment: ${convocacao.asaas_payment_id}`);
       
       try {
-        const asaasResponse = await fetch(
+        // Try with school's key first
+        let asaasResponse = await fetch(
           `https://api.asaas.com/v3/payments/${convocacao.asaas_payment_id}`,
           {
             method: 'DELETE',
-            headers: {
-              'accept': 'application/json',
-              'access_token': asaasApiKey,
-            },
+            headers: { 'accept': 'application/json', 'access_token': apiKeyToUse },
           }
         );
+
+        // If school key fails, try master key (payment might have been created on master)
+        if (!asaasResponse.ok && apiKeyToUse !== masterApiKey) {
+          console.log('School key failed, trying master key for cancellation');
+          asaasResponse = await fetch(
+            `https://api.asaas.com/v3/payments/${convocacao.asaas_payment_id}`,
+            {
+              method: 'DELETE',
+              headers: { 'accept': 'application/json', 'access_token': masterApiKey },
+            }
+          );
+        }
 
         if (!asaasResponse.ok) {
           const errorText = await asaasResponse.text();
           console.warn(`Asaas cancellation warning (continuing anyway): ${errorText}`);
-          // Continue even if Asaas returns an error - the payment might already be cancelled
         } else {
           console.log('Asaas payment cancelled successfully');
         }
       } catch (asaasError) {
         console.warn('Error calling Asaas API (continuing anyway):', asaasError);
-        // Continue - we still want to update the local status
       }
     }
 
@@ -106,10 +130,7 @@ serve(async (req) => {
     console.log('Convocacao cancelled successfully');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Participação cancelada com sucesso' 
-      }),
+      JSON.stringify({ success: true, message: 'Participação cancelada com sucesso' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

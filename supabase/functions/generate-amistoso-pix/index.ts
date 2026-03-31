@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
             nome,
             escola_cadastro_bancario(
               asaas_account_id,
+              asaas_api_key,
               asaas_status
             )
           )
@@ -190,30 +191,27 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Determine API key to use
+    // Determine API key to use - prefer school's own Asaas subconta API key
     let activeApiKey = ASAAS_API_KEY;
-    
-    if (cadastroBancario?.asaas_account_id && !cadastroBancario.asaas_account_id.startsWith('acc_test_')) {
-      const asaasAccountId = cadastroBancario.asaas_account_id;
-      
-      const walletResponse = await fetch(`${ASAAS_API_URL}/accounts/${asaasAccountId}/apiKey`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'access_token': ASAAS_API_KEY,
-        },
-      });
 
-      if (walletResponse.ok) {
-        const walletData = await walletResponse.json();
-        if (walletData.apiKey) {
-          activeApiKey = walletData.apiKey;
-        }
-      } else {
-        console.log('Usando API key master para teste sandbox');
-      }
+    // First try from the inline join
+    if (cadastroBancario?.asaas_api_key) {
+      activeApiKey = cadastroBancario.asaas_api_key;
+      console.log("Using school's Asaas subconta API key (inline) for escola:", eventoRaw?.escolinha_id, "Account ID:", cadastroBancario.asaas_account_id);
     } else {
-      console.log('Subconta de teste detectada ou não configurada - usando API key master');
+      // Fallback: query escola_cadastro_bancario directly
+      const { data: cadastroBancarioFull } = await supabase
+        .from('escola_cadastro_bancario')
+        .select('asaas_account_id, asaas_api_key, asaas_status')
+        .eq('escolinha_id', eventoRaw?.escolinha_id)
+        .single();
+
+      if (cadastroBancarioFull?.asaas_api_key) {
+        activeApiKey = cadastroBancarioFull.asaas_api_key;
+        console.log("Using school's Asaas subconta API key (direct query) for escola:", eventoRaw?.escolinha_id, "Account ID:", cadastroBancarioFull.asaas_account_id);
+      } else {
+        console.warn('ALERTA: Escola sem API key Asaas configurada, usando master key. Escolinha ID:', eventoRaw?.escolinha_id);
+      }
     }
 
     // Step 1: Create or find customer in Asaas
