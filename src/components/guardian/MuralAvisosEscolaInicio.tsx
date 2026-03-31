@@ -1,3 +1,4 @@
+import { LinkifyText } from '@/components/shared/LinkifyText';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,7 +127,7 @@ const MuralAvisosEscolaInicio = () => {
               )}
             </div>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {comunicado.mensagem}
+              <LinkifyText text={comunicado.mensagem} />
             </p>
             <div className="flex items-center justify-between mt-3">
               <span className="text-[10px] text-muted-foreground">
