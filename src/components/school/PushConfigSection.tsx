@@ -160,6 +160,23 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
               </div>
             </div>
 
+            {/* Lembrete diário para convocações pendentes */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-foreground">📋 Lembrete de Convocação Pendente</h4>
+              <p className="text-xs text-muted-foreground pl-2">
+                Enviado diariamente para responsáveis que ainda não confirmaram ou recusaram a convocação. Para de enviar quando o pai confirma, paga ou recusa.
+              </p>
+              <div className="space-y-2 pl-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Lembrete diário até confirmação</Label>
+                  <Switch
+                    checked={getValue('convocacao_pendente_diario', true)}
+                    onCheckedChange={(v) => setField('convocacao_pendente_diario', v)}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Aulas */}
             <div className="space-y-3">
               <h4 className="font-semibold text-sm text-foreground">📚 Lembretes de Confirmação de Aula</h4>
