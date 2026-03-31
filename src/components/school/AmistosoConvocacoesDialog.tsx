@@ -60,6 +60,7 @@ interface AtletaConvocacao {
   status?: string;
   dataPagamento?: string | null;
   notificadoEm?: string | null;
+  visualizado_em?: string | null;
 }
 
 export function AmistosoConvocacoesDialog({
