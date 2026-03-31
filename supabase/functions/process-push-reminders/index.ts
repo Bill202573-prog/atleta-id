@@ -69,14 +69,20 @@ Deno.serve(async (req) => {
 
     // Helper to check if already sent
     async function alreadySent(userId: string, tipo: string, referenciaId: string, diasAntes: number): Promise<boolean> {
-      const { data: existing } = await supabase
+      let query = supabase
         .from('push_notifications_log')
         .select('id')
         .eq('user_id', userId)
         .eq('tipo', tipo)
         .eq('referencia_id', referenciaId)
-        .eq('dias_antes', diasAntes)
-        .limit(1);
+        .eq('dias_antes', diasAntes);
+
+      // For daily pending reminders (dias_antes = -99), only check if sent today
+      if (diasAntes === -99) {
+        query = query.gte('enviado_em', todayStr);
+      }
+
+      const { data: existing } = await query.limit(1);
       return !!(existing && existing.length > 0);
     }
 
