@@ -22,7 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Users, Loader2, Save, UserCheck, DollarSign, Gift, CheckCircle, Clock, Send, Bell, Filter } from 'lucide-react';
+import { Search, Users, Loader2, Save, UserCheck, DollarSign, Gift, CheckCircle, Clock, Send, Bell, Filter, Mail, Eye, XCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEligibleAthletes } from '@/hooks/useCampeonatoConvocacoesData';
 import {
   useAmistosoConvocacoes,
