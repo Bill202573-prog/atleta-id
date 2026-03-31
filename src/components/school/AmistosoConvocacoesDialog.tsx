@@ -452,10 +452,10 @@ export function AmistosoConvocacoesDialog({
               )}
             </div>
 
-            {/* Table */}
-            <div className="rounded-md border overflow-x-auto max-h-[400px] overflow-y-auto">
+            {/* Table - Desktop */}
+            <div className="rounded-md border overflow-x-auto max-h-[350px] overflow-y-auto hidden sm:block">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
                     <TableHead className="w-[50px]">Convocar</TableHead>
                     <TableHead>Atleta</TableHead>
@@ -558,7 +558,6 @@ export function AmistosoConvocacoesDialog({
                           {atleta.convocado && (
                             <TooltipProvider>
                               <div className="flex items-center gap-1.5">
-                                {/* Status badge */}
                                 {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
                                   <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30">
                                     <CheckCircle className="w-3 h-3 mr-1" />
@@ -575,7 +574,6 @@ export function AmistosoConvocacoesDialog({
                                     Pendente
                                   </Badge>
                                 )}
-                                {/* Tracking icons */}
                                 {atleta.notificadoEm && atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
                                   <div className="flex items-center gap-0.5 ml-1">
                                     <Tooltip>
@@ -584,7 +582,7 @@ export function AmistosoConvocacoesDialog({
                                       </TooltipTrigger>
                                       <TooltipContent>Enviado</TooltipContent>
                                     </Tooltip>
-                                    {(atleta as any).visualizado_em ? (
+                                    {atleta.visualizado_em ? (
                                       <Tooltip>
                                         <TooltipTrigger>
                                           <Eye className="w-3.5 h-3.5 text-purple-500" />
@@ -603,6 +601,121 @@ export function AmistosoConvocacoesDialog({
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="sm:hidden space-y-2 max-h-[350px] overflow-y-auto">
+              {filteredAtletas.length === 0 ? (
+                <p className="text-center py-8 text-muted-foreground text-sm">
+                  {convocacoes.size === 0
+                    ? 'Nenhum atleta elegível'
+                    : 'Nenhum atleta encontrado'}
+                </p>
+              ) : (
+                filteredAtletas.map(atleta => (
+                  <div 
+                    key={atleta.crianca_id} 
+                    className={`p-3 rounded-lg border ${
+                      atleta.status === 'recusado' 
+                        ? 'bg-red-500/10 border-red-200' 
+                        : atleta.status === 'pago' || atleta.status === 'confirmado'
+                          ? 'bg-emerald-500/10 border-emerald-200' 
+                          : atleta.convocado 
+                            ? 'bg-primary/5 border-primary/20' 
+                            : 'border-border'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={atleta.convocado}
+                        onCheckedChange={() => handleToggleConvocado(atleta.crianca_id)}
+                        disabled={atleta.status === 'pago' || atleta.status === 'confirmado' || atleta.status === 'recusado'}
+                      />
+                      <ChildAvatar fotoUrl={atleta.foto_url} nome={atleta.nome} className="h-8 w-8" fallbackClassName="text-xs" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-sm truncate">{atleta.nome}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] h-4 px-1">{atleta.categoria}</Badge>
+                          <span className="text-[10px] text-muted-foreground">{atleta.idade} anos</span>
+                          {/* Tracking icons on mobile */}
+                          {atleta.convocado && atleta.notificadoEm && (
+                            <div className="flex items-center gap-0.5">
+                              <Mail className="w-3 h-3 text-blue-500" />
+                              {atleta.visualizado_em && <Eye className="w-3 h-3 text-purple-500" />}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Mobile: valor, isento, status row */}
+                    {atleta.convocado && (
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-2">
+                          {/* Valor */}
+                          {!atleta.isento ? (
+                            atleta.status === 'pago' ? (
+                              <span className="text-xs font-medium text-emerald-600">
+                                R$ {(atleta.valor ?? valorPadrao ?? 0).toFixed(2)}
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <Input
+                                  type="number"
+                                  placeholder={valorPadrao ? `R$${valorPadrao}` : 'Valor'}
+                                  value={atleta.valor ?? ''}
+                                  onChange={(e) => handleValorChange(atleta.crianca_id, e.target.value)}
+                                  className="w-20 h-7 text-xs"
+                                  step="0.01"
+                                  min="0"
+                                />
+                                {atleta.useValorPadrao && (
+                                  <Badge variant="secondary" className="text-[10px] h-4 px-1">Pad</Badge>
+                                )}
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-xs text-amber-600 font-medium">Isento</span>
+                          )}
+                          {/* Isentar toggle */}
+                          {atleta.status !== 'pago' && atleta.status !== 'confirmado' && atleta.status !== 'recusado' && (
+                            <div className="flex items-center gap-1">
+                              <Checkbox
+                                id={`isento-m-${atleta.crianca_id}`}
+                                checked={atleta.isento}
+                                onCheckedChange={() => handleToggleIsento(atleta.crianca_id)}
+                                className="h-3.5 w-3.5"
+                              />
+                              <label htmlFor={`isento-m-${atleta.crianca_id}`} className="text-[10px] text-muted-foreground">
+                                Isentar
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        {/* Status badge */}
+                        {atleta.status === 'pago' || atleta.status === 'confirmado' ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30 text-[10px] h-5">
+                            <CheckCircle className="w-3 h-3 mr-0.5" />
+                            OK
+                          </Badge>
+                        ) : atleta.status === 'recusado' ? (
+                          <Badge className="bg-red-500/20 text-red-700 border-red-500/30 text-[10px] h-5">
+                            <XCircle className="w-3 h-3 mr-0.5" />
+                            Recusado
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300 bg-orange-50 text-[10px] h-5">
+                            <Clock className="w-3 h-3 mr-0.5" />
+                            Pendente
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Footer */}
