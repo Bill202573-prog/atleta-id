@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
             nome,
             escola_cadastro_bancario(
               asaas_account_id,
+              asaas_api_key,
               asaas_status
             )
           )
