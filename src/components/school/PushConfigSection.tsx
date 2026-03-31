@@ -53,6 +53,7 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
         convocacao_2_dias_antes: getValue('convocacao_2_dias_antes', true),
         convocacao_1_dia_antes: getValue('convocacao_1_dia_antes', true),
         convocacao_no_dia: getValue('convocacao_no_dia', false),
+        convocacao_pendente_diario: getValue('convocacao_pendente_diario', true),
         aula_3_dias_antes: getValue('aula_3_dias_antes', true),
         aula_1_dia_antes: getValue('aula_1_dia_antes', true),
         aula_no_dia: getValue('aula_no_dia', true),
