@@ -79,6 +79,47 @@ export function useAmistosoConvocacoes(eventoId: string | null) {
   });
 }
 
+// Summary stats for an amistoso convocation
+export interface AmistosoConvocacaoStats {
+  convocados: number;
+  visualizados: number;
+  pagos: number;
+  isentos: number;
+}
+
+export function useAmistosoConvocacoesStats(eventoId: string | null) {
+  return useQuery({
+    queryKey: ['amistoso-convocacoes-stats', eventoId],
+    queryFn: async (): Promise<AmistosoConvocacaoStats> => {
+      if (!eventoId) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0 };
+
+      const { data: convocacoes, error } = await supabase
+        .from('amistoso_convocacoes')
+        .select('id, status, isento, notificado_em')
+        .eq('evento_id', eventoId);
+
+      if (error) throw error;
+      if (!convocacoes || convocacoes.length === 0) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0 };
+
+      const convocacaoIds = convocacoes.map(c => c.id);
+      const { data: visualizacoes } = await supabase
+        .from('convocacao_visualizacoes')
+        .select('convocacao_id')
+        .in('convocacao_id', convocacaoIds);
+
+      const vizSet = new Set((visualizacoes || []).map(v => v.convocacao_id));
+
+      return {
+        convocados: convocacoes.length,
+        visualizados: convocacoes.filter(c => vizSet.has(c.id)).length,
+        pagos: convocacoes.filter(c => c.status === 'pago' || c.status === 'confirmado').length,
+        isentos: convocacoes.filter(c => c.isento).length,
+      };
+    },
+    enabled: !!eventoId,
+  });
+}
+
 // Count convocacoes for an amistoso
 export function useAmistosoConvocacoesCount(eventoId: string | null) {
   return useQuery({
