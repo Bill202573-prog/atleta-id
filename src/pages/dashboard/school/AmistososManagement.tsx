@@ -559,6 +559,8 @@ export default function AmistososManagement() {
                         </React.Fragment>
                       );
                     })
+                  )}
+                </TableBody>
               </Table>
             </div>
           )}
