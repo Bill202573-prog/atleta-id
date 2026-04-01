@@ -165,29 +165,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Para SIGNED_IN / USER_UPDATED / outros eventos relevantes, atualiza dados do usuário
+        // Para SIGNED_IN / INITIAL_SESSION / USER_UPDATED, atualiza dados do usuário
         console.log('[AuthContext] Setting isLoading=true, fetching user data...');
         setIsLoading(true);
         fetchingRef.current = true;
-        setTimeout(() => {
-          // Re-check fetchingRef inside setTimeout — login() may have already completed
-          if (fetchingRef.current) {
-            console.log('[AuthContext] onAuthStateChange setTimeout: already fetched by login(), skipping');
-            setIsLoading(false);
-            fetchingRef.current = false;
-            return;
-          }
-          fetchingRef.current = true;
-          fetchUserData(nextSession.user.id).then(userData => {
+
+        fetchUserData(nextSession.user.id)
+          .then((userData) => {
             console.log('[AuthContext] onAuthStateChange fetchUserData result:', userData?.role);
             setUser(userData);
-            setIsLoading(false);
-            fetchingRef.current = false;
-          }).catch(() => {
+
+            // Fire-and-forget: registra acesso apenas em novo login
+            if (event === 'SIGNED_IN' && userData) {
+              registrarAcesso(nextSession.user.id, userData.role, userData.escolinhaId || null).catch(() => {});
+            }
+          })
+          .finally(() => {
             setIsLoading(false);
             fetchingRef.current = false;
           });
-        }, 0);
       }
     );
 
@@ -253,47 +249,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
-      // Carregar dados do usuário ANTES de retornar sucesso
-      // Isso evita race condition onde Dashboard redireciona para /auth
-      // antes do onAuthStateChange terminar de carregar os dados
-      if (data.user) {
-        const userId = data.user.id;
-        console.log('[AuthContext] login: loading user data before returning...');
-        
-        // Marcar como fetching para evitar duplicata com onAuthStateChange
-        fetchingRef.current = true;
-        setIsLoading(true);
-        
-        // Atualizar sessão imediatamente para que sessionRef fique atualizado
-        setSession(data.session);
-        sessionRef.current = data.session;
-        
-        try {
-          // Timeout de segurança: se fetchUserData demorar mais de 8s, continua sem travar
-          const userData = await Promise.race([
-            fetchUserData(userId),
-            new Promise<null>((resolve) => {
-              setTimeout(() => {
-                console.warn('[AuthContext] login: fetchUserData timeout after 8s');
-                resolve(null);
-              }, 8000);
-            }),
-          ]);
-          console.log('[AuthContext] login: user data loaded:', userData?.role);
-          setUser(userData);
-          setIsLoading(false);
-          fetchingRef.current = false;
-          
-          // Fire-and-forget: registra acesso sem bloquear
-          if (userData) {
-            registrarAcesso(userId, userData.role, userData.escolinhaId || null).catch(() => {});
-          }
-        } catch (fetchErr) {
-          console.error('[AuthContext] login: fetchUserData failed:', fetchErr);
-          setIsLoading(false);
-          fetchingRef.current = false;
-        }
-      }
+      // O carregamento do perfil é tratado pelo onAuthStateChange
+      // para evitar corridas entre login(), listener e redirecionamento.
 
       return { success: true };
     } catch (error) {

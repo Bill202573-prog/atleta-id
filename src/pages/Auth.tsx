@@ -72,7 +72,6 @@ const Auth = () => {
             title: 'Login realizado!',
             description: 'Bem-vindo ao sistema.',
           });
-          navigate('/dashboard');
         } else {
           toast({
             title: 'Erro no login',
