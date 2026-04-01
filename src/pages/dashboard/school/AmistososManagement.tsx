@@ -423,6 +423,7 @@ export default function AmistososManagement() {
 
                       {/* Convocation Summary */}
                       <AmistosoConvocacaoSummary eventoId={evento.id} />
+                    </div>
                   );
                 })
               )}
