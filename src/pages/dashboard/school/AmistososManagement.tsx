@@ -14,6 +14,7 @@ import { useAmistosoConvocacoesCount } from '@/hooks/useAmistosoConvocacoesData'
 import { EventoFormDialog } from '@/components/school/EventoFormDialog';
 import EventoDetailDialog from '@/components/school/EventoDetailDialog';
 import { AmistosoConvocacoesDialog } from '@/components/school/AmistosoConvocacoesDialog';
+import { AmistosoConvocacaoSummary } from '@/components/school/AmistosoConvocacaoSummary';
 import FinalizarAmistosoDialog from '@/components/school/FinalizarAmistosoDialog';
 import AmistosoPendentesPopup from '@/components/school/AmistosoPendentesPopup';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
