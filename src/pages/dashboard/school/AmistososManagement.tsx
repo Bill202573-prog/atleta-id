@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, isPast, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ import { useAmistosoConvocacoesCount } from '@/hooks/useAmistosoConvocacoesData'
 import { EventoFormDialog } from '@/components/school/EventoFormDialog';
 import EventoDetailDialog from '@/components/school/EventoDetailDialog';
 import { AmistosoConvocacoesDialog } from '@/components/school/AmistosoConvocacoesDialog';
+import { AmistosoConvocacaoSummary } from '@/components/school/AmistosoConvocacaoSummary';
 import FinalizarAmistosoDialog from '@/components/school/FinalizarAmistosoDialog';
 import AmistosoPendentesPopup from '@/components/school/AmistosoPendentesPopup';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -419,6 +420,9 @@ export default function AmistososManagement() {
                         )}
                         <ConvocacaoButton evento={evento} onClick={() => handleConvocar(evento)} />
                       </div>
+
+                      {/* Convocation Summary */}
+                      <AmistosoConvocacaoSummary eventoId={evento.id} />
                     </div>
                   );
                 })
@@ -460,8 +464,8 @@ export default function AmistososManagement() {
                         ? 'cursor-pointer hover:bg-green-100/80 bg-green-50 dark:bg-green-950/20 dark:hover:bg-green-950/30'
                         : 'cursor-pointer hover:bg-muted/50';
                       return (
+                        <React.Fragment key={evento.id}>
                         <TableRow
-                          key={evento.id}
                           className={rowClassName}
                           onClick={() => handleViewDetail(evento)}
                         >
@@ -547,6 +551,12 @@ export default function AmistososManagement() {
                             </DropdownMenu>
                           </TableCell>
                         </TableRow>
+                        <TableRow className="hover:bg-transparent border-b-2">
+                          <TableCell colSpan={9} className="py-1 px-4">
+                            <AmistosoConvocacaoSummary eventoId={evento.id} />
+                          </TableCell>
+                        </TableRow>
+                        </React.Fragment>
                       );
                     })
                   )}
