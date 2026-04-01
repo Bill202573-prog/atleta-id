@@ -559,9 +559,102 @@ export default function AmistososManagement() {
                       </>
                       );
                     }
-                    return (
-                      <>
-                    })
+                      return (
+                        <>
+                        <TableRow
+                          key={evento.id}
+                          className={rowClassName}
+                          onClick={() => handleViewDetail(evento)}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <Swords className="w-4 h-4 text-orange-500" />
+                              {evento.nome}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(evento.data), "dd 'de' MMM, yyyy", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            {evento.horario_inicio
+                              ? `${evento.horario_inicio.slice(0, 5)}${
+                                  evento.horario_fim ? ` - ${evento.horario_fim.slice(0, 5)}` : ''
+                                }`
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {evento.local ? (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-muted-foreground" />
+                                <span className="truncate max-w-[150px]">{evento.local}</span>
+                              </div>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>{evento.categoria || '-'}</TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            {evento.placar_time1 !== null && evento.placar_time2 !== null ? (
+                              <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30 font-semibold">
+                                {evento.placar_time1} x {evento.placar_time2}
+                              </Badge>
+                            ) : (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                                onClick={() => handleFinalizar(evento)}
+                              >
+                                <Flag className="w-3 h-3" />
+                                Lançar Placar
+                              </Button>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={STATUS_COLORS[evento.status]}>
+                              {STATUS_LABELS[evento.status]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <ConvocacaoButton evento={evento} onClick={() => handleConvocar(evento)} />
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewDetail(evento)}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Ver Detalhes
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleEdit(evento)}>
+                                  <Pencil className="w-4 h-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(evento)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                        <TableRow key={`${evento.id}-summary`} className="hover:bg-transparent border-b-2">
+                          <TableCell colSpan={9} className="py-1 px-4">
+                            <AmistosoConvocacaoSummary eventoId={evento.id} />
+                          </TableCell>
+                        </TableRow>
+                        </>
+                      );
                   )}
                 </TableBody>
               </Table>
