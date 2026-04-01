@@ -420,7 +420,9 @@ export default function AmistososManagement() {
                         )}
                         <ConvocacaoButton evento={evento} onClick={() => handleConvocar(evento)} />
                       </div>
-                    </div>
+
+                      {/* Convocation Summary */}
+                      <AmistosoConvocacaoSummary eventoId={evento.id} />
                   );
                 })
               )}
