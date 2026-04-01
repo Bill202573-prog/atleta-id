@@ -551,7 +551,16 @@ export default function AmistososManagement() {
                             </DropdownMenu>
                           </TableCell>
                         </TableRow>
+                        <TableRow key={`${evento.id}-summary`} className="hover:bg-transparent border-b-2">
+                          <TableCell colSpan={9} className="py-1 px-4">
+                            <AmistosoConvocacaoSummary eventoId={evento.id} />
+                          </TableCell>
+                        </TableRow>
+                      </>
                       );
+                    }
+                    return (
+                      <>
                     })
                   )}
                 </TableBody>
