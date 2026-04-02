@@ -81,25 +81,18 @@ export function AmistosoConvocacaoSummary({ eventoId, elegiveisCount }: Amistoso
             </Badge>
           ))}
           {stats.semPix > 0 && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20 text-[11px] h-6 gap-1 font-normal cursor-help">
-                    <AlertTriangle className="w-3 h-3" />
-                    Sem PIX <span className="font-semibold">{stats.semPix}</span>
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p className="font-medium text-xs mb-1">Atletas sem cobrança gerada:</p>
-                  <ul className="text-xs space-y-0.5">
-                    {stats.atletasSemPix.map((nome, i) => (
-                      <li key={i}>• {nome}</li>
-                    ))}
-                  </ul>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20 text-[11px] h-6 gap-1 font-normal">
+              <AlertTriangle className="w-3 h-3" />
+              Sem PIX <span className="font-semibold">{stats.semPix}</span>
+            </Badge>
           )}
+        </div>
+        {stats.semPix > 0 && stats.atletasSemPix.length > 0 && (
+          <div className="mt-1.5 p-2 rounded-md bg-red-50 border border-red-200 text-xs text-red-700" onClick={(e) => e.stopPropagation()}>
+            <p className="font-medium mb-0.5">⚠️ Atletas sem cobrança PIX:</p>
+            <p>{stats.atletasSemPix.join(', ')}</p>
+          </div>
+        )}
         </div>
       </CollapsibleContent>
     </Collapsible>
