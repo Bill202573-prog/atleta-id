@@ -96,7 +96,7 @@ export function useAmistosoConvocacoesStats(eventoId: string | null) {
   return useQuery({
     queryKey: ['amistoso-convocacoes-stats', eventoId],
     queryFn: async (): Promise<AmistosoConvocacaoStats> => {
-      if (!eventoId) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0, pixGerados: 0, semPix: 0, atletasSemPix: [] };
+      if (!eventoId) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0, recusados: 0, pixGerados: 0, semPix: 0, atletasSemPix: [], motivosSemPix: {} };
 
       const { data: convocacoes, error } = await supabase
         .from('amistoso_convocacoes')
