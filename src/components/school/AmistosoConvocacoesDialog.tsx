@@ -61,6 +61,7 @@ interface AtletaConvocacao {
   dataPagamento?: string | null;
   notificadoEm?: string | null;
   visualizado_em?: string | null;
+  asaas_payment_id?: string | null;
 }
 
 export function AmistosoConvocacoesDialog({
