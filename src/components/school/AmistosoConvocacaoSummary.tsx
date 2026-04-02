@@ -3,7 +3,7 @@ import { useAmistosoConvocacoesStats } from '@/hooks/useAmistosoConvocacoesData'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 import { ChevronDown, ChevronUp, Users, Eye, CheckCircle, Gift, Loader2, CreditCard, AlertTriangle } from 'lucide-react';
 
 interface AmistosoConvocacaoSummaryProps {
