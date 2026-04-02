@@ -454,6 +454,11 @@ export function AmistosoConvocacoesDialog({
                 <span className="text-xs text-amber-600">Isentos</span>
                 <span className="text-sm font-bold">{isentosCount}</span>
               </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500/10 rounded-md">
+                <XCircle className="w-3.5 h-3.5 text-orange-600" />
+                <span className="text-xs text-orange-600">Recusados</span>
+                <span className="text-sm font-bold">{recusadosCount}</span>
+              </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 rounded-md">
                 <CreditCard className="w-3.5 h-3.5 text-blue-600" />
                 <span className="text-xs text-blue-600">PIX Gerados</span>
