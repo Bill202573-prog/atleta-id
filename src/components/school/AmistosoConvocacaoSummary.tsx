@@ -88,12 +88,11 @@ export function AmistosoConvocacaoSummary({ eventoId, elegiveisCount }: Amistoso
           )}
         </div>
         {stats.semPix > 0 && stats.atletasSemPix.length > 0 && (
-          <div className="mt-1.5 p-2 rounded-md bg-red-50 border border-red-200 text-xs text-red-700" onClick={(e) => e.stopPropagation()}>
+          <div className="mt-1.5 p-2 rounded-md bg-destructive/10 border border-destructive/20 text-xs text-destructive" onClick={(e) => e.stopPropagation()}>
             <p className="font-medium mb-0.5">⚠️ Atletas sem cobrança PIX:</p>
             <p>{stats.atletasSemPix.join(', ')}</p>
           </div>
         )}
-        </div>
       </CollapsibleContent>
     </Collapsible>
   );
