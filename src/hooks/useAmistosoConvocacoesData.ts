@@ -85,9 +85,11 @@ export interface AmistosoConvocacaoStats {
   visualizados: number;
   pagos: number;
   isentos: number;
+  recusados: number;
   pixGerados: number;
   semPix: number;
   atletasSemPix: string[];
+  motivosSemPix: Record<string, string>;
 }
 
 export function useAmistosoConvocacoesStats(eventoId: string | null) {
