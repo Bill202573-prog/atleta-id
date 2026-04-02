@@ -52,6 +52,12 @@ export function AmistosoConvocacaoSummary({ eventoId, elegiveisCount }: Amistoso
       color: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
     },
     {
+      label: 'Recusados',
+      value: stats.recusados,
+      icon: XCircle,
+      color: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    },
+    {
       label: 'PIX Gerados',
       value: stats.pixGerados,
       icon: CreditCard,
