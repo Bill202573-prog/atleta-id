@@ -269,6 +269,14 @@ export function AmistosoConvocacoesDialog({
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.visualizado_em).length;
   }, [convocacoes]);
 
+  const pixGeradosCount = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !!a.asaas_payment_id).length;
+  }, [convocacoes]);
+
+  const semPixList = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !a.asaas_payment_id && !!a.notificadoEm);
+  }, [convocacoes]);
+
   const handleToggleConvocado = (criancaId: string) => {
     setConvocacoes(prev => {
       const map = new Map(prev);
