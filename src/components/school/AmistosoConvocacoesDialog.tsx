@@ -451,8 +451,34 @@ export function AmistosoConvocacoesDialog({
                 <span className="text-sm font-bold">{isentosCount}</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 rounded-md">
-                <DollarSign className="w-3.5 h-3.5 text-blue-600" />
-                <span className="text-xs text-blue-600">Valor Padrão</span>
+                <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs text-blue-600">PIX Gerados</span>
+                <span className="text-sm font-bold">{pixGeradosCount}</span>
+              </div>
+              {semPixList.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-500/10 rounded-md cursor-help">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                        <span className="text-xs text-red-600">Sem PIX</span>
+                        <span className="text-sm font-bold text-red-600">{semPixList.length}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="font-medium text-xs mb-1">Atletas sem cobrança gerada:</p>
+                      <ul className="text-xs space-y-0.5">
+                        {semPixList.map((a) => (
+                          <li key={a.crianca_id}>• {a.nome}</li>
+                        ))}
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-md">
+                <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Valor Padrão</span>
                 <span className="text-sm font-bold">
                   {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
                 </span>
