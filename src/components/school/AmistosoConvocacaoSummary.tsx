@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-import { ChevronDown, ChevronUp, Users, Eye, CheckCircle, Gift, Loader2, CreditCard, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Users, Eye, CheckCircle, Gift, Loader2, CreditCard, AlertTriangle, XCircle } from 'lucide-react';
 
 interface AmistosoConvocacaoSummaryProps {
   eventoId: string;
