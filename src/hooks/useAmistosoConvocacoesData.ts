@@ -183,7 +183,7 @@ export function useUpsertAmistosoConvocacoes() {
 
       // Insert new convocacoes
       const toInsert = convocacoes.filter(c => !existingMap.has(c.crianca_id));
-      const newInsertedIds: string[] = [];
+      
       
       if (toInsert.length > 0) {
         const insertData = toInsert.map(c => ({
@@ -194,24 +194,16 @@ export function useUpsertAmistosoConvocacoes() {
           notificado_em: enviarNotificacoes ? new Date().toISOString() : null,
         }));
         
-        const { data: insertedRecords, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('amistoso_convocacoes')
-          .insert(insertData)
-          .select('id, crianca_id, valor, isento');
+          .insert(insertData);
 
         if (insertError) throw insertError;
-        
-        // Track newly inserted IDs that need billing generation
-        if (insertedRecords && enviarNotificacoes) {
-          insertedRecords
-            .filter(r => !r.isento && r.valor && r.valor > 0)
-            .forEach(r => newInsertedIds.push(r.id));
-        }
       }
 
       // Update existing convocacoes
       const toUpdate = convocacoes.filter(c => existingMap.has(c.crianca_id));
-      const newlyNotifiedIds: string[] = [];
+      
       
       for (const conv of toUpdate) {
         const existingItem = existingMap.get(conv.crianca_id);
@@ -233,10 +225,7 @@ export function useUpsertAmistosoConvocacoes() {
 
           if (updateError) throw updateError;
           
-          // Track newly notified IDs that need billing generation
-          if (enviarNotificacoes && !existingItem.notificado_em && !conv.isento && (conv.valor || valorPadrao) && (conv.valor || valorPadrao)! > 0) {
-            newlyNotifiedIds.push(existingItem.id);
-          }
+          
         }
       }
 
@@ -245,18 +234,32 @@ export function useUpsertAmistosoConvocacoes() {
         ? toInsert.length + toUpdate.filter(c => !existingMap.get(c.crianca_id)?.notificado_em).length
         : 0;
 
-      // Generate PIX for new convocations that need payment (in background, don't wait)
-      const idsNeedingBilling = [...newInsertedIds, ...newlyNotifiedIds];
-      if (idsNeedingBilling.length > 0) {
-        // Fire and forget - generate PIX for each convocation
-        // We don't await this because we don't want to slow down the UI
-        idsNeedingBilling.forEach(id => {
-          supabase.functions.invoke('generate-amistoso-pix', {
-            body: { convocacao_id: id },
-          }).catch(err => {
-            console.error('Error generating PIX for convocacao:', id, err);
-          });
-        });
+      // Generate PIX: query DB for all convocations that were notified but don't have PIX yet
+      // This is more reliable than depending on insertedRecords which can be null due to RLS
+      if (enviarNotificacoes) {
+        try {
+          const { data: pendingPix } = await supabase
+            .from('amistoso_convocacoes')
+            .select('id')
+            .eq('evento_id', eventoId)
+            .not('notificado_em', 'is', null)
+            .is('asaas_payment_id', null)
+            .eq('isento', false)
+            .gt('valor', 0);
+
+          if (pendingPix && pendingPix.length > 0) {
+            console.log(`Generating PIX for ${pendingPix.length} convocations`);
+            pendingPix.forEach(({ id }) => {
+              supabase.functions.invoke('generate-amistoso-pix', {
+                body: { convocacao_id: id },
+              }).catch(err => {
+                console.error('Error generating PIX for convocacao:', id, err);
+              });
+            });
+          }
+        } catch (pixQueryErr) {
+          console.error('Error querying pending PIX convocations:', pixQueryErr);
+        }
       }
 
       return { success: true, newNotifications };
