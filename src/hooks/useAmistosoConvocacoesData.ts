@@ -194,19 +194,11 @@ export function useUpsertAmistosoConvocacoes() {
           notificado_em: enviarNotificacoes ? new Date().toISOString() : null,
         }));
         
-        const { data: insertedRecords, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('amistoso_convocacoes')
-          .insert(insertData)
-          .select('id, crianca_id, valor, isento');
+          .insert(insertData);
 
         if (insertError) throw insertError;
-        
-        // Track newly inserted IDs that need billing generation
-        if (insertedRecords && enviarNotificacoes) {
-          insertedRecords
-            .filter(r => !r.isento && r.valor && r.valor > 0)
-            .forEach(r => newInsertedIds.push(r.id));
-        }
       }
 
       // Update existing convocacoes
