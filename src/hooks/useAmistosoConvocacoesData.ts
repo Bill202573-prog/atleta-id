@@ -183,7 +183,7 @@ export function useUpsertAmistosoConvocacoes() {
 
       // Insert new convocacoes
       const toInsert = convocacoes.filter(c => !existingMap.has(c.crianca_id));
-      const newInsertedIds: string[] = [];
+      
       
       if (toInsert.length > 0) {
         const insertData = toInsert.map(c => ({
