@@ -114,20 +114,31 @@ export function useAmistosoConvocacoesStats(eventoId: string | null) {
 
       const vizSet = new Set((visualizacoes || []).map(v => v.convocacao_id));
 
-      // Pagantes = não isentos com valor > 0
-      const pagantes = convocacoes.filter(c => !c.isento && c.valor && c.valor > 0);
+      const recusados = convocacoes.filter(c => c.status === 'recusado');
+      // Pagantes = não isentos, não recusados, com valor > 0
+      const pagantes = convocacoes.filter(c => !c.isento && c.status !== 'recusado' && c.valor && c.valor > 0);
       const pixGerados = pagantes.filter(c => !!c.asaas_payment_id).length;
       const semPixList = pagantes.filter(c => !c.asaas_payment_id && c.notificado_em);
       
-      // Fetch names for athletes without PIX
+      // Fetch names for athletes without PIX and determine reasons
       let atletasSemPix: string[] = [];
+      const motivosSemPix: Record<string, string> = {};
       if (semPixList.length > 0) {
         const ids = semPixList.map(c => c.crianca_id);
         const { data: criancas } = await supabase
           .from('criancas')
           .select('id, nome')
           .in('id', ids);
-        atletasSemPix = (criancas || []).map(c => c.nome);
+        const criancaMap = new Map((criancas || []).map(c => [c.id, c.nome]));
+        for (const c of semPixList) {
+          const nome = criancaMap.get(c.crianca_id) || 'Desconhecido';
+          atletasSemPix.push(nome);
+          if (!c.valor || c.valor <= 0) {
+            motivosSemPix[nome] = 'Valor não definido';
+          } else {
+            motivosSemPix[nome] = 'Falha na geração do PIX';
+          }
+        }
       }
 
       return {
@@ -135,9 +146,11 @@ export function useAmistosoConvocacoesStats(eventoId: string | null) {
         visualizados: convocacoes.filter(c => vizSet.has(c.id)).length,
         pagos: convocacoes.filter(c => c.status === 'pago' || c.status === 'confirmado').length,
         isentos: convocacoes.filter(c => c.isento).length,
+        recusados: recusados.length,
         pixGerados,
         semPix: semPixList.length,
         atletasSemPix,
+        motivosSemPix,
       };
     },
     enabled: !!eventoId,
