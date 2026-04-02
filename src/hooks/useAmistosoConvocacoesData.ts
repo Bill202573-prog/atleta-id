@@ -245,18 +245,32 @@ export function useUpsertAmistosoConvocacoes() {
         ? toInsert.length + toUpdate.filter(c => !existingMap.get(c.crianca_id)?.notificado_em).length
         : 0;
 
-      // Generate PIX for new convocations that need payment (in background, don't wait)
-      const idsNeedingBilling = [...newInsertedIds, ...newlyNotifiedIds];
-      if (idsNeedingBilling.length > 0) {
-        // Fire and forget - generate PIX for each convocation
-        // We don't await this because we don't want to slow down the UI
-        idsNeedingBilling.forEach(id => {
-          supabase.functions.invoke('generate-amistoso-pix', {
-            body: { convocacao_id: id },
-          }).catch(err => {
-            console.error('Error generating PIX for convocacao:', id, err);
-          });
-        });
+      // Generate PIX: query DB for all convocations that were notified but don't have PIX yet
+      // This is more reliable than depending on insertedRecords which can be null due to RLS
+      if (enviarNotificacoes) {
+        try {
+          const { data: pendingPix } = await supabase
+            .from('amistoso_convocacoes')
+            .select('id')
+            .eq('evento_id', eventoId)
+            .not('notificado_em', 'is', null)
+            .is('asaas_payment_id', null)
+            .eq('isento', false)
+            .gt('valor', 0);
+
+          if (pendingPix && pendingPix.length > 0) {
+            console.log(`Generating PIX for ${pendingPix.length} convocations`);
+            pendingPix.forEach(({ id }) => {
+              supabase.functions.invoke('generate-amistoso-pix', {
+                body: { convocacao_id: id },
+              }).catch(err => {
+                console.error('Error generating PIX for convocacao:', id, err);
+              });
+            });
+          }
+        } catch (pixQueryErr) {
+          console.error('Error querying pending PIX convocations:', pixQueryErr);
+        }
       }
 
       return { success: true, newNotifications };
