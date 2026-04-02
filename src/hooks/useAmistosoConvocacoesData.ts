@@ -85,21 +85,24 @@ export interface AmistosoConvocacaoStats {
   visualizados: number;
   pagos: number;
   isentos: number;
+  pixGerados: number;
+  semPix: number;
+  atletasSemPix: string[];
 }
 
 export function useAmistosoConvocacoesStats(eventoId: string | null) {
   return useQuery({
     queryKey: ['amistoso-convocacoes-stats', eventoId],
     queryFn: async (): Promise<AmistosoConvocacaoStats> => {
-      if (!eventoId) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0 };
+      if (!eventoId) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0, pixGerados: 0, semPix: 0, atletasSemPix: [] };
 
       const { data: convocacoes, error } = await supabase
         .from('amistoso_convocacoes')
-        .select('id, status, isento, notificado_em')
+        .select('id, status, isento, notificado_em, asaas_payment_id, valor, crianca_id')
         .eq('evento_id', eventoId);
 
       if (error) throw error;
-      if (!convocacoes || convocacoes.length === 0) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0 };
+      if (!convocacoes || convocacoes.length === 0) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0, pixGerados: 0, semPix: 0, atletasSemPix: [] };
 
       const convocacaoIds = convocacoes.map(c => c.id);
       const { data: visualizacoes } = await supabase
@@ -109,11 +112,30 @@ export function useAmistosoConvocacoesStats(eventoId: string | null) {
 
       const vizSet = new Set((visualizacoes || []).map(v => v.convocacao_id));
 
+      // Pagantes = não isentos com valor > 0
+      const pagantes = convocacoes.filter(c => !c.isento && c.valor && c.valor > 0);
+      const pixGerados = pagantes.filter(c => !!c.asaas_payment_id).length;
+      const semPixList = pagantes.filter(c => !c.asaas_payment_id && c.notificado_em);
+      
+      // Fetch names for athletes without PIX
+      let atletasSemPix: string[] = [];
+      if (semPixList.length > 0) {
+        const ids = semPixList.map(c => c.crianca_id);
+        const { data: criancas } = await supabase
+          .from('criancas')
+          .select('id, nome')
+          .in('id', ids);
+        atletasSemPix = (criancas || []).map(c => c.nome);
+      }
+
       return {
         convocados: convocacoes.length,
         visualizados: convocacoes.filter(c => vizSet.has(c.id)).length,
         pagos: convocacoes.filter(c => c.status === 'pago' || c.status === 'confirmado').length,
         isentos: convocacoes.filter(c => c.isento).length,
+        pixGerados,
+        semPix: semPixList.length,
+        atletasSemPix,
       };
     },
     enabled: !!eventoId,

@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, Users, Loader2, Save, UserCheck, DollarSign, Gift, CheckCircle, Clock, Send, Bell, Filter, Mail, Eye, XCircle } from 'lucide-react';
+import { Search, Users, Loader2, Save, UserCheck, DollarSign, Gift, CheckCircle, Clock, Send, Bell, Filter, Mail, Eye, XCircle, CreditCard, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEligibleAthletes } from '@/hooks/useCampeonatoConvocacoesData';
 import {
@@ -61,6 +61,7 @@ interface AtletaConvocacao {
   dataPagamento?: string | null;
   notificadoEm?: string | null;
   visualizado_em?: string | null;
+  asaas_payment_id?: string | null;
 }
 
 export function AmistosoConvocacoesDialog({
@@ -184,6 +185,7 @@ export function AmistosoConvocacoesDialog({
             dataPagamento: conv.data_pagamento,
             notificadoEm: (conv as any).notificado_em,
             visualizado_em: (conv as any).visualizado_em || null,
+            asaas_payment_id: (conv as any).asaas_payment_id || null,
           });
         } else if (conv.crianca) {
           const birthDate = new Date(conv.crianca.data_nascimento);
@@ -204,6 +206,7 @@ export function AmistosoConvocacoesDialog({
             dataPagamento: conv.data_pagamento,
             notificadoEm: (conv as any).notificado_em,
             visualizado_em: (conv as any).visualizado_em || null,
+            asaas_payment_id: (conv as any).asaas_payment_id || null,
           });
         }
       });
@@ -264,6 +267,14 @@ export function AmistosoConvocacoesDialog({
 
   const visualizadosCount = useMemo(() => {
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.visualizado_em).length;
+  }, [convocacoes]);
+
+  const pixGeradosCount = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !!a.asaas_payment_id).length;
+  }, [convocacoes]);
+
+  const semPixList = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !a.asaas_payment_id && !!a.notificadoEm);
   }, [convocacoes]);
 
   const handleToggleConvocado = (criancaId: string) => {
@@ -440,8 +451,34 @@ export function AmistosoConvocacoesDialog({
                 <span className="text-sm font-bold">{isentosCount}</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 rounded-md">
-                <DollarSign className="w-3.5 h-3.5 text-blue-600" />
-                <span className="text-xs text-blue-600">Valor Padrão</span>
+                <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                <span className="text-xs text-blue-600">PIX Gerados</span>
+                <span className="text-sm font-bold">{pixGeradosCount}</span>
+              </div>
+              {semPixList.length > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-500/10 rounded-md cursor-help">
+                        <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
+                        <span className="text-xs text-red-600">Sem PIX</span>
+                        <span className="text-sm font-bold text-red-600">{semPixList.length}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="font-medium text-xs mb-1">Atletas sem cobrança gerada:</p>
+                      <ul className="text-xs space-y-0.5">
+                        {semPixList.map((a) => (
+                          <li key={a.crianca_id}>• {a.nome}</li>
+                        ))}
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 rounded-md">
+                <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Valor Padrão</span>
                 <span className="text-sm font-bold">
                   {valorPadrao ? `R$ ${valorPadrao.toFixed(2)}` : '-'}
                 </span>
