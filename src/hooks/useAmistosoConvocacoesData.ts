@@ -225,10 +225,7 @@ export function useUpsertAmistosoConvocacoes() {
 
           if (updateError) throw updateError;
           
-          // Track newly notified IDs that need billing generation
-          if (enviarNotificacoes && !existingItem.notificado_em && !conv.isento && (conv.valor || valorPadrao) && (conv.valor || valorPadrao)! > 0) {
-            newlyNotifiedIds.push(existingItem.id);
-          }
+          
         }
       }
 
