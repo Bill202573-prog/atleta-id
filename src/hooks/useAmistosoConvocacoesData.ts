@@ -104,7 +104,7 @@ export function useAmistosoConvocacoesStats(eventoId: string | null) {
         .eq('evento_id', eventoId);
 
       if (error) throw error;
-      if (!convocacoes || convocacoes.length === 0) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0, pixGerados: 0, semPix: 0, atletasSemPix: [] };
+      if (!convocacoes || convocacoes.length === 0) return { convocados: 0, visualizados: 0, pagos: 0, isentos: 0, recusados: 0, pixGerados: 0, semPix: 0, atletasSemPix: [], motivosSemPix: {} };
 
       const convocacaoIds = convocacoes.map(c => c.id);
       const { data: visualizacoes } = await supabase
