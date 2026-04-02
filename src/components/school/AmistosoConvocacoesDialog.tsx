@@ -265,16 +265,20 @@ export function AmistosoConvocacoesDialog({
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.isento).length;
   }, [convocacoes]);
 
+  const recusadosCount = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && a.status === 'recusado').length;
+  }, [convocacoes]);
+
   const visualizadosCount = useMemo(() => {
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.visualizado_em).length;
   }, [convocacoes]);
 
   const pixGeradosCount = useMemo(() => {
-    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !!a.asaas_payment_id).length;
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.status !== 'recusado' && a.valor && a.valor > 0 && !!a.asaas_payment_id).length;
   }, [convocacoes]);
 
   const semPixList = useMemo(() => {
-    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !a.asaas_payment_id && !!a.notificadoEm);
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.status !== 'recusado' && a.valor && a.valor > 0 && !a.asaas_payment_id && !!a.notificadoEm);
   }, [convocacoes]);
 
   const handleToggleConvocado = (criancaId: string) => {
@@ -449,6 +453,11 @@ export function AmistosoConvocacoesDialog({
                 <Gift className="w-3.5 h-3.5 text-amber-600" />
                 <span className="text-xs text-amber-600">Isentos</span>
                 <span className="text-sm font-bold">{isentosCount}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500/10 rounded-md">
+                <XCircle className="w-3.5 h-3.5 text-orange-600" />
+                <span className="text-xs text-orange-600">Recusados</span>
+                <span className="text-sm font-bold">{recusadosCount}</span>
               </div>
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500/10 rounded-md">
                 <CreditCard className="w-3.5 h-3.5 text-blue-600" />

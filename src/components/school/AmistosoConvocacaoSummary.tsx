@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-import { ChevronDown, ChevronUp, Users, Eye, CheckCircle, Gift, Loader2, CreditCard, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Users, Eye, CheckCircle, Gift, Loader2, CreditCard, AlertTriangle, XCircle } from 'lucide-react';
 
 interface AmistosoConvocacaoSummaryProps {
   eventoId: string;
@@ -52,6 +52,12 @@ export function AmistosoConvocacaoSummary({ eventoId, elegiveisCount }: Amistoso
       color: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
     },
     {
+      label: 'Recusados',
+      value: stats.recusados,
+      icon: XCircle,
+      color: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    },
+    {
       label: 'PIX Gerados',
       value: stats.pixGerados,
       icon: CreditCard,
@@ -90,7 +96,9 @@ export function AmistosoConvocacaoSummary({ eventoId, elegiveisCount }: Amistoso
         {stats.semPix > 0 && stats.atletasSemPix.length > 0 && (
           <div className="mt-1.5 p-2 rounded-md bg-destructive/10 border border-destructive/20 text-xs text-destructive" onClick={(e) => e.stopPropagation()}>
             <p className="font-medium mb-0.5">⚠️ Atletas sem cobrança PIX:</p>
-            <p>{stats.atletasSemPix.join(', ')}</p>
+            {stats.atletasSemPix.map(nome => (
+              <p key={nome}>{nome} — <span className="italic">{stats.motivosSemPix?.[nome] || 'Motivo desconhecido'}</span></p>
+            ))}
           </div>
         )}
       </CollapsibleContent>
