@@ -185,6 +185,7 @@ export function AmistosoConvocacoesDialog({
             dataPagamento: conv.data_pagamento,
             notificadoEm: (conv as any).notificado_em,
             visualizado_em: (conv as any).visualizado_em || null,
+            asaas_payment_id: (conv as any).asaas_payment_id || null,
           });
         } else if (conv.crianca) {
           const birthDate = new Date(conv.crianca.data_nascimento);
