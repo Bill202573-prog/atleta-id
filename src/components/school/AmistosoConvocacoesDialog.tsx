@@ -265,16 +265,20 @@ export function AmistosoConvocacoesDialog({
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.isento).length;
   }, [convocacoes]);
 
+  const recusadosCount = useMemo(() => {
+    return Array.from(convocacoes.values()).filter(a => a.convocado && a.status === 'recusado').length;
+  }, [convocacoes]);
+
   const visualizadosCount = useMemo(() => {
     return Array.from(convocacoes.values()).filter(a => a.convocado && a.visualizado_em).length;
   }, [convocacoes]);
 
   const pixGeradosCount = useMemo(() => {
-    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !!a.asaas_payment_id).length;
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.status !== 'recusado' && a.valor && a.valor > 0 && !!a.asaas_payment_id).length;
   }, [convocacoes]);
 
   const semPixList = useMemo(() => {
-    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.valor && a.valor > 0 && !a.asaas_payment_id && !!a.notificadoEm);
+    return Array.from(convocacoes.values()).filter(a => a.convocado && !a.isento && a.status !== 'recusado' && a.valor && a.valor > 0 && !a.asaas_payment_id && !!a.notificadoEm);
   }, [convocacoes]);
 
   const handleToggleConvocado = (criancaId: string) => {
