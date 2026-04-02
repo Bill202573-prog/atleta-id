@@ -203,7 +203,7 @@ export function useUpsertAmistosoConvocacoes() {
 
       // Update existing convocacoes
       const toUpdate = convocacoes.filter(c => existingMap.has(c.crianca_id));
-      const newlyNotifiedIds: string[] = [];
+      
       
       for (const conv of toUpdate) {
         const existingItem = existingMap.get(conv.crianca_id);
