@@ -266,7 +266,7 @@ export const useUpdateAtividadeExterna = () => {
 
       const { data, error } = await supabase
         .from('atividades_externas')
-        .update(updatePayload)
+        .update(updatePayload as any)
         .eq('id', id)
         .select()
         .single();

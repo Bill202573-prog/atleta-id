@@ -201,9 +201,10 @@ export const useUpdateComunicado = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Comunicado> & { id: string }) => {
+      const { escolinha, ...updateData } = data as any;
       const { data: result, error } = await supabase
         .from('comunicados')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
