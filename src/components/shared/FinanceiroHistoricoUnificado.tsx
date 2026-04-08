@@ -458,7 +458,7 @@ const FinanceiroHistoricoUnificado = ({ criancaId, canDelete = false, responsave
       }
       if (observacao) updateData.observacoes = observacao;
 
-      const { error } = await supabase.from('mensalidades').update(updateData).eq('id', id);
+      const { error } = await supabase.from('mensalidades').update(updateData as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: (_, variables) => {

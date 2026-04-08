@@ -74,7 +74,7 @@ const DeactivateStudentDialog = ({
 
       const { error: updateError } = await supabase
         .from('crianca_escolinha')
-        .update(updateData)
+        .update(updateData as any)
         .eq('crianca_id', student.id)
         .eq('escolinha_id', escolinhaId);
       

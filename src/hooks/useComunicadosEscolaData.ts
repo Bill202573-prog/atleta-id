@@ -426,9 +426,10 @@ export const useUpdateComunicadoEscola = () => {
 
   return useMutation({
     mutationFn: async ({ id, escolinhaId, ...data }: Partial<ComunicadoEscola> & { id: string; escolinhaId: string }) => {
+      const { escolinha, professor, turma, ...updateData } = data as any;
       const { data: result, error } = await supabase
         .from('comunicados_escola')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

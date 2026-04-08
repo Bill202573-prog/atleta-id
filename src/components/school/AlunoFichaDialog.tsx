@@ -694,7 +694,7 @@ const AlunoFichaDialog = ({ open, onOpenChange, student, escolinhaId: propEscoli
       
       const { error: criancaError } = await supabase
         .from('criancas')
-        .update(criancaUpdate)
+        .update(criancaUpdate as any)
         .eq('id', savedStudentId);
       
       if (criancaError) throw criancaError;
@@ -714,7 +714,7 @@ const AlunoFichaDialog = ({ open, onOpenChange, student, escolinhaId: propEscoli
       
       const { error: ceError } = await supabase
         .from('crianca_escolinha')
-        .update(ceUpdate)
+        .update(ceUpdate as any)
         .eq('crianca_id', savedStudentId)
         .eq('escolinha_id', effectiveEscolinhaId);
       
