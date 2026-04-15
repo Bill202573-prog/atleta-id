@@ -28,6 +28,7 @@ import {
   FileBarChart,
   ArrowLeft,
   LayoutDashboard,
+  ShieldCheck,
   ClipboardList,
   BarChart3,
   Receipt
@@ -490,6 +491,42 @@ const SchoolFinanceiroPage = () => {
     },
     onError: (error: Error) => {
       toast.error('Erro ao gerar cobranças: ' + error.message);
+    },
+  });
+
+  // Mutation for auditing/syncing payments with Asaas
+  const [syncResults, setSyncResults] = useState<any>(null);
+  const auditPayments = useMutation({
+    mutationFn: async (mesReferencia?: string) => {
+      const { data, error } = await supabase.functions.invoke('audit-mensalidade-payments', {
+        body: { 
+          escolinha_id: user?.escolinhaId,
+          mes_referencia: mesReferencia || undefined,
+        },
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Erro ao auditar pagamentos');
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-growth-data'] });
+      queryClient.invalidateQueries({ queryKey: ['financeiro-historico-unificado'] });
+      setSyncResults(data);
+      const { summary } = data;
+      if (summary.auto_synced > 0) {
+        toast.success(`${summary.auto_synced} pagamento(s) sincronizado(s) automaticamente!`);
+      } else if (summary.mismatches === 0) {
+        toast.info('Todos os pagamentos estão sincronizados com o Asaas.');
+      } else {
+        toast.warning(`${summary.mismatches} divergência(s) encontrada(s).`);
+      }
+      if (summary.double_entries > 0) {
+        toast.warning(`${summary.double_entries} pagamento(s) com dupla entrada (pago manual + Asaas).`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao sincronizar: ' + error.message);
     },
   });
 
