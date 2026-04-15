@@ -53,6 +53,7 @@ const SchoolChamadaPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedAula, setSelectedAula] = useState<AulaForAdmin | null>(null);
   const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent' | null>>({});
+  const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const { data: aulas = [], isLoading } = useAdminAulasForDay(escolinhaId || undefined, dateStr);
