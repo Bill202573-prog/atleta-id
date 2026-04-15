@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,11 +31,19 @@ import {
   HelpCircle,
   ClipboardCheck,
   ArrowLeft,
+  Cake,
+  PartyPopper,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BirthdayBadge from '@/components/shared/BirthdayBadge';
-import { format, addDays, subDays, isToday } from 'date-fns';
+import { format, addDays, subDays, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 
 const SchoolChamadaPage = () => {
