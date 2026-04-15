@@ -1083,7 +1083,21 @@ const SchoolFinanceiroPage = () => {
             <CardTitle>Mensalidades</CardTitle>
             <CardDescription>Lista detalhada de todas as mensalidades</CardDescription>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => auditPayments.mutate(filterMonth !== 'all' ? filterMonth : undefined)}
+              disabled={auditPayments.isPending}
+              className="gap-2"
+            >
+              {auditPayments.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              Sincronizar Asaas
+            </Button>
             <div className="relative flex-1 sm:w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
