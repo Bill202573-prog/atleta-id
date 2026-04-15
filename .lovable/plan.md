@@ -1,88 +1,36 @@
 
+## Plan: Audit and Sync April Payments
 
-## Plano de Melhorias: Upload de Foto, Like Otimista e Toggles de Dados
+### Goal
+Verify Asaas payment status for all 12 "a_vencer" charges and cross-check the 8 manual payments against Asaas to detect any payments that entered Asaas without being reflected in the app.
 
-### 1. Foto aparece imediatamente apos upload (sem refresh)
+### Steps
 
-**Problema identificado**: Ao fazer upload da foto no `ProfilePhotoUpload` (dentro do dialog de edição), a imagem atualiza apenas no preview do dialog. O `PerfilHeader` só reflete a mudança após salvar e a query ser invalidada. O browser também pode cachear a URL antiga.
+1. **Create an audit edge function** (`audit-mensalidade-payments`)
+   - Accepts an `escolinha_id` and `mes_referencia`
+   - Fetches the school's `asaas_api_key` from `escola_cadastro_bancario`
+   - For each mensalidade with an `asaas_payment_id`, calls the Asaas API to get the real status
+   - Returns a comparison report: local status vs Asaas status, flagging mismatches
+   - Automatically updates any mensalidade that shows as RECEIVED/CONFIRMED in Asaas but is still "a_vencer" locally
 
-**Solucao**:
-- Adicionar um `cache-buster` (`?t=timestamp`) na URL retornada do upload para evitar cache do browser
-- Apos o `onSubmit` do `EditPerfilDialog`, garantir que a invalidacao do React Query force o refetch imediato no `PerfilHeader`
-- No `PerfilHeader`, ao fazer upload direto pelo botao da camera, usar `setQueryData` para atualizar o cache local instantaneamente (optimistic update), sem esperar o refetch
+2. **Check the 8 manual-paid entries**
+   - For the 8 athletes marked "pago" via manual, query Asaas to see if their original `asaas_payment_id` was also paid
+   - If so, flag as "double entry" (paid in Asaas AND manually confirmed)
 
-**Arquivos afetados**:
-- `src/hooks/useCarreiraData.ts` - Adicionar cache-buster na `uploadProfilePhoto` e optimistic update no `useUpdatePerfilAtleta`
-- `src/components/carreira/PerfilHeader.tsx` - Usar `queryClient.setQueryData` apos upload direto
-- `src/components/carreira/ProfilePhotoUpload.tsx` - Adicionar cache-buster na URL do banner
+3. **Generate missing April mensalidades**
+   - For the 7 athletes without April records, investigate why `generate-student-billing-asaas` skipped them
+   - Create the missing records and generate PIX charges if appropriate
 
----
+4. **Add a "Sync with Asaas" button** on the school financial page
+   - Allows the admin to trigger a bulk verification of all pending payments against Asaas
+   - Shows results inline with which ones were auto-confirmed
 
-### 2. "Gostei" com atualizacao otimista (sem refresh)
+### Technical Details
+- Edge function uses the school's sub-account API key (already fixed in `check-mensalidade-payment`)
+- The Asaas payments list endpoint (`/v3/payments?customer=...`) can also be used to find payments not tracked in the system
+- Files to modify: new edge function, `SchoolFinanceiroPage.tsx`, `useSchoolData.ts` or new hook
 
-**Problema identificado**: O hook `usePostLike` usa `invalidateQueries` no `onSuccess`, o que causa um refetch completo do feed. Isso gera um delay visivel - o usuario clica e nao ve a mudanca instantaneamente.
-
-**Solucao**: Implementar **optimistic update** no hook `usePostLike`:
-- Ao clicar em "Gostei", atualizar imediatamente o estado local (`isLiked`) e o contador (`likes_count`) no cache do React Query
-- Se a mutacao falhar, reverter o estado anterior (rollback)
-- Manter o `invalidateQueries` como fallback para sincronizar com o servidor
-
-**Logica**:
-```text
-1. Usuario clica "Gostei"
-2. Imediatamente: isLiked = true, likes_count + 1 (ou inverso)
-3. Envia request ao servidor
-4. Se erro: reverte para estado anterior
-5. Se sucesso: invalida queries para sync
-```
-
-**Arquivo afetado**:
-- `src/hooks/useCarreiraData.ts` - Reescrever `usePostLike` com `onMutate` (optimistic) e `onError` (rollback)
-
----
-
-### 3. Toggles "Dados visiveis" para atletas Carreira
-
-**Problema identificado**: Os toggles de "Gols marcados", "Amistosos", "Campeonatos", etc. aparecem habilitados para todos os perfis, mas atletas vindos do Carreira nao possuem esses dados (pois vem da escolinha via Atleta ID).
-
-**Solucao**: Detectar se o atleta e "Carreira-only" (sem `crianca_id` vinculado a escolinha ativa) e exibir os toggles como **desabilitados** com uma mensagem explicativa.
-
-**Logica de deteccao**:
-```text
-isCarreiraOnly = perfil.crianca_id existe, MAS nao tem registro ativo em crianca_escolinha
-OU perfil.crianca_id nao existe
-```
-
-**Visual**: Toggles com `disabled={true}` e uma badge/texto abaixo:
-> "Recurso disponivel ao vincular-se a uma escolinha no Atleta ID"
-
-**Arquivo afetado**:
-- `src/components/carreira/EditPerfilDialog.tsx` - Adicionar verificacao de vinculo escolar e condicional nos toggles
-
----
-
-### 4. Estrategia de Conexao Carreira <-> Atleta ID
-
-**Conceito**: Quando um atleta que se cadastrou pelo Carreira passa a treinar em uma escolinha que usa o Atleta ID, o sistema precisa "plugar" ele.
-
-**Fluxo proposto**:
-1. A escola cadastra o aluno normalmente (cria `crianca` + `crianca_escolinha`)
-2. No cadastro, a escola informa o **CPF do responsavel** (que ja existe no Carreira)
-3. O sistema detecta que esse CPF/email ja tem um `perfil_atleta` no Carreira
-4. Automaticamente (ou via aprovacao do responsavel), vincula o `perfil_atleta.crianca_id` ao `crianca.id` da escola
-5. Os dados institucionais (gols, jornada, premiacoes) passam a popular o perfil do Carreira
-6. Os toggles de "Dados visiveis" sao habilitados automaticamente
-
-**Nota**: Este fluxo e complexo e envolve logica de matching (CPF/email), aprovacao e migracao de dados. Recomendo implementar em uma fase posterior, apos estabilizar os 3 pontos acima. Posso detalhar esta integracao quando quiser avancar.
-
----
-
-### Resumo de arquivos
-
-| Arquivo | Alteracao |
-|---|---|
-| `src/hooks/useCarreiraData.ts` | Optimistic update no `usePostLike` + cache-buster no upload |
-| `src/components/carreira/PerfilHeader.tsx` | Update otimista do avatar apos upload |
-| `src/components/carreira/ProfilePhotoUpload.tsx` | Cache-buster na URL do banner |
-| `src/components/carreira/EditPerfilDialog.tsx` | Toggles desabilitados para Carreira-only + verificacao de vinculo |
-
+### Why this matters
+- Prevents the admin from having to manually check each payment
+- Catches any payments that went to Asaas but were never confirmed in the app
+- Ensures financial reports are accurate
