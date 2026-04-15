@@ -150,6 +150,7 @@ const SchoolFinanceiroPage = () => {
   // Generate billing dialog state
   const [generateBillingDialogOpen, setGenerateBillingDialogOpen] = useState(false);
 
+
   const { data: children = [] } = useSchoolChildrenWithRelations(undefined, true);
   const { openEditDialog } = useStudentRegistration();
 
