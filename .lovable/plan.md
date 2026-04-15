@@ -1,36 +1,63 @@
 
-## Plan: Audit and Sync April Payments
 
-### Goal
-Verify Asaas payment status for all 12 "a_vencer" charges and cross-check the 8 manual payments against Asaas to detect any payments that entered Asaas without being reflected in the app.
+## Respostas e Plano
 
-### Steps
+### 1. "Encerrar Jogo Definitivamente" — O que acontece?
 
-1. **Create an audit edge function** (`audit-mensalidade-payments`)
-   - Accepts an `escolinha_id` and `mes_referencia`
-   - Fetches the school's `asaas_api_key` from `escola_cadastro_bancario`
-   - For each mensalidade with an `asaas_payment_id`, calls the Asaas API to get the real status
-   - Returns a comparison report: local status vs Asaas status, flagging mismatches
-   - Automatically updates any mensalidade that shows as RECEIVED/CONFIRMED in Asaas but is still "a_vencer" locally
+**O que faz:**
+- Muda o status do evento de `realizado` → `finalizado`
+- É apenas um `UPDATE` no campo `status` da tabela `eventos_esportivos`
 
-2. **Check the 8 manual-paid entries**
-   - For the 8 athletes marked "pago" via manual, query Asaas to see if their original `asaas_payment_id` was also paid
-   - If so, flag as "double entry" (paid in Asaas AND manually confirmed)
+**Impacto de encerrar:**
+- Todas as seções (gols, premiações, conquistas, times) passam a receber `isReadOnly={true}`, bloqueando edições
+- O botão "Encerrar" desaparece (só aparece quando `status === 'realizado'`)
+- O jogo fica apenas para consulta
 
-3. **Generate missing April mensalidades**
-   - For the 7 athletes without April records, investigate why `generate-student-billing-asaas` skipped them
-   - Create the missing records and generate PIX charges if appropriate
+**Impacto de NÃO encerrar (manter como "realizado"):**
+- O jogo continua editável — pode adicionar/remover gols, premiações, atletas
+- Funciona como um rascunho salvo
+- **Não há impacto negativo** nos dados dos atletas — gols, presenças e premiações já são registrados no momento do "Lançar Placar" (status `realizado`), não no "Encerrar"
+- O único risco é alguém editar acidentalmente depois
 
-4. **Add a "Sync with Asaas" button** on the school financial page
-   - Allows the admin to trigger a bulk verification of all pending payments against Asaas
-   - Shows results inline with which ones were auto-confirmed
+**Registros no app dos atletas:**
+Os dados aparecem corretamente no app do responsável porque:
+- Participação: registrada em `evento_time_alunos` + `amistoso_convocacoes` (campo `presente`)
+- Gols: registrados em `evento_gols` com `crianca_id`
+- Premiações: registradas em `evento_premiacoes` com `crianca_id`
+- O hook `useAlunoHistoricoData` busca tudo isso e monta o histórico
+- Os dados ficam disponíveis assim que o placar é lançado (status `realizado`), **independente** de encerrar ou não
 
-### Technical Details
-- Edge function uses the school's sub-account API key (already fixed in `check-mensalidade-payment`)
-- The Asaas payments list endpoint (`/v3/payments?customer=...`) can also be used to find payments not tracked in the system
-- Files to modify: new edge function, `SchoolFinanceiroPage.tsx`, `useSchoolData.ts` or new hook
+**Resumo:** O botão "Encerrar" é apenas um "cadeado" — trava edições. Todos os registros de participação, gols e premiações já são gravados ao lançar o placar.
 
-### Why this matters
-- Prevents the admin from having to manually check each payment
-- Catches any payments that went to Asaas but were never confirmed in the app
-- Ensures financial reports are accurate
+---
+
+### 2. Push de Aniversariantes + Popup na Chamada
+
+#### Parte A: Edge Function de Push de Aniversário
+
+Adicionar uma seção `BIRTHDAY` no `process-push-reminders/index.ts`:
+
+- Para cada escola com push ativo, buscar crianças ativas cujo `data_nascimento` tenha dia/mês = hoje
+- Enviar push para o **responsável do atleta**: "🎂 Parabéns! Hoje é o aniversário do(a) {nome}! Desejamos um dia incrível cheio de alegria e conquistas!"
+- Enviar push para o **admin da escola**: "🎂 Aniversariante do dia! Hoje é aniversário do(a) {nome}! Já enviamos uma mensagem de felicitação."
+- Usar `alreadySent` com tipo `aniversario` para não duplicar
+- Habilitar para Bandeirantes e escolas de teste
+
+#### Parte B: Popup de Aniversariantes na Chamada
+
+No `SchoolChamadaPage.tsx`, ao abrir uma aula:
+
+- Buscar alunos daquela aula cujo aniversário cai **naquela semana** (seg-dom)
+- Exibir um popup/banner destacado com:
+  - 🎂 Aniversariantes da semana
+  - Lista com avatar, nome, data do aniversário, e badge "Hoje!" se for no dia
+- O popup aparece automaticamente ao selecionar a aula, pode ser fechado
+
+### Arquivos a modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `supabase/functions/process-push-reminders/index.ts` | Adicionar seção BIRTHDAY com push para responsável + admin |
+| `src/pages/dashboard/school/SchoolChamadaPage.tsx` | Adicionar popup de aniversariantes da semana ao abrir aula |
+| `src/hooks/useSchoolData.ts` | Adicionar helper `isBirthdayThisWeek` |
+
