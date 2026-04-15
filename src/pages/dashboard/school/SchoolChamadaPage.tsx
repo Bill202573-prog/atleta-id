@@ -385,6 +385,57 @@ const SchoolChamadaPage = () => {
             );
           })}
         </div>
+
+        {/* Birthday Popup */}
+        <Dialog open={showBirthdayPopup} onOpenChange={setShowBirthdayPopup}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg">
+                <Cake className="w-5 h-5 text-warning" />
+                🎂 Aniversariantes da Semana
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              {birthdayStudents.map((aluno) => {
+                const [, m, d] = aluno.birthdayDate.split('-');
+                return (
+                  <div
+                    key={aluno.crianca_id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      aluno.isBirthdayToday
+                        ? 'bg-warning/10 border-warning/40 ring-1 ring-warning/30'
+                        : 'bg-card border-border'
+                    }`}
+                  >
+                    <ChildAvatar
+                      fotoUrl={aluno.crianca.foto_url}
+                      nome={aluno.crianca.nome}
+                      className="w-10 h-10"
+                      fallbackClassName="text-sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">{aluno.crianca.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {d}/{m} — {calculateAge(aluno.birthdayDate)} anos
+                      </p>
+                    </div>
+                    {aluno.isBirthdayToday ? (
+                      <Badge className="bg-warning text-warning-foreground gap-1 animate-bounce-subtle">
+                        <PartyPopper className="w-3 h-3" />
+                        Hoje!
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 border-warning/50 text-warning">
+                        <Cake className="w-3 h-3" />
+                        Esta semana
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
