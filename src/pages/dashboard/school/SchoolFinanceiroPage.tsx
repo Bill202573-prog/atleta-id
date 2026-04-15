@@ -895,20 +895,37 @@ const SchoolFinanceiroPage = () => {
               <CardTitle>Resumo Mensal</CardTitle>
               <CardDescription>Mês anterior, mês atual e projeção do próximo mês</CardDescription>
             </div>
-            <Button
-              onClick={() => setGenerateBillingDialogOpen(true)}
-              disabled={generateStudentBilling.isPending || !isCadastroBancarioAprovado}
-              className="gap-2"
-              title={!isCadastroBancarioAprovado ? 'Complete o cadastro bancário primeiro' : ''}
-            >
-              {generateStudentBilling.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline">Gerar Cobranças PIX</span>
-              <span className="sm:hidden">Cobranças</span>
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => auditPayments.mutate(currentMonth)}
+                disabled={auditPayments.isPending || !isCadastroBancarioAprovado}
+                className="gap-2"
+                title="Verificar pagamentos no Asaas e sincronizar automaticamente"
+              >
+                {auditPayments.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Sincronizar Asaas</span>
+                <span className="sm:hidden">Sync</span>
+              </Button>
+              <Button
+                onClick={() => setGenerateBillingDialogOpen(true)}
+                disabled={generateStudentBilling.isPending || !isCadastroBancarioAprovado}
+                className="gap-2"
+                title={!isCadastroBancarioAprovado ? 'Complete o cadastro bancário primeiro' : ''}
+              >
+                {generateStudentBilling.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Gerar Cobranças PIX</span>
+                <span className="sm:hidden">Cobranças</span>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
