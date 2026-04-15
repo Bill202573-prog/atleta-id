@@ -296,6 +296,75 @@ Deno.serve(async (req) => {
         }
       }
 
+      // ========== BIRTHDAY REMINDERS ==========
+      {
+        const todayDate = new Date();
+        const todayDay = todayDate.getDate();
+        const todayMonth = todayDate.getMonth() + 1; // 1-based
+
+        // Get active children for this school whose birthday is today
+        const { data: allChildren } = await supabase
+          .from('crianca_escolinha')
+          .select('crianca_id, criancas!inner(id, nome, data_nascimento)')
+          .eq('escolinha_id', config.escolinha_id)
+          .eq('ativo', true);
+
+        if (allChildren && allChildren.length > 0) {
+          const birthdayChildren = allChildren.filter((ce: any) => {
+            const dob = ce.criancas?.data_nascimento;
+            if (!dob) return false;
+            const parts = dob.split('-');
+            return parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayDay;
+          });
+
+          // Get school admin user id
+          const { data: escola } = await supabase
+            .from('escolinhas')
+            .select('admin_user_id, nome')
+            .eq('id', config.escolinha_id)
+            .single();
+
+          for (const ce of birthdayChildren) {
+            const childName = (ce as any).criancas?.nome || 'atleta';
+            const criancaId = ce.crianca_id;
+
+            // Send to guardians
+            const userIds = await getGuardianUserIds(criancaId);
+            for (const userId of userIds) {
+              if (await alreadySent(userId, 'aniversario', criancaId, 0)) continue;
+              totalSent += await sendPush(
+                userId,
+                '🎂 Feliz Aniversário!',
+                `Parabéns! Hoje é o aniversário do(a) ${childName}! Desejamos um dia incrível cheio de alegria e conquistas! 🎉⚽`,
+                '/dashboard',
+                `aniversario-${criancaId}-${todayStr}`,
+                'aniversario',
+                criancaId,
+                0,
+                config.escolinha_id
+              );
+            }
+
+            // Send to school admin
+            if (escola?.admin_user_id) {
+              if (!(await alreadySent(escola.admin_user_id, 'aniversario_admin', criancaId, 0))) {
+                totalSent += await sendPush(
+                  escola.admin_user_id,
+                  '🎂 Aniversariante do dia!',
+                  `Hoje é aniversário do(a) ${childName}! Já enviamos uma mensagem de felicitação para a família. 🎉`,
+                  '/dashboard/chamada',
+                  `aniversario-admin-${criancaId}-${todayStr}`,
+                  'aniversario_admin',
+                  criancaId,
+                  0,
+                  config.escolinha_id
+                );
+              }
+            }
+          }
+        }
+      }
+
       // ========== AULA REMINDERS ==========
       const diasAula: number[] = [];
       if (config.aula_3_dias_antes) diasAula.push(3);

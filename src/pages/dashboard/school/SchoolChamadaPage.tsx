@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,11 +31,19 @@ import {
   HelpCircle,
   ClipboardCheck,
   ArrowLeft,
+  Cake,
+  PartyPopper,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BirthdayBadge from '@/components/shared/BirthdayBadge';
-import { format, addDays, subDays, isToday } from 'date-fns';
+import { format, addDays, subDays, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
 
 const SchoolChamadaPage = () => {
@@ -45,6 +53,7 @@ const SchoolChamadaPage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedAula, setSelectedAula] = useState<AulaForAdmin | null>(null);
   const [attendance, setAttendance] = useState<Record<string, 'present' | 'absent' | null>>({});
+  const [showBirthdayPopup, setShowBirthdayPopup] = useState(false);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const { data: aulas = [], isLoading } = useAdminAulasForDay(escolinhaId || undefined, dateStr);
@@ -54,6 +63,30 @@ const SchoolChamadaPage = () => {
   const handlePrevDay = () => setSelectedDate(prev => subDays(prev, 1));
   const handleNextDay = () => setSelectedDate(prev => addDays(prev, 1));
   const handleToday = () => setSelectedDate(new Date());
+
+  // Helper: check if birthday falls within a given week
+  const isBirthdayInWeek = (dataNascimento: string, referenceDate: Date) => {
+    if (!dataNascimento) return false;
+    const weekStart = startOfWeek(referenceDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(referenceDate, { weekStartsOn: 1 });
+    const [, month, day] = dataNascimento.split('-').map(Number);
+    const year = referenceDate.getFullYear();
+    const birthday = new Date(year, month - 1, day);
+    return birthday >= weekStart && birthday <= weekEnd;
+  };
+
+  // Get birthday students for the selected aula's week
+  const birthdayStudents = useMemo(() => {
+    if (!selectedAula) return [];
+    const aulaDate = new Date(selectedAula.data + 'T12:00:00');
+    return selectedAula.alunos
+      .filter(a => isBirthdayInWeek(a.crianca.data_nascimento, aulaDate))
+      .map(a => ({
+        ...a,
+        isBirthdayToday: isBirthdayToday(a.crianca.data_nascimento),
+        birthdayDate: a.crianca.data_nascimento,
+      }));
+  }, [selectedAula]);
 
   // Select a class
   const handleSelectAula = (aula: AulaForAdmin) => {
@@ -70,6 +103,13 @@ const SchoolChamadaPage = () => {
       }
     });
     setAttendance(initialAttendance);
+
+    // Check for birthday students and show popup
+    const aulaDate = new Date(aula.data + 'T12:00:00');
+    const hasBirthdays = aula.alunos.some(a => isBirthdayInWeek(a.crianca.data_nascimento, aulaDate));
+    if (hasBirthdays) {
+      setShowBirthdayPopup(true);
+    }
   };
 
   // Handle marking attendance
@@ -345,6 +385,57 @@ const SchoolChamadaPage = () => {
             );
           })}
         </div>
+
+        {/* Birthday Popup */}
+        <Dialog open={showBirthdayPopup} onOpenChange={setShowBirthdayPopup}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg">
+                <Cake className="w-5 h-5 text-warning" />
+                🎂 Aniversariantes da Semana
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 mt-2">
+              {birthdayStudents.map((aluno) => {
+                const [, m, d] = aluno.birthdayDate.split('-');
+                return (
+                  <div
+                    key={aluno.crianca_id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${
+                      aluno.isBirthdayToday
+                        ? 'bg-warning/10 border-warning/40 ring-1 ring-warning/30'
+                        : 'bg-card border-border'
+                    }`}
+                  >
+                    <ChildAvatar
+                      fotoUrl={aluno.crianca.foto_url}
+                      nome={aluno.crianca.nome}
+                      className="w-10 h-10"
+                      fallbackClassName="text-sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">{aluno.crianca.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {d}/{m} — {calculateAge(aluno.birthdayDate)} anos
+                      </p>
+                    </div>
+                    {aluno.isBirthdayToday ? (
+                      <Badge className="bg-warning text-warning-foreground gap-1 animate-bounce-subtle">
+                        <PartyPopper className="w-3 h-3" />
+                        Hoje!
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 border-warning/50 text-warning">
+                        <Cake className="w-3 h-3" />
+                        Esta semana
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
