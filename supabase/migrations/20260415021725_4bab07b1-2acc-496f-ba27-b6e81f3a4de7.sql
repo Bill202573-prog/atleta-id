@@ -1,0 +1,1 @@
+ALTER TABLE public.escola_push_config ADD COLUMN aniversario_push boolean NOT NULL DEFAULT true;

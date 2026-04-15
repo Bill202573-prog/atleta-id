@@ -1489,6 +1489,7 @@ export type Database = {
       }
       escola_push_config: {
         Row: {
+          aniversario_push: boolean
           aula_1_dia_antes: boolean
           aula_3_dias_antes: boolean
           aula_no_dia: boolean
@@ -1508,6 +1509,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aniversario_push?: boolean
           aula_1_dia_antes?: boolean
           aula_3_dias_antes?: boolean
           aula_no_dia?: boolean
@@ -1527,6 +1529,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aniversario_push?: boolean
           aula_1_dia_antes?: boolean
           aula_3_dias_antes?: boolean
           aula_no_dia?: boolean
