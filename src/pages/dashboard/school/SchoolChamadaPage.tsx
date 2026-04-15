@@ -64,6 +64,30 @@ const SchoolChamadaPage = () => {
   const handleNextDay = () => setSelectedDate(prev => addDays(prev, 1));
   const handleToday = () => setSelectedDate(new Date());
 
+  // Helper: check if birthday falls within a given week
+  const isBirthdayInWeek = (dataNascimento: string, referenceDate: Date) => {
+    if (!dataNascimento) return false;
+    const weekStart = startOfWeek(referenceDate, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(referenceDate, { weekStartsOn: 1 });
+    const [, month, day] = dataNascimento.split('-').map(Number);
+    const year = referenceDate.getFullYear();
+    const birthday = new Date(year, month - 1, day);
+    return birthday >= weekStart && birthday <= weekEnd;
+  };
+
+  // Get birthday students for the selected aula's week
+  const birthdayStudents = useMemo(() => {
+    if (!selectedAula) return [];
+    const aulaDate = new Date(selectedAula.data + 'T12:00:00');
+    return selectedAula.alunos
+      .filter(a => isBirthdayInWeek(a.crianca.data_nascimento, aulaDate))
+      .map(a => ({
+        ...a,
+        isBirthdayToday: isBirthdayToday(a.crianca.data_nascimento),
+        birthdayDate: a.crianca.data_nascimento,
+      }));
+  }, [selectedAula]);
+
   // Select a class
   const handleSelectAula = (aula: AulaForAdmin) => {
     setSelectedAula(aula);
@@ -79,6 +103,13 @@ const SchoolChamadaPage = () => {
       }
     });
     setAttendance(initialAttendance);
+
+    // Check for birthday students and show popup
+    const aulaDate = new Date(aula.data + 'T12:00:00');
+    const hasBirthdays = aula.alunos.some(a => isBirthdayInWeek(a.crianca.data_nascimento, aulaDate));
+    if (hasBirthdays) {
+      setShowBirthdayPopup(true);
+    }
   };
 
   // Handle marking attendance
