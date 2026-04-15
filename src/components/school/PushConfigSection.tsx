@@ -58,6 +58,7 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
         aula_1_dia_antes: getValue('aula_1_dia_antes', true),
         aula_no_dia: getValue('aula_no_dia', true),
         comunicado_push: getValue('comunicado_push', true),
+        aniversario_push: getValue('aniversario_push', true),
       };
 
       const { error } = await supabase
@@ -212,6 +213,23 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
                   <Switch
                     checked={getValue('comunicado_push', true)}
                     onCheckedChange={(v) => setField('comunicado_push', v)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Aniversariantes */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-foreground">🎂 Aniversariantes</h4>
+              <p className="text-xs text-muted-foreground pl-2">
+                Envia um push automático no dia do aniversário do atleta para a família e para o administrador da escola.
+              </p>
+              <div className="space-y-2 pl-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Enviar push de aniversário</Label>
+                  <Switch
+                    checked={getValue('aniversario_push', true)}
+                    onCheckedChange={(v) => setField('aniversario_push', v)}
                   />
                 </div>
               </div>
