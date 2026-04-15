@@ -28,6 +28,7 @@ import {
   FileBarChart,
   ArrowLeft,
   LayoutDashboard,
+  ShieldCheck,
   ClipboardList,
   BarChart3,
   Receipt
@@ -148,6 +149,7 @@ const SchoolFinanceiroPage = () => {
 
   // Generate billing dialog state
   const [generateBillingDialogOpen, setGenerateBillingDialogOpen] = useState(false);
+
 
   const { data: children = [] } = useSchoolChildrenWithRelations(undefined, true);
   const { openEditDialog } = useStudentRegistration();
@@ -490,6 +492,42 @@ const SchoolFinanceiroPage = () => {
     },
     onError: (error: Error) => {
       toast.error('Erro ao gerar cobranças: ' + error.message);
+    },
+  });
+
+  // Mutation for auditing/syncing payments with Asaas
+  const [syncResults, setSyncResults] = useState<any>(null);
+  const auditPayments = useMutation({
+    mutationFn: async (mesReferencia?: string) => {
+      const { data, error } = await supabase.functions.invoke('audit-mensalidade-payments', {
+        body: { 
+          escolinha_id: user?.escolinhaId,
+          mes_referencia: mesReferencia || undefined,
+        },
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Erro ao auditar pagamentos');
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['school-mensalidades-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['school-growth-data'] });
+      queryClient.invalidateQueries({ queryKey: ['financeiro-historico-unificado'] });
+      setSyncResults(data);
+      const { summary } = data;
+      if (summary.auto_synced > 0) {
+        toast.success(`${summary.auto_synced} pagamento(s) sincronizado(s) automaticamente!`);
+      } else if (summary.mismatches === 0) {
+        toast.info('Todos os pagamentos estão sincronizados com o Asaas.');
+      } else {
+        toast.warning(`${summary.mismatches} divergência(s) encontrada(s).`);
+      }
+      if (summary.double_entries > 0) {
+        toast.warning(`${summary.double_entries} pagamento(s) com dupla entrada (pago manual + Asaas).`);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error('Erro ao sincronizar: ' + error.message);
     },
   });
 
@@ -858,20 +896,37 @@ const SchoolFinanceiroPage = () => {
               <CardTitle>Resumo Mensal</CardTitle>
               <CardDescription>Mês anterior, mês atual e projeção do próximo mês</CardDescription>
             </div>
-            <Button
-              onClick={() => setGenerateBillingDialogOpen(true)}
-              disabled={generateStudentBilling.isPending || !isCadastroBancarioAprovado}
-              className="gap-2"
-              title={!isCadastroBancarioAprovado ? 'Complete o cadastro bancário primeiro' : ''}
-            >
-              {generateStudentBilling.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline">Gerar Cobranças PIX</span>
-              <span className="sm:hidden">Cobranças</span>
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => auditPayments.mutate(currentMonth)}
+                disabled={auditPayments.isPending || !isCadastroBancarioAprovado}
+                className="gap-2"
+                title="Verificar pagamentos no Asaas e sincronizar automaticamente"
+              >
+                {auditPayments.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Sincronizar Asaas</span>
+                <span className="sm:hidden">Sync</span>
+              </Button>
+              <Button
+                onClick={() => setGenerateBillingDialogOpen(true)}
+                disabled={generateStudentBilling.isPending || !isCadastroBancarioAprovado}
+                className="gap-2"
+                title={!isCadastroBancarioAprovado ? 'Complete o cadastro bancário primeiro' : ''}
+              >
+                {generateStudentBilling.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Gerar Cobranças PIX</span>
+                <span className="sm:hidden">Cobranças</span>
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
@@ -1029,7 +1084,21 @@ const SchoolFinanceiroPage = () => {
             <CardTitle>Mensalidades</CardTitle>
             <CardDescription>Lista detalhada de todas as mensalidades</CardDescription>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => auditPayments.mutate(filterMonth !== 'all' ? filterMonth : undefined)}
+              disabled={auditPayments.isPending}
+              className="gap-2"
+            >
+              {auditPayments.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              Sincronizar Asaas
+            </Button>
             <div className="relative flex-1 sm:w-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -1069,6 +1138,52 @@ const SchoolFinanceiroPage = () => {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Sync Results Banner */}
+        {syncResults && (
+          <div className="mb-4 p-4 rounded-lg border bg-secondary/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                Resultado da Sincronização
+              </h4>
+              <Button variant="ghost" size="sm" onClick={() => setSyncResults(null)} className="text-xs">
+                Fechar
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div className="p-2 rounded bg-emerald-500/10 text-center">
+                <p className="font-bold text-emerald-600">{syncResults.summary.auto_synced}</p>
+                <p className="text-muted-foreground">Sincronizados</p>
+              </div>
+              <div className="p-2 rounded bg-blue-500/10 text-center">
+                <p className="font-bold text-blue-600">{syncResults.summary.paid_in_asaas}</p>
+                <p className="text-muted-foreground">Pagos no Asaas</p>
+              </div>
+              <div className="p-2 rounded bg-amber-500/10 text-center">
+                <p className="font-bold text-amber-600">{syncResults.summary.double_entries}</p>
+                <p className="text-muted-foreground">Dupla entrada</p>
+              </div>
+              <div className="p-2 rounded bg-destructive/10 text-center">
+                <p className="font-bold text-destructive">{syncResults.summary.errors}</p>
+                <p className="text-muted-foreground">Erros</p>
+              </div>
+            </div>
+            {syncResults.results.filter((r: any) => r.action_taken || r.double_entry || r.error).length > 0 && (
+              <div className="mt-2 space-y-1 text-xs">
+                {syncResults.results
+                  .filter((r: any) => r.action_taken || r.double_entry || r.error)
+                  .map((r: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-background/60">
+                      <span className="font-medium">{r.crianca_nome}:</span>
+                      {r.action_taken && <span className="text-emerald-600">{r.action_taken}</span>}
+                      {r.double_entry && <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Dupla entrada</Badge>}
+                      {r.error && <span className="text-destructive">{r.error}</span>}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
         {filteredMensalidades.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Nenhuma mensalidade encontrada.
