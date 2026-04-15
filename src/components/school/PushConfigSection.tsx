@@ -217,6 +217,23 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
                 </div>
               </div>
             </div>
+
+            {/* Aniversariantes */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm text-foreground">🎂 Aniversariantes</h4>
+              <p className="text-xs text-muted-foreground pl-2">
+                Envia um push automático no dia do aniversário do atleta para a família e para o administrador da escola.
+              </p>
+              <div className="space-y-2 pl-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Enviar push de aniversário</Label>
+                  <Switch
+                    checked={getValue('aniversario_push', true)}
+                    onCheckedChange={(v) => setField('aniversario_push', v)}
+                  />
+                </div>
+              </div>
+            </div>
           </>
         )}
 
