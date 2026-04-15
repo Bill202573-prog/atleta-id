@@ -1137,6 +1137,52 @@ const SchoolFinanceiroPage = () => {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Sync Results Banner */}
+        {syncResults && (
+          <div className="mb-4 p-4 rounded-lg border bg-secondary/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                Resultado da Sincronização
+              </h4>
+              <Button variant="ghost" size="sm" onClick={() => setSyncResults(null)} className="text-xs">
+                Fechar
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div className="p-2 rounded bg-emerald-500/10 text-center">
+                <p className="font-bold text-emerald-600">{syncResults.summary.auto_synced}</p>
+                <p className="text-muted-foreground">Sincronizados</p>
+              </div>
+              <div className="p-2 rounded bg-blue-500/10 text-center">
+                <p className="font-bold text-blue-600">{syncResults.summary.paid_in_asaas}</p>
+                <p className="text-muted-foreground">Pagos no Asaas</p>
+              </div>
+              <div className="p-2 rounded bg-amber-500/10 text-center">
+                <p className="font-bold text-amber-600">{syncResults.summary.double_entries}</p>
+                <p className="text-muted-foreground">Dupla entrada</p>
+              </div>
+              <div className="p-2 rounded bg-destructive/10 text-center">
+                <p className="font-bold text-destructive">{syncResults.summary.errors}</p>
+                <p className="text-muted-foreground">Erros</p>
+              </div>
+            </div>
+            {syncResults.results.filter((r: any) => r.action_taken || r.double_entry || r.error).length > 0 && (
+              <div className="mt-2 space-y-1 text-xs">
+                {syncResults.results
+                  .filter((r: any) => r.action_taken || r.double_entry || r.error)
+                  .map((r: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-background/60">
+                      <span className="font-medium">{r.crianca_nome}:</span>
+                      {r.action_taken && <span className="text-emerald-600">{r.action_taken}</span>}
+                      {r.double_entry && <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600">Dupla entrada</Badge>}
+                      {r.error && <span className="text-destructive">{r.error}</span>}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
         {filteredMensalidades.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             Nenhuma mensalidade encontrada.
