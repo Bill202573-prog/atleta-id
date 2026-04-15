@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
       }
 
       // ========== BIRTHDAY REMINDERS ==========
-      {
+      if (config.aniversario_push !== false) {
         const todayDate = new Date();
         const todayDay = todayDate.getDate();
         const todayMonth = todayDate.getMonth() + 1; // 1-based
