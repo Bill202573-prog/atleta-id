@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Mail, User, Fingerprint } from 'lucide-react';
 import { z } from 'zod';
-import logoAtletaId from '@/assets/logo-atleta-id.png';
+import logoAtletaId from '@/assets/logo-atleta-id-white.png';
 import PwaInstallButton from '@/components/shared/PwaInstallButton';
 import PasswordInput from '@/components/shared/PasswordInput';
 import ForgotPasswordDialog from '@/components/auth/ForgotPasswordDialog';
@@ -131,7 +131,7 @@ const Auth = () => {
       <div className="w-full max-w-md relative animate-fade-in">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <img src={logoAtletaId} alt="ATLETA ID" className="h-32 w-auto mx-auto mb-4 drop-shadow-2xl" />
+          <img src={logoAtletaId} alt="ATLETA ID" className="h-40 w-auto mx-auto mb-4" />
           <p className="text-white text-base font-medium">Acompanhe de perto a evolução do seu filho</p>
         </div>
 
