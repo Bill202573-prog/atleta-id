@@ -18,12 +18,6 @@ const getRpId = (req: Request): string => {
   }
 };
 
-const isEligibleSchool = (nome?: string | null) => {
-  if (!nome) return false;
-  const n = nome.toLowerCase();
-  return n.includes('fluminense') || n.includes('flamengo');
-};
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -50,7 +44,10 @@ Deno.serve(async (req) => {
       userName: user.email || user.id,
       userID: new TextEncoder().encode(user.id),
       attestationType: 'none',
-      excludeCredentials: (existing || []).map((c: any) => ({ id: c.credential_id, transports: c.transports })),
+      excludeCredentials: (existing || []).map((c: any) => ({
+        id: c.credential_id,
+        transports: c.transports || undefined,
+      })),
       authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
     });
 

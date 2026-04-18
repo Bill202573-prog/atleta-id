@@ -51,11 +51,15 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Verificação falhou' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { credential } = verification.registrationInfo as any;
-    const credentialId: string = credential.id; // already base64url string in v10+
-    const publicKey: string = b64(credential.publicKey);
-    const counter: number = credential.counter ?? 0;
+    const registrationInfo = verification.registrationInfo as any;
+    const credentialId: string = registrationInfo.credential?.id ?? registrationInfo.credentialID;
+    const publicKey: string = b64(registrationInfo.credential?.publicKey ?? registrationInfo.credentialPublicKey);
+    const counter: number = registrationInfo.credential?.counter ?? registrationInfo.counter ?? 0;
     const transports: string[] | undefined = response.response?.transports;
+
+    if (!credentialId || !publicKey) {
+      return new Response(JSON.stringify({ error: 'Credencial inválida para ativação da biometria' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const admin = createClient(supabaseUrl, serviceKey);
     const { error: insErr } = await admin.from('user_passkeys').insert({
