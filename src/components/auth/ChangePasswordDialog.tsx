@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Key, Fingerprint, Shield, Smartphone } from 'lucide-react';
+import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle, X } from 'lucide-react';
 import { z } from 'zod';
 import PasswordInput from '@/components/shared/PasswordInput';
 import {
@@ -34,6 +34,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   const biometricSupported = isBiometricSupported();
   const [biometricOn, setBiometricOn] = useState(false);
@@ -42,6 +43,10 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   useEffect(() => {
     if (open && user?.email) {
       setBiometricOn(hasLocalPasskey(user.email));
+      setPasswordOpen(false);
+      setPassword('');
+      setConfirmPassword('');
+      setErrorMsg(null);
     }
   }, [open, user?.email]);
 
@@ -85,6 +90,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
         toast.success('Senha alterada com sucesso!');
         setPassword('');
         setConfirmPassword('');
+        setPasswordOpen(false);
       } else {
         toast.error(result.error || 'Erro ao alterar senha');
       }
