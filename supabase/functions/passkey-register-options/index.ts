@@ -41,39 +41,6 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Verifica se o usuário pertence a escola elegível (Fluminense/Flamengo)
-    let eligible = false;
-    // 1) Admin de escola
-    const { data: escolasAdmin } = await admin.from('escolinhas').select('nome').eq('admin_user_id', user.id);
-    if (escolasAdmin?.some((e) => isEligibleSchool(e.nome))) eligible = true;
-    // 2) Sócio de escola
-    if (!eligible) {
-      const { data: escolasSocio } = await admin.from('escolinhas').select('nome').eq('socio_user_id', user.id);
-      if (escolasSocio?.some((e) => isEligibleSchool(e.nome))) eligible = true;
-    }
-    // 3) Professor
-    if (!eligible) {
-      const { data: profs } = await admin.from('professores').select('escolinha_id, escolinhas(nome)').eq('user_id', user.id);
-      if (profs?.some((p: any) => isEligibleSchool(p.escolinhas?.nome))) eligible = true;
-    }
-    // 4) Responsável
-    if (!eligible) {
-      const { data: resps } = await admin.from('responsaveis').select('id').eq('user_id', user.id).maybeSingle();
-      if (resps?.id) {
-        const { data: vinc } = await admin
-          .from('crianca_responsavel')
-          .select('crianca_id, criancas!inner(crianca_escolinha!inner(escolinhas!inner(nome)))')
-          .eq('responsavel_id', resps.id);
-        if (vinc?.some((v: any) =>
-          v.criancas?.crianca_escolinha?.some((ce: any) => isEligibleSchool(ce.escolinhas?.nome))
-        )) eligible = true;
-      }
-    }
-
-    if (!eligible) {
-      return new Response(JSON.stringify({ error: 'Login biométrico ainda não disponível para sua escola.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
     const { data: existing } = await admin.from('user_passkeys').select('credential_id, transports').eq('user_id', user.id);
 
     const rpID = getRpId(req);

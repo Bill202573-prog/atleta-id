@@ -131,7 +131,7 @@ const Auth = () => {
       <div className="w-full max-w-md relative animate-fade-in">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <img src={logoAtletaId} alt="ATLETA ID" className="h-40 w-auto mx-auto mb-4" />
+          <img src={logoAtletaId} alt="ATLETA ID" className="h-48 w-auto mx-auto mb-4" />
           <p className="text-white text-base font-medium">Acompanhe de perto a evolução do seu filho</p>
         </div>
 
