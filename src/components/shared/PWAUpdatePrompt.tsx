@@ -8,9 +8,6 @@ import { isCarreiraDomain } from '@/hooks/useCarreiraBasePath';
 type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
 
 export function PWAUpdatePrompt() {
-  // Não exibir prompt de atualização para atletas (Carreira ID)
-  if (typeof window !== 'undefined' && isCarreiraDomain()) return null;
-
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -72,6 +69,8 @@ export function PWAUpdatePrompt() {
   };
 
   if (!needsRefresh || dismissed) return null;
+  // Não exibir prompt de atualização para atletas (Carreira ID)
+  if (typeof window !== 'undefined' && isCarreiraDomain()) return null;
 
   return (
     <>
