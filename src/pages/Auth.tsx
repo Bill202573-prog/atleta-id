@@ -45,7 +45,10 @@ const Auth = () => {
 
   // Mostrar botão biometria se houver passkey local para o email digitado (ou último email salvo)
   useEffect(() => {
-    if (!isBiometricSupported()) return;
+    if (!isBiometricSupported()) {
+      setShowBiometric(false);
+      return;
+    }
     const lastEmail = email || localStorage.getItem('last_login_email') || '';
     if (lastEmail && hasLocalPasskey(lastEmail)) {
       setShowBiometric(true);
@@ -60,10 +63,13 @@ const Auth = () => {
       toast({ title: 'Informe o e-mail', description: 'Digite seu e-mail para entrar com biometria.', variant: 'destructive' });
       return;
     }
+
     setBiometricLoading(true);
     const result = await loginWithPasskey(email);
     setBiometricLoading(false);
+
     if (result.success) {
+      localStorage.setItem('last_login_email', email);
       toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
     } else {
       toast({ title: 'Falha na biometria', description: result.error, variant: 'destructive' });

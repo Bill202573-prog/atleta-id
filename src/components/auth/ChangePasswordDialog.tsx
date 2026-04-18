@@ -65,7 +65,8 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
     if (result.success) {
       setLocalPasskeyFlag(user.email, true);
       setBiometricOn(true);
-      toast.success('Biometria ativada! Use-a no próximo login.');
+      localStorage.setItem('last_login_email', user.email);
+      toast.success('Biometria ativada com sucesso neste dispositivo.');
     } else {
       toast.error(result.error || 'Não foi possível ativar a biometria');
     }
