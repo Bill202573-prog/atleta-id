@@ -21,6 +21,14 @@ const b64ToBytes = (b64: string): Uint8Array => {
   return out;
 };
 
+const normalizeCredentialId = (value: string): string[] => {
+  const norm = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = norm.length % 4 ? norm + '='.repeat(4 - (norm.length % 4)) : norm;
+  const unpadded = padded.replace(/=+$/, '');
+  const urlSafe = unpadded.replace(/\+/g, '-').replace(/\//g, '_');
+  return Array.from(new Set([value, padded, unpadded, urlSafe]));
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
@@ -37,8 +45,9 @@ Deno.serve(async (req) => {
     const user = userList?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
     if (!user) return new Response(JSON.stringify({ error: 'Usuário não encontrado' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    const credentialId = response.id;
-    const { data: pk } = await admin.from('user_passkeys').select('*').eq('user_id', user.id).eq('credential_id', credentialId).maybeSingle();
+    const credentialCandidates = normalizeCredentialId(response.id);
+    const { data: passkeys } = await admin.from('user_passkeys').select('*').eq('user_id', user.id).in('credential_id', credentialCandidates).limit(1);
+    const pk = passkeys?.[0];
     if (!pk) return new Response(JSON.stringify({ error: 'Credencial não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     const verification = await verifyAuthenticationResponse({

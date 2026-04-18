@@ -49,19 +49,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserData = async (userId: string): Promise<AuthUser | null> => {
     try {
       console.log('[AuthContext] fetchUserData starting for:', userId);
-      // Buscar role do usuario
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .single();
-
-      // Buscar profile do usuario
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('nome, avatar_url, email, password_needs_change')
-        .eq('user_id', userId)
-        .single();
+      const [
+        { data: roleData, error: roleError },
+        { data: profileData, error: profileError },
+      ] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single(),
+        supabase
+          .from('profiles')
+          .select('nome, avatar_url, email, password_needs_change')
+          .eq('user_id', userId)
+          .single(),
+      ]);
 
       if (!roleData || !profileData) {
         console.warn('[AuthContext] fetchUserData: missing data', { roleData, roleError, profileData, profileError });

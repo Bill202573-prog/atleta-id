@@ -6,10 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PWAUpdatePrompt } from "@/components/shared/PWAUpdatePrompt";
-import LandingPage from "./pages/LandingPage";
 import { isCarreiraDomain } from "@/hooks/useCarreiraBasePath";
 
 // Lazy load pages not needed on initial render
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
