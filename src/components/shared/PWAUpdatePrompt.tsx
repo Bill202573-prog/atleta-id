@@ -3,6 +3,7 @@ import { registerSW } from 'virtual:pwa-register';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { isCarreiraDomain } from '@/hooks/useCarreiraBasePath';
 
 type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
 
@@ -68,6 +69,8 @@ export function PWAUpdatePrompt() {
   };
 
   if (!needsRefresh || dismissed) return null;
+  // Não exibir prompt de atualização para atletas (Carreira ID)
+  if (typeof window !== 'undefined' && isCarreiraDomain()) return null;
 
   return (
     <>

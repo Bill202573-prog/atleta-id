@@ -121,7 +121,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary to-primary/80 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-primary p-4 relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
@@ -131,8 +131,8 @@ const Auth = () => {
       <div className="w-full max-w-md relative animate-fade-in">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <img src={logoAtletaId} alt="ATLETA ID" className="h-28 w-auto mx-auto mb-4 brightness-0 invert" />
-          <p className="text-primary-foreground/90 text-base">Acompanhe de perto a evolução do seu filho</p>
+          <img src={logoAtletaId} alt="ATLETA ID" className="h-32 w-auto mx-auto mb-4 drop-shadow-2xl" />
+          <p className="text-white text-base font-medium">Acompanhe de perto a evolução do seu filho</p>
         </div>
 
         <Card className="border-0 shadow-2xl">
