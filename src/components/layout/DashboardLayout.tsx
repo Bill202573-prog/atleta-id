@@ -19,7 +19,8 @@ import {
   Upload,
   Loader2,
   MessageSquare,
-  Activity
+  Activity,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';

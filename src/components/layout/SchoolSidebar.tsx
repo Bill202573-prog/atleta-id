@@ -43,6 +43,7 @@ import {
   Globe,
   ArrowLeft,
   Shield,
+  Settings,
 } from 'lucide-react';
 import ChangePasswordDialog from '@/components/auth/ChangePasswordDialog';
 import { cn } from '@/lib/utils';
