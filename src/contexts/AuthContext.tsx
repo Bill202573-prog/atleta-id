@@ -8,6 +8,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 import type { UserRole } from '@/types';
 import { AuthContext, type AuthContextType, type AuthUser } from './auth-context';
 import { useQueryClient } from '@tanstack/react-query';
+import { updateBiometricRefreshToken } from '@/lib/biometric';
 
 // Função para registrar acesso (definida aqui para evitar dependência circular)
 async function registrarAcesso(
@@ -145,6 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Sempre atualiza a sessão (necessário para manter token atualizado)
         setSession(nextSession);
         sessionRef.current = nextSession;
+
+        // Mantém o cofre de biometria sincronizado com o refresh_token mais recente
+        if (nextSession?.user?.email && nextSession.refresh_token) {
+          updateBiometricRefreshToken(nextSession.user.email, nextSession.refresh_token);
+        }
 
         // Se não há usuário, encerra e limpa estado
         if (!nextSession?.user) {
