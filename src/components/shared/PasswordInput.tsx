@@ -37,7 +37,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
           tabIndex={-1}
           onPointerDown={toggle}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 -m-2 text-muted-foreground hover:text-foreground transition-colors z-20 touch-manipulation"
+          className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-20 touch-manipulation"
           aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
         >
           {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
