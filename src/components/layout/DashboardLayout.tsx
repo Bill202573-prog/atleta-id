@@ -19,7 +19,8 @@ import {
   Upload,
   Loader2,
   MessageSquare,
-  Activity
+  Activity,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
@@ -241,8 +242,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             {user?.role !== 'admin' && (
               <ChangePasswordDialog
                 trigger={
-                  <Button variant="ghost" size="icon" title="Alterar Senha">
-                    <Key className="w-4 h-4" />
+                  <Button variant="ghost" size="icon" title="Configurações">
+                    <Settings className="w-4 h-4" />
                   </Button>
                 }
               />

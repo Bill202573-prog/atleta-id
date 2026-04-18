@@ -43,6 +43,7 @@ import {
   Globe,
   ArrowLeft,
   Shield,
+  Settings,
 } from 'lucide-react';
 import ChangePasswordDialog from '@/components/auth/ChangePasswordDialog';
 import { cn } from '@/lib/utils';
@@ -318,9 +319,9 @@ export function SchoolSidebar() {
             <SidebarMenuItem>
               <ChangePasswordDialog
                 trigger={
-                  <SidebarMenuButton tooltip="Alterar Senha">
-                    <Key className="w-4 h-4" />
-                    <span>Alterar Senha</span>
+                  <SidebarMenuButton tooltip="Configurações">
+                    <Settings className="w-4 h-4" />
+                    <span>Configurações</span>
                   </SidebarMenuButton>
                 }
               />

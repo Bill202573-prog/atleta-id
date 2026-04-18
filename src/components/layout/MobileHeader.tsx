@@ -256,7 +256,7 @@ export function MobileHeader({ children, currentChild, guardianName, onChildChan
                     className="w-full justify-start gap-3"
                   >
                     <Settings className="w-5 h-5" />
-                    Alterar Senha
+                    Configurações
                   </Button>
                 }
               />
