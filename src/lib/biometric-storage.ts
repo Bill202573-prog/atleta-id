@@ -7,7 +7,7 @@ const LAST_EMAIL_KEY = 'last_login_email';
 interface StoredBiometricVault {
   email: string;
   ciphertext: ArrayBuffer;
-  iv: Uint8Array;
+  iv: ArrayBuffer;
   key: CryptoKey;
   createdAt: number;
   updatedAt: number;
@@ -95,7 +95,7 @@ const encryptRefreshToken = async (refreshToken: string, currentKey?: CryptoKey)
   const key = currentKey ?? await generateVaultKey();
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(refreshToken));
-  return { key, iv, ciphertext };
+  return { key, iv: iv.slice().buffer, ciphertext };
 };
 
 export const isBiometricEnabledLocally = (email: string): boolean => {
@@ -166,7 +166,7 @@ export const getStoredRefreshToken = async (email: string): Promise<string | nul
 
   try {
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: record.iv },
+      { name: 'AES-GCM', iv: new Uint8Array(record.iv) },
       record.key,
       record.ciphertext,
     );
