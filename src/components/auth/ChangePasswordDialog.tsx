@@ -91,7 +91,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
 
     if (!next) {
       // Disable locally (credential remains on server until removed by admin/future setting)
-      setLocalPasskeyFlag(user.email, false);
+      await setLocalPasskeyFlag(user.email, false);
       setBiometricOn(false);
       toast.success('Biometria desativada neste dispositivo');
       return;
@@ -100,7 +100,6 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
     const result = await registerPasskey(navigator.userAgent.slice(0, 80));
     setBiometricLoading(false);
     if (result.success) {
-      setLocalPasskeyFlag(user.email, true);
       setBiometricOn(true);
       localStorage.setItem('last_login_email', user.email);
       toast.success('Biometria ativada com sucesso neste dispositivo.');

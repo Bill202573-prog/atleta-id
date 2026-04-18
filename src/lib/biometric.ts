@@ -10,17 +10,15 @@
  * - Se algo falhar, o usuário simplesmente faz login normal por email/senha.
  */
 import { supabase } from '@/integrations/supabase/client';
-
-const VAULT_PREFIX = 'biometric_vault:'; // biometric_vault:<email_lower>
-const PASSKEY_FLAG_PREFIX = 'has_passkey:'; // legado — mantido para compat de UI
-const LAST_EMAIL_KEY = 'last_login_email';
-
-interface BiometricVault {
-  email: string;
-  refresh_token: string;
-  credential_id: string; // base64url do rawId WebAuthn
-  created_at: number;
-}
+import {
+  disableBiometricPersistence,
+  enableBiometricPersistence,
+  getBiometricStorageDiagnostics,
+  getStoredCredentialId,
+  getStoredRefreshToken,
+  hasStoredBiometricSetup,
+  updateStoredRefreshToken,
+} from '@/lib/biometric-storage';
 
 const log = (...args: unknown[]) => {
   try { console.log('[biometric]', ...args); } catch { /* noop */ }
@@ -42,29 +40,6 @@ const fromBase64Url = (str: string): ArrayBuffer => {
   return out.buffer;
 };
 
-const vaultKey = (email: string) => VAULT_PREFIX + email.trim().toLowerCase();
-
-const readVault = (email: string): BiometricVault | null => {
-  try {
-    const raw = localStorage.getItem(vaultKey(email));
-    if (!raw) return null;
-    return JSON.parse(raw) as BiometricVault;
-  } catch {
-    return null;
-  }
-};
-
-const writeVault = (vault: BiometricVault) => {
-  localStorage.setItem(vaultKey(vault.email), JSON.stringify(vault));
-  localStorage.setItem(PASSKEY_FLAG_PREFIX + vault.email.toLowerCase(), '1');
-  localStorage.setItem(LAST_EMAIL_KEY, vault.email);
-};
-
-const clearVault = (email: string) => {
-  localStorage.removeItem(vaultKey(email));
-  localStorage.removeItem(PASSKEY_FLAG_PREFIX + email.toLowerCase());
-};
-
 // ----------------- Capabilities -----------------
 
 export const isBiometricSupported = (): boolean => {
@@ -82,6 +57,9 @@ export const getBiometricUnavailableReason = (): string | null => {
   if (typeof window === 'undefined') return 'Ambiente sem suporte a biometria.';
   if (!isBiometricSupported()) return 'Seu dispositivo não suporta biometria.';
   if (!window.isSecureContext) return 'A biometria exige conexão segura (HTTPS).';
+  if (typeof indexedDB === 'undefined' || !window.crypto?.subtle) {
+    return 'Seu navegador não oferece armazenamento seguro local para a biometria.';
+  }
   return null;
 };
 
@@ -91,12 +69,12 @@ export const canUseBiometricOnCurrentDomain = (): boolean => getBiometricUnavail
 
 export const hasLocalPasskey = (email: string): boolean => {
   if (!email) return false;
-  return !!readVault(email);
+  return hasStoredBiometricSetup(email);
 };
 
-export const setLocalPasskeyFlag = (email: string, value: boolean) => {
+export const setLocalPasskeyFlag = async (email: string, value: boolean) => {
   if (!email) return;
-  if (!value) clearVault(email);
+  if (!value) await disableBiometricPersistence(email);
 };
 
 // ----------------- Token persistence (chamado após login OK) -----------------
@@ -105,12 +83,10 @@ export const setLocalPasskeyFlag = (email: string, value: boolean) => {
  * Atualiza o refresh_token guardado quando uma sessão nova chega (refresh, login, etc.).
  * Chame isto a partir do AuthContext sempre que `onAuthStateChange` retornar um novo token.
  */
-export const updateBiometricRefreshToken = (email: string | null | undefined, refreshToken: string | null | undefined) => {
+export const updateBiometricRefreshToken = async (email: string | null | undefined, refreshToken: string | null | undefined) => {
   if (!email || !refreshToken) return;
-  const vault = readVault(email);
-  if (!vault) return; // só atualizamos se o usuário já ativou a biometria
-  if (vault.refresh_token === refreshToken) return;
-  writeVault({ ...vault, refresh_token: refreshToken });
+  if (!hasStoredBiometricSetup(email)) return;
+  await updateStoredRefreshToken(email, refreshToken);
   log('refresh_token atualizado no cofre');
 };
 
@@ -162,13 +138,8 @@ export const registerPasskey = async (deviceLabel?: string): Promise<{ success: 
 
     const credentialId = toBase64Url(cred.rawId);
 
-    // 3) Gravar cofre local
-    writeVault({
-      email,
-      refresh_token: refreshToken,
-      credential_id: credentialId,
-      created_at: Date.now(),
-    });
+    // 3) Gravar cofre local seguro
+    await enableBiometricPersistence(email, credentialId, refreshToken);
 
     log('cofre criado para', email);
     return { success: true };
@@ -196,12 +167,19 @@ export const loginWithPasskey = async (email: string): Promise<{ success: boolea
 
   if (!email) return { success: false, error: 'Informe o e-mail para entrar com biometria.' };
 
-  const vault = readVault(email);
-  if (!vault) {
+  if (!hasStoredBiometricSetup(email)) {
     return { success: false, error: 'Nenhuma biometria ativa para este e-mail neste dispositivo.' };
   }
 
   try {
+    const diagnostics = await getBiometricStorageDiagnostics(email);
+    const credentialId = getStoredCredentialId(email);
+    log('diagnóstico antes da biometria', { email, ...diagnostics });
+
+    if (!credentialId) {
+      return { success: false, error: 'A biometria deste dispositivo precisa ser reconfigurada.' };
+    }
+
     // 1) Pedir a biometria local. Se aprovada, o usuário "abriu o cadeado" do cofre.
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const assertion = await navigator.credentials.get({
@@ -212,7 +190,7 @@ export const loginWithPasskey = async (email: string): Promise<{ success: boolea
         userVerification: 'required',
         allowCredentials: [{
           type: 'public-key',
-          id: fromBase64Url(vault.credential_id),
+          id: fromBase64Url(credentialId),
           transports: ['internal', 'hybrid'],
         }],
       },
@@ -220,28 +198,32 @@ export const loginWithPasskey = async (email: string): Promise<{ success: boolea
 
     if (!assertion) return { success: false, error: 'Biometria não confirmada.' };
 
-    // 2) Restaurar a sessão Supabase usando o refresh_token salvo.
-    //    setSession aceita um refresh_token e dispara um refresh automático no cliente.
-    const { data, error } = await supabase.auth.setSession({
-      access_token: '',
-      refresh_token: vault.refresh_token,
-    });
+    const refreshToken = await getStoredRefreshToken(email);
+    log('resultado da leitura do token local', { email, hasRefreshToken: !!refreshToken });
 
-    if (error || !data.session) {
-      log('setSession falhou', error);
-      // Se o refresh_token expirou/foi revogado, limpamos o cofre para evitar loop.
-      clearVault(email);
+    if (!refreshToken) {
       return {
         success: false,
-        error: 'Sua sessão expirou. Entre uma vez com email e senha para reativar a biometria.',
+        error: 'Faça login com email e senha uma vez para renovar o acesso biométrico neste dispositivo.',
+      };
+    }
+
+    // 2) Restaurar a sessão Supabase usando o refresh_token salvo no cofre local.
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+
+    if (error || !data.session) {
+      log('refreshSession falhou', error);
+      return {
+        success: false,
+        error: 'Não foi possível renovar sua sessão automaticamente. Faça login com email e senha uma vez neste dispositivo.',
       };
     }
 
     // 3) Atualizar cofre com o token novo (refresh emite um novo refresh_token).
-    if (data.session.refresh_token && data.session.refresh_token !== vault.refresh_token) {
-      writeVault({ ...vault, refresh_token: data.session.refresh_token });
+    if (data.session.refresh_token && data.session.refresh_token !== refreshToken) {
+      await updateStoredRefreshToken(email, data.session.refresh_token);
     }
-    localStorage.setItem(LAST_EMAIL_KEY, email);
+    localStorage.setItem('last_login_email', email);
     log('login por biometria OK');
     return { success: true };
   } catch (e: unknown) {

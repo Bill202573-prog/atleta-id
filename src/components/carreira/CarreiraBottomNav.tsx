@@ -31,7 +31,7 @@ export function CarreiraBottomNav({ currentUserId, profileSlug }: CarreiraBottom
   });
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     toast.success('Você saiu da sua conta');
     // If on carreira domain, go to carreira landing; otherwise go back to AtletaID login
     if (isCarreiraDomain()) {

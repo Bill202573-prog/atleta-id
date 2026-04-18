@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Mantém o cofre de biometria sincronizado com o refresh_token mais recente
         if (nextSession?.user?.email && nextSession.refresh_token) {
-          updateBiometricRefreshToken(nextSession.user.email, nextSession.refresh_token);
+          void updateBiometricRefreshToken(nextSession.user.email, nextSession.refresh_token);
         }
 
         // Se não há usuário, encerra e limpa estado
@@ -200,6 +200,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AuthContext] getSession result:', session?.user?.id ? 'has session' : 'no session');
       setSession(session);
       sessionRef.current = session;
+
+      if (session?.user?.email && session.refresh_token) {
+        void updateBiometricRefreshToken(session.user.email, session.refresh_token);
+      }
 
       if (session?.user) {
         if (fetchingRef.current) {
@@ -348,7 +352,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     // Clear all cached queries on logout to ensure fresh data on next login
     queryClient.clear();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     setUser(null);
     setSession(null);
   };
