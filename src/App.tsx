@@ -32,6 +32,7 @@ const PrivacidadePage = lazy(() => import("./pages/carreira/PrivacidadePage"));
 const ContatoPage = lazy(() => import("./pages/carreira/ContatoPage"));
 const ImportUsersPage = lazy(() => import("./pages/ImportUsersPage"));
 const MigrateAtividadeFotosPage = lazy(() => import("./pages/MigrateAtividadeFotosPage"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 
 const queryClient = new QueryClient({
@@ -80,6 +81,7 @@ const App = () => (
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/login" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/install" element={<InstallApp />} />
                   <Route path="/indicacao" element={<IndicacaoPage />} />
                   <Route path="/i" element={<ShortIndicacaoRedirect />} />

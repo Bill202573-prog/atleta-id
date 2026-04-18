@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.sync-all-to-carreira]
 verify_jwt = false
+
+[functions.passkey-login-options]
+verify_jwt = false
+
+[functions.passkey-login-verify]
+verify_jwt = false
