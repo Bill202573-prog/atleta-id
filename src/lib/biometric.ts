@@ -4,6 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 const PASSKEY_FLAG_PREFIX = 'has_passkey:';
 const EDGE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const OFFICIAL_PASSKEY_HOSTS = ['atletaid.com.br', 'www.atletaid.com.br'];
+
+const getCurrentHostname = (): string => {
+  if (typeof window === 'undefined') return '';
+  return window.location.hostname.toLowerCase();
+};
 
 const invokeEdgeFunction = async <T>(
   functionName: string,
@@ -79,6 +85,20 @@ export const isBiometricSupported = (): boolean => {
   }
 };
 
+export const getBiometricUnavailableReason = (): string | null => {
+  if (!isBiometricSupported()) {
+    return 'Seu dispositivo não suporta biometria.';
+  }
+
+  if (!OFFICIAL_PASSKEY_HOSTS.includes(getCurrentHostname())) {
+    return 'A biometria só fica disponível no domínio oficial do Atleta ID. Em links de teste e preview ela foi desativada para evitar novas falhas.';
+  }
+
+  return null;
+};
+
+export const canUseBiometricOnCurrentDomain = (): boolean => getBiometricUnavailableReason() === null;
+
 export const hasLocalPasskey = (email: string): boolean => {
   if (!email) return false;
   return localStorage.getItem(PASSKEY_FLAG_PREFIX + email.toLowerCase()) === '1';
@@ -91,6 +111,11 @@ export const setLocalPasskeyFlag = (email: string, value: boolean) => {
 };
 
 export const registerPasskey = async (deviceLabel?: string): Promise<{ success: boolean; error?: string }> => {
+  const unavailableReason = getBiometricUnavailableReason();
+  if (unavailableReason) {
+    return { success: false, error: unavailableReason };
+  }
+
   try {
     const { data: optionsRes, error: optionsError } = await invokeEdgeFunction<{ options?: any }>(
       'passkey-register-options',
@@ -124,6 +149,11 @@ export const registerPasskey = async (deviceLabel?: string): Promise<{ success: 
 };
 
 export const loginWithPasskey = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  const unavailableReason = getBiometricUnavailableReason();
+  if (unavailableReason) {
+    return { success: false, error: unavailableReason };
+  }
+
   try {
     const { data: optionsRes, error: optionsError, status: optionsStatus } = await invokeEdgeFunction<{ options?: any }>(
       'passkey-login-options',

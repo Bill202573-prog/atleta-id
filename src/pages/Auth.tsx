@@ -12,7 +12,7 @@ import logoAtletaId from '@/assets/logo-atleta-id-white.png';
 import PwaInstallButton from '@/components/shared/PwaInstallButton';
 import PasswordInput from '@/components/shared/PasswordInput';
 import ForgotPasswordDialog from '@/components/auth/ForgotPasswordDialog';
-import { isBiometricSupported, hasLocalPasskey, loginWithPasskey } from '@/lib/biometric';
+import { canUseBiometricOnCurrentDomain, getBiometricUnavailableReason, hasLocalPasskey, isBiometricSupported, loginWithPasskey } from '@/lib/biometric';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalido'),
@@ -45,7 +45,7 @@ const Auth = () => {
 
   // Mostrar botão biometria se houver passkey local para o email digitado (ou último email salvo)
   useEffect(() => {
-    if (!isBiometricSupported()) {
+    if (!isBiometricSupported() || !canUseBiometricOnCurrentDomain()) {
       setShowBiometric(false);
       return;
     }
@@ -59,6 +59,12 @@ const Auth = () => {
   }, [email]);
 
   const handleBiometricLogin = async () => {
+    const unavailableReason = getBiometricUnavailableReason();
+    if (unavailableReason) {
+      toast({ title: 'Biometria indisponível', description: unavailableReason, variant: 'destructive' });
+      return;
+    }
+
     if (!email) {
       toast({ title: 'Informe o e-mail', description: 'Digite seu e-mail para entrar com biometria.', variant: 'destructive' });
       return;
