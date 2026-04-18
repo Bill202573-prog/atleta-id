@@ -26,11 +26,32 @@ const invokeEdgeFunction = async <T>(
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(`${EDGE_FUNCTIONS_URL}/${functionName}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${EDGE_FUNCTIONS_URL}/${functionName}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+  } catch (error: any) {
+    window.clearTimeout(timeoutId);
+    if (error?.name === 'AbortError') {
+      return { error: 'A biometria demorou mais do que o esperado. Tente novamente.', status: 408 };
+    }
+
+    return {
+      error: 'Não foi possível conectar ao serviço de biometria. Tente novamente em instantes.',
+      status: 0,
+    };
+  }
+
+  window.clearTimeout(timeoutId);
 
   let payload: any = null;
 

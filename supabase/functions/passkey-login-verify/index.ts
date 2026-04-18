@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       expectedOrigin: getOrigin(req),
       expectedRPID: getRpId(req),
       authenticator: {
-        credentialID: b64ToBytes(pk.credential_id),
+        credentialID: pk.credential_id,
         credentialPublicKey: b64ToBytes(pk.public_key),
         counter: Number(pk.counter ?? 0),
         transports: pk.transports || undefined,
