@@ -10,6 +10,8 @@ import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle
 import { z } from 'zod';
 import PasswordInput from '@/components/shared/PasswordInput';
 import {
+  canUseBiometricOnCurrentDomain,
+  getBiometricUnavailableReason,
   isBiometricSupported,
   hasLocalPasskey,
   setLocalPasskeyFlag,
@@ -39,6 +41,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   const [helpOpen, setHelpOpen] = useState(false);
 
   const biometricSupported = isBiometricSupported();
+  const biometricUnavailableReason = getBiometricUnavailableReason();
   const [biometricOn, setBiometricOn] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
 
@@ -71,7 +74,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
 
   useEffect(() => {
     if (open && user?.email) {
-      setBiometricOn(hasLocalPasskey(user.email));
+      setBiometricOn(canUseBiometricOnCurrentDomain() && hasLocalPasskey(user.email));
       setPasswordOpen(false);
       setPassword('');
       setConfirmPassword('');
@@ -81,6 +84,11 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
 
   const handleToggleBiometric = async (next: boolean) => {
     if (!user?.email) return;
+    if (biometricUnavailableReason) {
+      toast.error(biometricUnavailableReason);
+      return;
+    }
+
     if (!next) {
       // Disable locally (credential remains on server until removed by admin/future setting)
       setLocalPasskeyFlag(user.email, false);
@@ -172,7 +180,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
                     id="biometric-switch"
                     checked={biometricOn}
                     onCheckedChange={handleToggleBiometric}
-                    disabled={biometricLoading}
+                    disabled={biometricLoading || !!biometricUnavailableReason}
                   />
                 ) : (
                   <span className="text-xs text-muted-foreground">Indisponível</span>
@@ -181,6 +189,8 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
               <p className="text-xs text-muted-foreground mt-1">
                 {biometricLoading
                   ? 'Ativando…'
+                    : biometricUnavailableReason
+                    ? biometricUnavailableReason
                   : biometricOn
                   ? 'Ativado — Login com biometria neste dispositivo'
                   : biometricSupported
