@@ -1,45 +1,55 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { SchoolDashboardLayout } from '@/components/layout/SchoolDashboardLayout';
 import { AdminSchoolProvider } from '@/contexts/AdminSchoolContext';
-import AdminDashboard from './dashboard/AdminDashboard';
-import AdminUsersPage from './dashboard/admin/AdminUsersPage';
-import SchoolDashboard from './dashboard/SchoolDashboard';
-import TeacherDashboard from './dashboard/TeacherDashboard';
-import ChildrenManagement from './dashboard/school/ChildrenManagement';
-import TeachersManagement from './dashboard/school/TeachersManagement';
-import ClassesManagement from './dashboard/school/ClassesManagement';
-import AulasManagement from './dashboard/school/AulasManagement';
-import AmistososManagement from './dashboard/school/AmistososManagement';
-import CampeonatosManagement from './dashboard/school/CampeonatosManagement';
-import CampeonatoDetailPage from './dashboard/school/CampeonatoDetailPage';
-import SalaTrofeusPage from './dashboard/school/SalaTrofeusPage';
-import AdminSchoolsPage from './dashboard/admin/AdminSchoolsPage';
-import AdminFinanceiroPage from './dashboard/admin/AdminFinanceiroPage';
-import SchoolAdminPage from './dashboard/admin/SchoolAdminPage';
-import SchoolFinanceiroPage from './dashboard/school/SchoolFinanceiroPage';
-import SchoolChamadaPage from './dashboard/school/SchoolChamadaPage';
-import DiagnosticoAcessoPage from './dashboard/admin/DiagnosticoAcessoPage';
-import ComunicadosManagement from './dashboard/admin/ComunicadosManagement';
-import AtividadesExternasAdminPage from './dashboard/admin/AtividadesExternasAdminPage';
-import AdminRedeSocialPage from './dashboard/admin/AdminRedeSocialPage';
-import ComunicadosEscolaManagement from './dashboard/school/ComunicadosEscolaManagement';
-import IndicacoesManagement from './dashboard/school/IndicacoesManagement';
-import SchoolLojaPage from './dashboard/school/SchoolLojaPage';
-import SchoolPublicProfilePage from './dashboard/school/SchoolPublicProfilePage';
-import GuardianInicioPage from './dashboard/guardian/GuardianInicioPage';
-import GuardianAgendaPage from './dashboard/guardian/GuardianAgendaPage';
-import GuardianPerfilPage from './dashboard/guardian/GuardianPerfilPage';
-import GuardianFrequenciaPage from './dashboard/guardian/GuardianFrequenciaPage';
-import GuardianFinanceiroPage from './dashboard/guardian/GuardianFinanceiroPage';
-import GuardianJornadaPage from './dashboard/guardian/GuardianJornadaPage';
-import GuardianConvocacoesPage from './dashboard/guardian/GuardianConvocacoesPage';
-import GuardianLojaPage from './dashboard/guardian/GuardianLojaPage';
-import EventosManagement from './dashboard/school/EventosManagement';
 import BiometricSetupPrompt from '@/components/auth/BiometricSetupPrompt';
-
 import { Loader2 } from 'lucide-react';
+
+const AdminDashboard = lazy(() => import('./dashboard/AdminDashboard'));
+const AdminUsersPage = lazy(() => import('./dashboard/admin/AdminUsersPage'));
+const SchoolDashboard = lazy(() => import('./dashboard/SchoolDashboard'));
+const TeacherDashboard = lazy(() => import('./dashboard/TeacherDashboard'));
+const ChildrenManagement = lazy(() => import('./dashboard/school/ChildrenManagement'));
+const TeachersManagement = lazy(() => import('./dashboard/school/TeachersManagement'));
+const ClassesManagement = lazy(() => import('./dashboard/school/ClassesManagement'));
+const AulasManagement = lazy(() => import('./dashboard/school/AulasManagement'));
+const AmistososManagement = lazy(() => import('./dashboard/school/AmistososManagement'));
+const CampeonatosManagement = lazy(() => import('./dashboard/school/CampeonatosManagement'));
+const CampeonatoDetailPage = lazy(() => import('./dashboard/school/CampeonatoDetailPage'));
+const SalaTrofeusPage = lazy(() => import('./dashboard/school/SalaTrofeusPage'));
+const AdminSchoolsPage = lazy(() => import('./dashboard/admin/AdminSchoolsPage'));
+const AdminFinanceiroPage = lazy(() => import('./dashboard/admin/AdminFinanceiroPage'));
+const SchoolAdminPage = lazy(() => import('./dashboard/admin/SchoolAdminPage'));
+const SchoolFinanceiroPage = lazy(() => import('./dashboard/school/SchoolFinanceiroPage'));
+const SchoolChamadaPage = lazy(() => import('./dashboard/school/SchoolChamadaPage'));
+const DiagnosticoAcessoPage = lazy(() => import('./dashboard/admin/DiagnosticoAcessoPage'));
+const ComunicadosManagement = lazy(() => import('./dashboard/admin/ComunicadosManagement'));
+const AtividadesExternasAdminPage = lazy(() => import('./dashboard/admin/AtividadesExternasAdminPage'));
+const AdminRedeSocialPage = lazy(() => import('./dashboard/admin/AdminRedeSocialPage'));
+const ComunicadosEscolaManagement = lazy(() => import('./dashboard/school/ComunicadosEscolaManagement'));
+const IndicacoesManagement = lazy(() => import('./dashboard/school/IndicacoesManagement'));
+const SchoolLojaPage = lazy(() => import('./dashboard/school/SchoolLojaPage'));
+const SchoolPublicProfilePage = lazy(() => import('./dashboard/school/SchoolPublicProfilePage'));
+const GuardianInicioPage = lazy(() => import('./dashboard/guardian/GuardianInicioPage'));
+const GuardianAgendaPage = lazy(() => import('./dashboard/guardian/GuardianAgendaPage'));
+const GuardianPerfilPage = lazy(() => import('./dashboard/guardian/GuardianPerfilPage'));
+const GuardianFrequenciaPage = lazy(() => import('./dashboard/guardian/GuardianFrequenciaPage'));
+const GuardianFinanceiroPage = lazy(() => import('./dashboard/guardian/GuardianFinanceiroPage'));
+const GuardianJornadaPage = lazy(() => import('./dashboard/guardian/GuardianJornadaPage'));
+const GuardianConvocacoesPage = lazy(() => import('./dashboard/guardian/GuardianConvocacoesPage'));
+const GuardianLojaPage = lazy(() => import('./dashboard/guardian/GuardianLojaPage'));
+const EventosManagement = lazy(() => import('./dashboard/school/EventosManagement'));
+
+const DashboardLoading = () => (
+  <div className="min-h-[40vh] flex items-center justify-center bg-background">
+    <div className="text-center">
+      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+      <p className="text-muted-foreground">Carregando...</p>
+    </div>
+  </div>
+);
 
 const Dashboard = () => {
   const { user, isLoading } = useAuth();
@@ -67,7 +77,7 @@ const Dashboard = () => {
         <div className="text-center max-w-md p-6">
           <h2 className="text-xl font-semibold mb-2">Acesso Pendente</h2>
           <p className="text-muted-foreground">
-            Sua conta foi criada mas ainda nao foi configurada com um perfil. 
+            Sua conta foi criada mas ainda nao foi configurada com um perfil.
             Entre em contato com o administrador do sistema.
           </p>
         </div>
@@ -75,38 +85,34 @@ const Dashboard = () => {
     );
   }
 
-  // ============================================
-  // ADMIN IMPERSONATING A SCHOOL
-  // When admin has ?escolinhaId=xxx, show full school layout
-  // ============================================
   const adminEscolinhaId = searchParams.get('escolinhaId');
   if (user.role === 'admin' && adminEscolinhaId) {
     return (
       <AdminSchoolProvider escolinhaId={adminEscolinhaId}>
         <SchoolDashboardLayout>
-          <AdminSchoolContent />
+          <Suspense fallback={<DashboardLoading />}>
+            <AdminSchoolContent />
+          </Suspense>
         </SchoolDashboardLayout>
       </AdminSchoolProvider>
     );
   }
 
-  // Guardian uses its own layout with sidebar
   if (user.role === 'guardian') {
     const path = location.pathname;
-    if (path === '/dashboard/agenda') return <GuardianAgendaPage />;
-    if (path === '/dashboard/perfil') return <GuardianPerfilPage />;
-    if (path === '/dashboard/frequencia') return <GuardianFrequenciaPage />;
-    if (path === '/dashboard/financeiro') return <GuardianFinanceiroPage />;
-    if (path === '/dashboard/jornada') return <GuardianJornadaPage />;
-    if (path === '/dashboard/convocacoes') return <GuardianConvocacoesPage />;
-    if (path === '/dashboard/loja') return <GuardianLojaPage />;
-    return <GuardianInicioPage />;
+    if (path === '/dashboard/agenda') return <Suspense fallback={<DashboardLoading />}><GuardianAgendaPage /></Suspense>;
+    if (path === '/dashboard/perfil') return <Suspense fallback={<DashboardLoading />}><GuardianPerfilPage /></Suspense>;
+    if (path === '/dashboard/frequencia') return <Suspense fallback={<DashboardLoading />}><GuardianFrequenciaPage /></Suspense>;
+    if (path === '/dashboard/financeiro') return <Suspense fallback={<DashboardLoading />}><GuardianFinanceiroPage /></Suspense>;
+    if (path === '/dashboard/jornada') return <Suspense fallback={<DashboardLoading />}><GuardianJornadaPage /></Suspense>;
+    if (path === '/dashboard/convocacoes') return <Suspense fallback={<DashboardLoading />}><GuardianConvocacoesPage /></Suspense>;
+    if (path === '/dashboard/loja') return <Suspense fallback={<DashboardLoading />}><GuardianLojaPage /></Suspense>;
+    return <Suspense fallback={<DashboardLoading />}><GuardianInicioPage /></Suspense>;
   }
 
   const renderContent = () => {
     const path = location.pathname;
-    
-    // Admin-specific routes
+
     if (user.role === 'admin') {
       if (path === '/dashboard/schools') return <AdminSchoolsPage />;
       if (path === '/dashboard/financeiro') return <AdminFinanceiroPage />;
@@ -117,8 +123,7 @@ const Dashboard = () => {
       if (path === '/dashboard/rede-social') return <AdminRedeSocialPage />;
       if (path === '/dashboard/users') return <AdminUsersPage />;
     }
-    
-    // School-specific routes
+
     if (user.role === 'school') {
       if (path === '/dashboard/children') return <ChildrenManagement />;
       if (path === '/dashboard/teachers') return <TeachersManagement />;
@@ -138,8 +143,7 @@ const Dashboard = () => {
       if (path === '/dashboard/perfil-publico') return <SchoolPublicProfilePage />;
       if (path === '/dashboard/financeiro') return <SchoolFinanceiroPage />;
     }
-    
-    // Default dashboard by role
+
     switch (user.role) {
       case 'admin':
         return <AdminDashboard />;
@@ -152,12 +156,13 @@ const Dashboard = () => {
     }
   };
 
-  // Use different layouts based on role
   if (user.role === 'school') {
     return (
       <>
         <SchoolDashboardLayout>
-          {renderContent()}
+          <Suspense fallback={<DashboardLoading />}>
+            {renderContent()}
+          </Suspense>
         </SchoolDashboardLayout>
         <BiometricSetupPrompt />
       </>
@@ -167,17 +172,15 @@ const Dashboard = () => {
   return (
     <>
       <DashboardLayout>
-        {renderContent()}
+        <Suspense fallback={<DashboardLoading />}>
+          {renderContent()}
+        </Suspense>
       </DashboardLayout>
       <BiometricSetupPrompt />
     </>
   );
 };
 
-/**
- * Content router for admin viewing a school.
- * All school routes are available here, using the overridden escolinhaId.
- */
 const AdminSchoolContent = () => {
   const location = useLocation();
   const path = location.pathname;
@@ -201,7 +204,6 @@ const AdminSchoolContent = () => {
   if (path === '/dashboard/financeiro') return <SchoolFinanceiroPage />;
   if (path === '/dashboard/eventos') return <EventosManagement />;
 
-  // Default: school dashboard
   return <SchoolDashboard />;
 };
 
