@@ -37,6 +37,7 @@ import GuardianJornadaPage from './dashboard/guardian/GuardianJornadaPage';
 import GuardianConvocacoesPage from './dashboard/guardian/GuardianConvocacoesPage';
 import GuardianLojaPage from './dashboard/guardian/GuardianLojaPage';
 import EventosManagement from './dashboard/school/EventosManagement';
+import BiometricSetupPrompt from '@/components/auth/BiometricSetupPrompt';
 
 import { Loader2 } from 'lucide-react';
 
@@ -154,16 +155,22 @@ const Dashboard = () => {
   // Use different layouts based on role
   if (user.role === 'school') {
     return (
-      <SchoolDashboardLayout>
-        {renderContent()}
-      </SchoolDashboardLayout>
+      <>
+        <SchoolDashboardLayout>
+          {renderContent()}
+        </SchoolDashboardLayout>
+        <BiometricSetupPrompt />
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
-      {renderContent()}
-    </DashboardLayout>
+    <>
+      <DashboardLayout>
+        {renderContent()}
+      </DashboardLayout>
+      <BiometricSetupPrompt />
+    </>
   );
 };
 
