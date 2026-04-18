@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle, X } from 'lucide-react';
+import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle, Flame, ShieldCheck, Wallet, LifeBuoy, Mail, MessageCircle } from 'lucide-react';
 import { z } from 'zod';
 import PasswordInput from '@/components/shared/PasswordInput';
 import {
@@ -35,10 +36,38 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const biometricSupported = isBiometricSupported();
   const [biometricOn, setBiometricOn] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+
+  const helpTopics = [
+    {
+      value: 'primeiros-passos',
+      title: 'Primeiros passos',
+      description: 'Aprenda como acessar a conta, navegar pelo app e acompanhar o atleta desde o primeiro acesso.',
+      icon: Flame,
+    },
+    {
+      value: 'conta-seguranca',
+      title: 'Conta e segurança',
+      description: 'Entenda como trocar senha, ativar biometria e manter sua conta protegida no dispositivo.',
+      icon: ShieldCheck,
+    },
+    {
+      value: 'pagamentos',
+      title: 'Pagamentos',
+      description: 'Consulte mensalidades, taxas e o histórico financeiro vinculado ao aluno com mais clareza.',
+      icon: Wallet,
+    },
+    {
+      value: 'suporte',
+      title: 'Suporte',
+      description: 'Fale com nossa equipe para tirar dúvidas, relatar problemas ou pedir orientação rápida.',
+      icon: LifeBuoy,
+    },
+  ];
 
   useEffect(() => {
     if (open && user?.email) {
@@ -207,10 +236,9 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Suporte
           </h3>
-          <a
-            href="https://wa.me/5521988887777?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20Atleta%20ID"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
             className="w-full rounded-lg border bg-card p-4 flex items-center gap-3 text-left transition-colors hover:bg-accent/40 hover:border-primary/40"
           >
             <div className="bg-primary/10 rounded-md p-2 shrink-0">
@@ -223,7 +251,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
               </p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-          </a>
+          </button>
         </div>
       </DialogContent>
 
@@ -282,6 +310,83 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
               Alterar Senha
             </Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-primary" />
+              Central de Ajuda
+            </DialogTitle>
+            <DialogDescription>
+              Encontre respostas rápidas e fale com nosso suporte quando precisar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-2xl border bg-muted/40 p-4">
+              <div className="rounded-xl bg-primary/10 p-3">
+                <HelpCircle className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-foreground">Perguntas Populares</p>
+                <p className="text-sm text-muted-foreground">Os assuntos mais buscados para te ajudar mais rápido.</p>
+              </div>
+            </div>
+
+            <Accordion type="single" collapsible className="space-y-3">
+              {helpTopics.map((topic) => {
+                const Icon = topic.icon;
+
+                return (
+                  <AccordionItem
+                    key={topic.value}
+                    value={topic.value}
+                    className="rounded-2xl border bg-card px-5 shadow-sm data-[state=open]:border-primary/30"
+                  >
+                    <AccordionTrigger className="gap-4 py-5 text-left hover:no-underline">
+                      <div className="flex items-center gap-4">
+                        <div className="rounded-xl bg-primary/10 p-3">
+                          <Icon className="h-5 w-5 text-primary" />
+                        </div>
+                        <span className="text-base font-semibold text-foreground">{topic.title}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-5 pl-[4.5rem] pr-2 text-sm text-muted-foreground">
+                      {topic.description}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+
+            <div className="rounded-3xl border bg-gradient-to-r from-secondary to-background p-6 text-center shadow-sm">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <HelpCircle className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">Precisa de mais ajuda?</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Entre em contato com nossa equipe de suporte por e-mail ou WhatsApp.
+              </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <Button asChild size="lg" className="w-full">
+                  <a href="mailto:contato@atletaid.com.br">
+                    <Mail className="h-4 w-4" />
+                    E-mail
+                  </a>
+                </Button>
+                <Button asChild size="lg" variant="success" className="w-full">
+                  <a href="https://wa.me/5521969622045" target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Dialog>
