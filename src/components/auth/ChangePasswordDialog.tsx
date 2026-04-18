@@ -178,17 +178,68 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
           </div>
         </div>
 
-        {/* Alterar Senha */}
+        {/* Senha */}
         <div className="space-y-3 pt-2">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Senha
           </h3>
-          <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Key className="w-4 h-4 text-primary" />
-              <span className="font-semibold text-sm">Alterar senha</span>
+          <button
+            type="button"
+            onClick={() => setPasswordOpen(true)}
+            className="w-full rounded-lg border bg-card p-4 flex items-center gap-3 text-left transition-colors hover:bg-accent/40 hover:border-primary/40"
+          >
+            <div className="bg-primary/10 rounded-md p-2 shrink-0">
+              <Key className="w-5 h-5 text-primary" />
             </div>
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold text-sm block">Alterar senha</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Defina uma nova senha de acesso
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </button>
+        </div>
 
+        {/* Suporte */}
+        <div className="space-y-3 pt-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Suporte
+          </h3>
+          <a
+            href="https://wa.me/5521988887777?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20Atleta%20ID"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full rounded-lg border bg-card p-4 flex items-center gap-3 text-left transition-colors hover:bg-accent/40 hover:border-primary/40"
+          >
+            <div className="bg-primary/10 rounded-md p-2 shrink-0">
+              <HelpCircle className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="font-semibold text-sm block">Central de Ajuda</span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tire suas dúvidas com nosso suporte
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </a>
+        </div>
+      </DialogContent>
+
+      {/* Sub-dialog: Alterar Senha */}
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="w-5 h-5 text-primary" />
+              Alterar senha
+            </DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para sua conta
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new-password">Nova Senha</Label>
               <PasswordInput
@@ -230,8 +281,8 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
               Alterar Senha
             </Button>
           </form>
-        </div>
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
