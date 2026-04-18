@@ -39,6 +39,9 @@ export const registerPasskey = async (deviceLabel?: string): Promise<{ success: 
     }
     return { success: true };
   } catch (e: any) {
+    if (e?.name === 'NotAllowedError') {
+      return { success: false, error: 'A ativação da biometria foi cancelada ou não concluída no dispositivo.' };
+    }
     return { success: false, error: e?.message || 'Erro inesperado' };
   }
 };
@@ -64,6 +67,9 @@ export const loginWithPasskey = async (email: string): Promise<{ success: boolea
     if (sessErr) return { success: false, error: sessErr.message };
     return { success: true };
   } catch (e: any) {
+    if (e?.name === 'NotAllowedError') {
+      return { success: false, error: 'A autenticação biométrica foi cancelada ou não concluída.' };
+    }
     return { success: false, error: e?.message || 'Erro inesperado' };
   }
 };
