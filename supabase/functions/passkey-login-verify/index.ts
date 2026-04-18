@@ -41,12 +41,19 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    const { data: userList } = await admin.auth.admin.listUsers();
-    const user = userList?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (!user) return new Response(JSON.stringify({ error: 'Usuário não encontrado' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data: profile, error: profileError } = await admin
+      .from('profiles')
+      .select('user_id, email')
+      .ilike('email', normalizedEmail)
+      .maybeSingle();
+
+    if (profileError || !profile?.user_id) {
+      return new Response(JSON.stringify({ error: 'Usuário não encontrado' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
     const credentialCandidates = normalizeCredentialId(response.id);
-    const { data: passkeys } = await admin.from('user_passkeys').select('*').eq('user_id', user.id).in('credential_id', credentialCandidates).limit(1);
+    const { data: passkeys } = await admin.from('user_passkeys').select('*').eq('user_id', profile.user_id).in('credential_id', credentialCandidates).limit(1);
     const pk = passkeys?.[0];
     if (!pk) return new Response(JSON.stringify({ error: 'Credencial não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
@@ -77,7 +84,7 @@ Deno.serve(async (req) => {
     // Gera magic link e troca por sessão
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type: 'magiclink',
-      email: user.email!,
+      email: profile.email || normalizedEmail,
     });
     if (linkErr || !linkData?.properties?.hashed_token) {
       return new Response(JSON.stringify({ error: 'Falha ao gerar sessão' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

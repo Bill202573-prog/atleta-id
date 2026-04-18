@@ -21,14 +21,18 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Localiza user pelo email
-    const { data: userList } = await admin.auth.admin.listUsers();
-    const user = userList?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (!user) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data: profile, error: profileError } = await admin
+      .from('profiles')
+      .select('user_id, email')
+      .ilike('email', normalizedEmail)
+      .maybeSingle();
+
+    if (profileError || !profile?.user_id) {
       return new Response(JSON.stringify({ error: 'Nenhum dispositivo registrado para este e-mail.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const { data: passkeys } = await admin.from('user_passkeys').select('credential_id, transports').eq('user_id', user.id);
+    const { data: passkeys } = await admin.from('user_passkeys').select('credential_id, transports').eq('user_id', profile.user_id);
     if (!passkeys || passkeys.length === 0) {
       return new Response(JSON.stringify({ error: 'Nenhuma biometria cadastrada para este usuário.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
