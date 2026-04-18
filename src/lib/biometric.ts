@@ -2,6 +2,53 @@ import { startRegistration, startAuthentication, browserSupportsWebAuthn } from 
 import { supabase } from '@/integrations/supabase/client';
 
 const PASSKEY_FLAG_PREFIX = 'has_passkey:';
+const EDGE_FUNCTIONS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+const invokeEdgeFunction = async <T>(
+  functionName: string,
+  body: Record<string, unknown>,
+  requireSession = false,
+): Promise<{ data?: T; error?: string; status: number }> => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    apikey: SUPABASE_PUBLISHABLE_KEY,
+  };
+
+  if (requireSession) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+
+    if (!accessToken) {
+      return { error: 'Sessão expirada. Faça login novamente.', status: 401 };
+    }
+
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await fetch(`${EDGE_FUNCTIONS_URL}/${functionName}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  let payload: any = null;
+
+  try {
+    payload = await response.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    return {
+      error: payload?.error || payload?.message || 'Não foi possível concluir a biometria.',
+      status: response.status,
+    };
+  }
+
+  return { data: payload as T, status: response.status };
+};
 
 export const isBiometricSupported = (): boolean => {
   try {
@@ -24,19 +71,28 @@ export const setLocalPasskeyFlag = (email: string, value: boolean) => {
 
 export const registerPasskey = async (deviceLabel?: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data: optionsRes, error: optErr } = await supabase.functions.invoke('passkey-register-options', {
-      body: { deviceLabel },
-    });
-    if (optErr || !optionsRes?.options) {
-      return { success: false, error: optErr?.message || optionsRes?.error || 'Falha ao iniciar registro' };
+    const { data: optionsRes, error: optionsError } = await invokeEdgeFunction<{ options?: any }>(
+      'passkey-register-options',
+      { deviceLabel },
+      true,
+    );
+
+    if (optionsError || !optionsRes?.options) {
+      return { success: false, error: optionsError || 'Falha ao iniciar registro da biometria.' };
     }
+
     const attResp = await startRegistration({ optionsJSON: optionsRes.options });
-    const { data: verifyRes, error: verErr } = await supabase.functions.invoke('passkey-register-verify', {
-      body: { response: attResp, deviceLabel, expectedChallenge: optionsRes.options.challenge },
-    });
-    if (verErr || !verifyRes?.verified) {
-      return { success: false, error: verErr?.message || verifyRes?.error || 'Verificação falhou' };
+
+    const { data: verifyRes, error: verifyError } = await invokeEdgeFunction<{ verified?: boolean }>(
+      'passkey-register-verify',
+      { response: attResp, deviceLabel, expectedChallenge: optionsRes.options.challenge },
+      true,
+    );
+
+    if (verifyError || !verifyRes?.verified) {
+      return { success: false, error: verifyError || 'Não foi possível concluir a ativação da biometria.' };
     }
+
     return { success: true };
   } catch (e: any) {
     if (e?.name === 'NotAllowedError') {
@@ -48,19 +104,35 @@ export const registerPasskey = async (deviceLabel?: string): Promise<{ success: 
 
 export const loginWithPasskey = async (email: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data: optionsRes, error: optErr } = await supabase.functions.invoke('passkey-login-options', {
-      body: { email },
-    });
-    if (optErr || !optionsRes?.options) {
-      return { success: false, error: optErr?.message || optionsRes?.error || 'Falha ao iniciar login' };
+    const { data: optionsRes, error: optionsError, status: optionsStatus } = await invokeEdgeFunction<{ options?: any }>(
+      'passkey-login-options',
+      { email },
+    );
+
+    if (optionsError || !optionsRes?.options) {
+      if (optionsStatus === 404) {
+        setLocalPasskeyFlag(email, false);
+      }
+      return { success: false, error: optionsError || 'Falha ao iniciar login com biometria.' };
     }
+
     const authResp = await startAuthentication({ optionsJSON: optionsRes.options });
-    const { data: verifyRes, error: verErr } = await supabase.functions.invoke('passkey-login-verify', {
-      body: { email, response: authResp, expectedChallenge: optionsRes.options.challenge },
+
+    const { data: verifyRes, error: verifyError, status: verifyStatus } = await invokeEdgeFunction<{
+      session?: { access_token: string; refresh_token: string };
+    }>('passkey-login-verify', {
+      email,
+      response: authResp,
+      expectedChallenge: optionsRes.options.challenge,
     });
-    if (verErr || !verifyRes?.session) {
-      return { success: false, error: verErr?.message || verifyRes?.error || 'Verificação falhou' };
+
+    if (verifyError || !verifyRes?.session) {
+      if (verifyStatus === 404) {
+        setLocalPasskeyFlag(email, false);
+      }
+      return { success: false, error: verifyError || 'Falha na validação da biometria.' };
     }
+
     // Set session locally
     const { access_token, refresh_token } = verifyRes.session;
     const { error: sessErr } = await supabase.auth.setSession({ access_token, refresh_token });
