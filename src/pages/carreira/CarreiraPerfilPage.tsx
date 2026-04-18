@@ -425,7 +425,7 @@ export default function CarreiraPerfilPage() {
                   Meu Perfil
                 </Button>
                 <Button variant="ghost" size="sm" className="text-muted-foreground hidden sm:flex h-8 text-xs" onClick={async () => {
-                  await supabase.auth.signOut();
+                  await supabase.auth.signOut({ scope: 'local' });
                   toast.success('Você saiu da sua conta');
                   if (isCarreiraDomain()) {
                     navigate(carreiraPath('/'), { replace: true });

@@ -76,7 +76,7 @@ const Auth = () => {
 
     if (result.success) {
       localStorage.setItem('last_login_email', email);
-      toast({ title: 'Login realizado!', description: 'Bem-vindo de volta.' });
+      toast({ title: 'Login realizado!', description: 'Sua sessão foi renovada automaticamente.' });
     } else {
       toast({ title: 'Falha na biometria', description: result.error, variant: 'destructive' });
     }
