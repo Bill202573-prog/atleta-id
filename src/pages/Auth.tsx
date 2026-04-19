@@ -207,7 +207,7 @@ const Auth = () => {
               </Button>
             </form>
 
-            {isLogin && showBiometric && (
+            {isLogin && (
               <div className="mt-4">
                 <div className="relative my-3">
                   <div className="absolute inset-0 flex items-center">
@@ -219,23 +219,17 @@ const Auth = () => {
                 </div>
                 <Button
                   type="button"
-                  variant="default"
-                  className="w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 shadow-md"
+                  variant="outline"
+                  className="w-full"
                   size="lg"
-                  onClick={handleBiometricLogin}
-                  disabled={biometricLoading || isLoading}
+                  disabled
                 >
-                  {biometricLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <Fingerprint className="w-6 h-6 mr-2" />
-                      Entrar com biometria
-                    </>
-                  )}
+                  <Fingerprint className="w-6 h-6 mr-2" />
+                  Entrar com biometria
+                  <span className="ml-2 text-xs font-medium text-muted-foreground">(em breve)</span>
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Acesso rápido neste dispositivo
+                  Estamos finalizando o acesso rápido por biometria
                 </p>
               </div>
             )}
