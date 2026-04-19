@@ -8,7 +8,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 import type { UserRole } from '@/types';
 import { AuthContext, type AuthContextType, type AuthUser } from './auth-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { updateBiometricRefreshToken } from '@/lib/biometric';
+import { syncBiometricSession } from '@/lib/biometric';
 
 // Função para registrar acesso (definida aqui para evitar dependência circular)
 async function registrarAcesso(
@@ -147,9 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(nextSession);
         sessionRef.current = nextSession;
 
-        // Mantém o cofre de biometria sincronizado com o refresh_token mais recente
+        // Mantém o cofre de biometria sincronizado com a sessão mais recente
+        // (cobre SIGNED_IN, TOKEN_REFRESHED, INITIAL_SESSION e USER_UPDATED).
         if (nextSession?.user?.email && nextSession.refresh_token) {
-          void updateBiometricRefreshToken(nextSession.user.email, nextSession.refresh_token);
+          void syncBiometricSession(nextSession.user.email, {
+            access_token: nextSession.access_token,
+            refresh_token: nextSession.refresh_token,
+            expires_at: nextSession.expires_at,
+          });
         }
 
         // Se não há usuário, encerra e limpa estado
@@ -202,7 +207,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionRef.current = session;
 
       if (session?.user?.email && session.refresh_token) {
-        void updateBiometricRefreshToken(session.user.email, session.refresh_token);
+        void syncBiometricSession(session.user.email, {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+          expires_at: session.expires_at,
+        });
       }
 
       if (session?.user) {
