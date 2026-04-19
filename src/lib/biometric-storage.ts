@@ -1,3 +1,11 @@
+/**
+ * Cofre local da biometria.
+ * - Mantém access_token + refresh_token criptografados no IndexedDB (AES-GCM)
+ * - Mantém metadados (expires_at, updatedAt) para diagnóstico e decisão de refresh
+ * - Não depende de nenhuma sessão Supabase ativa para existir
+ */
+import type { Session } from '@supabase/supabase-js';
+
 const DB_NAME = 'atletaid-biometric';
 const STORE_NAME = 'vaults';
 const BIOMETRY_FLAG_PREFIX = 'biometry_enabled:';
@@ -6,8 +14,11 @@ const LAST_EMAIL_KEY = 'last_login_email';
 
 interface StoredBiometricVault {
   email: string;
-  ciphertext: ArrayBuffer;
-  iv: ArrayBuffer;
+  ciphertext: ArrayBuffer;          // refresh_token criptografado
+  iv: ArrayBuffer;                  // iv do refresh_token
+  accessCiphertext?: ArrayBuffer;   // access_token criptografado
+  accessIv?: ArrayBuffer;           // iv do access_token
+  expiresAt?: number;               // timestamp (ms) de expiração do access_token
   key: CryptoKey;
   createdAt: number;
   updatedAt: number;
@@ -91,12 +102,18 @@ const generateVaultKey = async () => crypto.subtle.generateKey(
   ['encrypt', 'decrypt'],
 );
 
-const encryptRefreshToken = async (refreshToken: string, currentKey?: CryptoKey) => {
-  const key = currentKey ?? await generateVaultKey();
+const encryptString = async (plain: string, key: CryptoKey) => {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(refreshToken));
-  return { key, iv: iv.slice().buffer, ciphertext };
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(plain));
+  return { iv: iv.slice().buffer, ciphertext };
 };
+
+const decryptString = async (key: CryptoKey, iv: ArrayBuffer, ciphertext: ArrayBuffer) => {
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv) }, key, ciphertext);
+  return decoder.decode(decrypted);
+};
+
+// ---------------- Public API ----------------
 
 export const isBiometricEnabledLocally = (email: string): boolean => {
   if (typeof window === 'undefined' || !email) return false;
@@ -113,6 +130,12 @@ export const hasStoredBiometricSetup = (email: string): boolean => {
   return isBiometricEnabledLocally(email) && !!getStoredCredentialId(email);
 };
 
+export const hasBiometricVault = async (email: string): Promise<boolean> => {
+  if (!email) return false;
+  const record = await getVaultRecord(email);
+  return !!record;
+};
+
 export const setLastBiometricEmail = (email: string) => {
   if (typeof window === 'undefined' || !email) return;
   localStorage.setItem(LAST_EMAIL_KEY, normalizeEmail(email));
@@ -123,15 +146,31 @@ export const getLastBiometricEmail = (): string => {
   return localStorage.getItem(LAST_EMAIL_KEY) || '';
 };
 
-export const enableBiometricPersistence = async (email: string, credentialId: string, refreshToken: string) => {
+/**
+ * Cria/atualiza o cofre com a sessão atual no momento da ATIVAÇÃO.
+ * Reutiliza a key existente se já houver cofre.
+ */
+export const enableBiometricPersistence = async (
+  email: string,
+  credentialId: string,
+  refreshToken: string,
+  accessToken?: string | null,
+  expiresAt?: number | null,
+) => {
   const normalizedEmail = normalizeEmail(email);
   const existingRecord = await getVaultRecord(normalizedEmail);
-  const { key, iv, ciphertext } = await encryptRefreshToken(refreshToken, existingRecord?.key);
+  const key = existingRecord?.key ?? await generateVaultKey();
+
+  const refresh = await encryptString(refreshToken, key);
+  const access = accessToken ? await encryptString(accessToken, key) : null;
 
   await putVaultRecord({
     email: normalizedEmail,
-    ciphertext,
-    iv,
+    ciphertext: refresh.ciphertext,
+    iv: refresh.iv,
+    accessCiphertext: access?.ciphertext,
+    accessIv: access?.iv,
+    expiresAt: expiresAt ?? undefined,
     key,
     createdAt: existingRecord?.createdAt ?? Date.now(),
     updatedAt: Date.now(),
@@ -142,6 +181,37 @@ export const enableBiometricPersistence = async (email: string, credentialId: st
   setLastBiometricEmail(normalizedEmail);
 };
 
+/**
+ * Atualiza apenas os tokens (e expires) do cofre existente, sem mexer em flag/credencial.
+ * Usado para manter o cofre sempre com o último refresh_token rotacionado pelo Supabase.
+ */
+export const storeBiometricSessionTokens = async (
+  email: string,
+  session: Pick<Session, 'access_token' | 'refresh_token' | 'expires_at'>,
+) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!hasStoredBiometricSetup(normalizedEmail)) return;
+  if (!session?.refresh_token) return;
+
+  const existingRecord = await getVaultRecord(normalizedEmail);
+  if (!existingRecord) return;
+
+  const key = existingRecord.key;
+  const refresh = await encryptString(session.refresh_token, key);
+  const access = session.access_token ? await encryptString(session.access_token, key) : null;
+
+  await putVaultRecord({
+    ...existingRecord,
+    ciphertext: refresh.ciphertext,
+    iv: refresh.iv,
+    accessCiphertext: access?.ciphertext,
+    accessIv: access?.iv,
+    expiresAt: session.expires_at ? session.expires_at * 1000 : undefined,
+    updatedAt: Date.now(),
+  });
+};
+
+/** Compat: atualiza só o refresh_token (sem dados de access). */
 export const updateStoredRefreshToken = async (email: string, refreshToken: string) => {
   const normalizedEmail = normalizeEmail(email);
   if (!hasStoredBiometricSetup(normalizedEmail)) return;
@@ -149,31 +219,55 @@ export const updateStoredRefreshToken = async (email: string, refreshToken: stri
   const existingRecord = await getVaultRecord(normalizedEmail);
   if (!existingRecord) return;
 
-  const { key, iv, ciphertext } = await encryptRefreshToken(refreshToken, existingRecord.key);
+  const refresh = await encryptString(refreshToken, existingRecord.key);
   await putVaultRecord({
     ...existingRecord,
-    ciphertext,
-    iv,
-    key,
+    ciphertext: refresh.ciphertext,
+    iv: refresh.iv,
     updatedAt: Date.now(),
   });
 };
 
-export const getStoredRefreshToken = async (email: string): Promise<string | null> => {
-  const normalizedEmail = normalizeEmail(email);
-  const record = await getVaultRecord(normalizedEmail);
-  if (!record) return null;
+export interface VaultTokens {
+  refreshToken: string | null;
+  accessToken: string | null;
+  expiresAt: number | null;
+  updatedAt: number | null;
+}
+
+export const getStoredTokens = async (email: string): Promise<VaultTokens> => {
+  const record = await getVaultRecord(email);
+  if (!record) return { refreshToken: null, accessToken: null, expiresAt: null, updatedAt: null };
+
+  let refreshToken: string | null = null;
+  let accessToken: string | null = null;
 
   try {
-    const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: new Uint8Array(record.iv) },
-      record.key,
-      record.ciphertext,
-    );
-    return decoder.decode(decrypted);
+    refreshToken = await decryptString(record.key, record.iv, record.ciphertext);
   } catch {
-    return null;
+    refreshToken = null;
   }
+
+  if (record.accessCiphertext && record.accessIv) {
+    try {
+      accessToken = await decryptString(record.key, record.accessIv, record.accessCiphertext);
+    } catch {
+      accessToken = null;
+    }
+  }
+
+  return {
+    refreshToken,
+    accessToken,
+    expiresAt: record.expiresAt ?? null,
+    updatedAt: record.updatedAt ?? null,
+  };
+};
+
+/** Compat: lê apenas o refresh_token. */
+export const getStoredRefreshToken = async (email: string): Promise<string | null> => {
+  const tokens = await getStoredTokens(email);
+  return tokens.refreshToken;
 };
 
 export const disableBiometricPersistence = async (email: string) => {
@@ -185,8 +279,34 @@ export const disableBiometricPersistence = async (email: string) => {
   await deleteVaultRecord(normalizedEmail);
 };
 
-export const getBiometricStorageDiagnostics = async (email: string) => ({
-  enabled: isBiometricEnabledLocally(email),
-  hasCredential: !!getStoredCredentialId(email),
-  hasRefreshToken: !!(await getStoredRefreshToken(email)),
-});
+const maskToken = (token: string | null) => {
+  if (!token) return null;
+  if (token.length <= 8) return '***';
+  return `${token.slice(0, 4)}…${token.slice(-4)} (len:${token.length})`;
+};
+
+export const getMaskedBiometricDiagnostics = async (email: string) => {
+  const tokens = await getStoredTokens(email);
+  return {
+    email: normalizeEmail(email),
+    enabled: isBiometricEnabledLocally(email),
+    hasCredential: !!getStoredCredentialId(email),
+    hasRefreshToken: !!tokens.refreshToken,
+    hasAccessToken: !!tokens.accessToken,
+    refreshTokenMasked: maskToken(tokens.refreshToken),
+    accessTokenMasked: maskToken(tokens.accessToken),
+    expiresAt: tokens.expiresAt ? new Date(tokens.expiresAt).toISOString() : null,
+    updatedAt: tokens.updatedAt ? new Date(tokens.updatedAt).toISOString() : null,
+    accessTokenExpired: tokens.expiresAt ? Date.now() >= tokens.expiresAt - 30_000 : null,
+  };
+};
+
+/** Compat com a versão anterior. */
+export const getBiometricStorageDiagnostics = async (email: string) => {
+  const tokens = await getStoredTokens(email);
+  return {
+    enabled: isBiometricEnabledLocally(email),
+    hasCredential: !!getStoredCredentialId(email),
+    hasRefreshToken: !!tokens.refreshToken,
+  };
+};
