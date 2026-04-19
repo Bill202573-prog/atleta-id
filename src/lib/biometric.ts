@@ -231,10 +231,10 @@ const restoreSupabaseSession = async (email: string): Promise<{ success: boolean
 
     // Mensagens específicas para diagnóstico — NÃO desativamos a biometria.
     const lower = errMsg.toLowerCase();
-    if (lower.includes('invalid_grant') || lower.includes('refresh token') || lower.includes('not found')) {
+    if (lower.includes('invalid_grant') || lower.includes('refresh token') || lower.includes('not found') || lower.includes('revoked')) {
       return {
         success: false,
-        error: 'Seu acesso salvo expirou ou foi revogado. Entre com email e senha uma vez para reativar a biometria.',
+        error: 'Seu acesso salvo expirou. Entre uma vez com email e senha — a biometria continua ativa para os próximos acessos.',
       };
     }
     if (lower.includes('network') || lower.includes('failed to fetch')) {
@@ -245,7 +245,7 @@ const restoreSupabaseSession = async (email: string): Promise<{ success: boolean
     }
     return {
       success: false,
-      error: 'Não foi possível renovar sua sessão automaticamente. Entre com email e senha uma vez neste dispositivo.',
+      error: 'Não foi possível renovar sua sessão agora. Entre uma vez com email e senha — a biometria continua ativa.',
     };
   }
 
