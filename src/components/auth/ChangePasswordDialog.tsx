@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle, Flame, ShieldCheck, Wallet, LifeBuoy, Mail, MessageCircle } from 'lucide-react';
+import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle, Flame, ShieldCheck, Wallet, LifeBuoy, Mail, MessageCircle, UserCog } from 'lucide-react';
 import { z } from 'zod';
 import PasswordInput from '@/components/shared/PasswordInput';
 import GuardianMeusDadosCard from '@/components/guardian/GuardianMeusDadosCard';
@@ -41,6 +41,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [meusDadosOpen, setMeusDadosOpen] = useState(false);
 
   const biometricSupported = isBiometricSupported();
   const biometricUnavailableReason = getBiometricUnavailableReason();
@@ -226,7 +227,22 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                 Meus dados
               </h3>
-              <GuardianMeusDadosCard />
+              <button
+                type="button"
+                onClick={() => setMeusDadosOpen(true)}
+                className="w-full rounded-lg border bg-card p-4 flex items-center gap-3 text-left transition-colors hover:bg-accent/40 hover:border-primary/40"
+              >
+                <div className="bg-primary/10 rounded-md p-2 shrink-0">
+                  <UserCog className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-sm block">Meus dados</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Veja e atualize seus dados cadastrais
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </button>
             </div>
 
             <div className="space-y-3 pt-2">
