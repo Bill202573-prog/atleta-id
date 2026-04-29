@@ -82,12 +82,7 @@ const GuardianMeusDadosCard = () => {
 
     // Valida CPF apenas quando o responsável altera o CPF.
     // Isso evita bloquear o salvamento de outros campos por dados legados inválidos já existentes.
-    if (!cpfLocked && cpfChanged && formCpfDigits.length > 0) {
-      if (!validateCPF(formCpfDigits)) {
-        toast.error('CPF inválido');
-        return;
-      }
-    }
+    const cpfInvalid = !cpfLocked && cpfChanged && formCpfDigits.length > 0 && !validateCPF(formCpfDigits);
 
     setSaving(true);
     try {
@@ -105,12 +100,16 @@ const GuardianMeusDadosCard = () => {
       };
 
       // Só envia CPF se ainda não tem um válido cadastrado e o campo foi alterado
-      if (!cpfLocked && cpfChanged) {
+      if (!cpfLocked && cpfChanged && !cpfInvalid) {
         payload.cpf = formCpfDigits || null;
       }
 
       await updateMutation.mutateAsync(payload);
-      toast.success('Dados atualizados com sucesso!');
+      if (cpfInvalid) {
+        toast.warning('Dados salvos. O CPF informado não foi salvo porque não passou na validação.');
+      } else {
+        toast.success('Dados atualizados com sucesso!');
+      }
     } catch (err: any) {
       console.error('Erro ao salvar:', err);
       toast.error(err?.message || 'Erro ao salvar. Tente novamente.');
