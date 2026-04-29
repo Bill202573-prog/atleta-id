@@ -359,6 +359,22 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
         </DialogContent>
       </Dialog>
 
+      {/* Sub-dialog: Meus Dados (responsável) */}
+      <Dialog open={meusDadosOpen} onOpenChange={setMeusDadosOpen}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="w-5 h-5 text-primary" />
+              Meus dados
+            </DialogTitle>
+            <DialogDescription>
+              Atualize seus dados cadastrais
+            </DialogDescription>
+          </DialogHeader>
+          <GuardianMeusDadosCard />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
