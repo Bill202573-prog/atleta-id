@@ -35,6 +35,7 @@ import BirthdayBadge from '@/components/shared/BirthdayBadge';
 import { Link } from 'react-router-dom';
 import MuralAvisosSchool from '@/components/school/MuralAvisosSchool';
 import { ParentAccessAnalyticsCard } from '@/components/school/ParentAccessAnalyticsCard';
+import { PushNotificationToggle } from '@/components/guardian/PushNotificationToggle';
 
 
 const SchoolDashboard = () => {
