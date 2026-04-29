@@ -124,9 +124,14 @@ export const useUpdateGuardianProfile = () => {
       // Nunca permitir alterar campos de vínculo
       const { id, user_id, email, ativo, senha_temporaria, senha_temporaria_ativa, ...safe } = updates as any;
 
+      const updatePayload = {
+        ...safe,
+        updated_at: new Date().toISOString(),
+      };
+
       const { data, error } = await supabase
         .from('responsaveis')
-        .update(safe)
+        .update(updatePayload)
         .eq('user_id', user.id)
         .select()
         .single();
