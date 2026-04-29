@@ -35,6 +35,13 @@ const GuardianPerfilPage = () => {
           </p>
         </div>
 
+        {/* Meus Dados - cadastro do responsável (beta) */}
+        {meusDadosEnabled && (
+          <div className="mb-4">
+            <GuardianMeusDadosCard />
+          </div>
+        )}
+
         {/* Indicar amigos - deve aparecer logo no início (sem precisar rolar) */}
         <div className="mb-4">
           <IndicarAmigoCard />
