@@ -97,6 +97,7 @@ const GuardianMeusDadosCard = () => {
         bairro: form.bairro?.trim() || null,
         cidade: form.cidade?.trim() || null,
         estado: form.estado?.trim() || null,
+        data_nascimento: form.data_nascimento ? form.data_nascimento : null,
       };
 
       // Só envia CPF se ainda não tem um válido cadastrado
