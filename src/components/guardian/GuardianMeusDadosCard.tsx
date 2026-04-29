@@ -194,7 +194,17 @@ const GuardianMeusDadosCard = () => {
             />
           </div>
 
-          {/* Endereço */}
+          {/* Data de nascimento */}
+          <div>
+            <Label htmlFor="data_nascimento">Data de nascimento</Label>
+            <Input
+              id="data_nascimento"
+              type="date"
+              value={form.data_nascimento ?? ''}
+              onChange={(e) => handleChange('data_nascimento', e.target.value)}
+            />
+          </div>
+
           <div className="pt-2 border-t">
             <h4 className="text-sm font-semibold mb-3 text-foreground">Endereço</h4>
             <div className="space-y-3">
