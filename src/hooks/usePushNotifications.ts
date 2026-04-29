@@ -42,6 +42,8 @@ function bufferSourceToUrlBase64(source?: BufferSource | null): string | null {
   return uint8ArrayToUrlBase64(view);
 }
 
+const getPushOptOutKey = (userId: string) => `atleta_id_push_opt_out:${userId}`;
+
 export function usePushNotifications() {
   const { session } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -49,6 +51,7 @@ export function usePushNotifications() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
+  const [isOptedOut, setIsOptedOut] = useState(false);
 
   const getPushRegistration = async (): Promise<ServiceWorkerRegistration> => {
     // Register dedicated push SW with a unique scope to avoid conflicts with Workbox SW
@@ -133,9 +136,16 @@ export function usePushNotifications() {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
     setIsSupported(supported);
 
-    if (supported) {
+    const optedOut = session?.user?.id
+      ? localStorage.getItem(getPushOptOutKey(session.user.id)) === 'true'
+      : false;
+    setIsOptedOut(optedOut);
+
+    if (supported && !optedOut) {
       setPermission(Notification.permission);
       checkExistingSubscription();
+    } else if (optedOut) {
+      setIsSubscribed(false);
     }
   }, [checkExistingSubscription, session?.user?.id]);
 
@@ -150,6 +160,9 @@ export function usePushNotifications() {
       if (perm !== 'granted') {
         return false;
       }
+
+      localStorage.removeItem(getPushOptOutKey(session.user.id));
+      setIsOptedOut(false);
 
       const currentVapidKey = await fetchVapidPublicKey();
       const registration = await getPushRegistration();
@@ -193,6 +206,9 @@ export function usePushNotifications() {
 
     setIsLoading(true);
     try {
+      localStorage.setItem(getPushOptOutKey(session.user.id), 'true');
+      setIsOptedOut(true);
+
       const registration = await getPushRegistration();
       const subscription = await registration.pushManager.getSubscription();
 
@@ -218,6 +234,7 @@ export function usePushNotifications() {
     isSupported,
     permission,
     isSubscribed,
+    isOptedOut,
     isLoading,
     subscribe,
     unsubscribe,
