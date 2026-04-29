@@ -115,6 +115,9 @@ function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
         </SidebarInset>
       </div>
 
+      {/* Auto-subscribe admin to push notifications */}
+      <PushAutoSubscribe />
+
       {/* Force Password Change Dialog */}
       <ForcePasswordChangeDialog open={user?.passwordNeedsChange || false} />
 
