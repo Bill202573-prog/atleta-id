@@ -43,6 +43,12 @@ const GuardianPerfilPage = () => {
           </div>
         )}
 
+        {/* Notificações - toggle de push (default já ativo via auto-subscribe) */}
+        <div className="mb-4">
+          <h3 className="text-sm font-semibold text-foreground mb-2 px-1">Notificações</h3>
+          <PushNotificationToggle />
+        </div>
+
         {/* Indicar amigos - deve aparecer logo no início (sem precisar rolar) */}
         <div className="mb-4">
           <IndicarAmigoCard />
