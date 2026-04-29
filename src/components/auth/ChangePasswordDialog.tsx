@@ -220,6 +220,24 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
           </div>
         </div>
 
+        {isGuardian && (
+          <>
+            <div className="space-y-3 pt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Meus dados
+              </h3>
+              <GuardianMeusDadosCard />
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Notificações
+              </h3>
+              <PushNotificationToggle />
+            </div>
+          </>
+        )}
+
         {/* Senha */}
         <div className="space-y-3 pt-2">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
