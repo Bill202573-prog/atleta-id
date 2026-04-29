@@ -10,6 +10,7 @@ import { MobileGuardianLayout } from '@/components/layout/MobileGuardianLayout';
 const GuardianPerfilPage = () => {
   const { data: children = [], isLoading } = useGuardianChildren();
   const [selectedChild, setSelectedChild] = useState<string | null>(null);
+  const { isEnabled: meusDadosEnabled } = useMeusDadosEnabled();
 
   const currentChildId = selectedChild || children[0]?.id || null;
   const currentChild = children.find(c => c.id === currentChildId);
