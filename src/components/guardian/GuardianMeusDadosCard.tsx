@@ -67,8 +67,11 @@ const GuardianMeusDadosCard = () => {
 
   if (!guardian) return null;
 
-  const cpfLocked = !!(guardian.cpf && cleanCPF(guardian.cpf).length === 11 && validateCPF(guardian.cpf));
-  const cpfMissing = !guardian.cpf || cleanCPF(guardian.cpf).length !== 11;
+  const guardianCpfDigits = cleanCPF(guardian.cpf ?? '');
+  const formCpfDigits = cleanCPF(form.cpf ?? '');
+  const cpfLocked = guardianCpfDigits.length === 11 && validateCPF(guardianCpfDigits);
+  const cpfMissing = guardianCpfDigits.length !== 11;
+  const cpfChanged = formCpfDigits !== guardianCpfDigits;
 
   const handleChange = (field: keyof Responsavel, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -77,9 +80,10 @@ const GuardianMeusDadosCard = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar CPF se preenchido
-    if (form.cpf && cleanCPF(form.cpf).length > 0) {
-      if (!validateCPF(form.cpf)) {
+    // Valida CPF apenas quando o responsável altera o CPF.
+    // Isso evita bloquear o salvamento de outros campos por dados legados inválidos já existentes.
+    if (!cpfLocked && cpfChanged && formCpfDigits.length > 0) {
+      if (!validateCPF(formCpfDigits)) {
         toast.error('CPF inválido');
         return;
       }
@@ -100,9 +104,9 @@ const GuardianMeusDadosCard = () => {
         data_nascimento: form.data_nascimento ? form.data_nascimento : null,
       };
 
-      // Só envia CPF se ainda não tem um válido cadastrado
-      if (!cpfLocked && form.cpf) {
-        payload.cpf = cleanCPF(form.cpf);
+      // Só envia CPF se ainda não tem um válido cadastrado e o campo foi alterado
+      if (!cpfLocked && cpfChanged) {
+        payload.cpf = formCpfDigits || null;
       }
 
       await updateMutation.mutateAsync(payload);
