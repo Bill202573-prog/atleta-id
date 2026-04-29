@@ -1,0 +1,1 @@
+ALTER TABLE public.professores ADD COLUMN IF NOT EXISTS data_nascimento DATE;

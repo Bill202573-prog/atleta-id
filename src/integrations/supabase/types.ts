@@ -3052,6 +3052,7 @@ export type Database = {
           cidade: string | null
           cpf: string | null
           created_at: string
+          data_nascimento: string | null
           email: string
           endereco: string | null
           escolinha_id: string
@@ -3074,6 +3075,7 @@ export type Database = {
           cidade?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email: string
           endereco?: string | null
           escolinha_id: string
@@ -3096,6 +3098,7 @@ export type Database = {
           cidade?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email?: string
           endereco?: string | null
           escolinha_id?: string
