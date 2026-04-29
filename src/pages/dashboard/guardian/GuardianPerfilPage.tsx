@@ -3,6 +3,8 @@ import { useGuardianChildren } from '@/hooks/useSchoolData';
 import { Loader2 } from 'lucide-react';
 import ChildProfileTab from '@/components/guardian/ChildProfileTab';
 import IndicarAmigoCard from '@/components/guardian/IndicarAmigoCard';
+import GuardianMeusDadosCard from '@/components/guardian/GuardianMeusDadosCard';
+import { useMeusDadosEnabled } from '@/hooks/useMeusDadosEnabled';
 import { MobileGuardianLayout } from '@/components/layout/MobileGuardianLayout';
 
 const GuardianPerfilPage = () => {
