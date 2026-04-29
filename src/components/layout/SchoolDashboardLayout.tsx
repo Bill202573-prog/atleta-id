@@ -5,6 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { SchoolSidebar } from './SchoolSidebar';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
+import { PushAutoSubscribe } from '@/components/guardian/PushAutoSubscribe';
 import { FinancialStatusBanner } from '@/components/school/FinancialStatusBanner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,6 +115,9 @@ function SchoolDashboardLayoutInner({ children }: SchoolDashboardLayoutProps) {
           </main>
         </SidebarInset>
       </div>
+
+      {/* Auto-subscribe admin to push notifications */}
+      <PushAutoSubscribe />
 
       {/* Force Password Change Dialog */}
       <ForcePasswordChangeDialog open={user?.passwordNeedsChange || false} />

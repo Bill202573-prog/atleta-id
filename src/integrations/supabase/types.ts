@@ -3341,6 +3341,7 @@ export type Database = {
           complemento: string | null
           cpf: string | null
           created_at: string
+          data_nascimento: string | null
           email: string
           estado: string | null
           id: string
@@ -3361,6 +3362,7 @@ export type Database = {
           complemento?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email: string
           estado?: string | null
           id?: string
@@ -3381,6 +3383,7 @@ export type Database = {
           complemento?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email?: string
           estado?: string | null
           id?: string

@@ -35,6 +35,7 @@ import BirthdayBadge from '@/components/shared/BirthdayBadge';
 import { Link } from 'react-router-dom';
 import MuralAvisosSchool from '@/components/school/MuralAvisosSchool';
 import { ParentAccessAnalyticsCard } from '@/components/school/ParentAccessAnalyticsCard';
+import { PushNotificationToggle } from '@/components/guardian/PushNotificationToggle';
 
 
 const SchoolDashboard = () => {
@@ -102,6 +103,9 @@ const SchoolDashboard = () => {
         </h1>
         <p className="text-muted-foreground">Painel de gestão da escolinha</p>
       </div>
+
+      {/* Notificações push (default ativo via auto-subscribe) */}
+      <PushNotificationToggle />
 
       {/* Mural de Avisos do Sistema */}
       {user?.escolinhaId && (

@@ -50,6 +50,7 @@ const GuardianMeusDadosCard = () => {
         bairro: guardian.bairro ?? '',
         cidade: guardian.cidade ?? '',
         estado: guardian.estado ?? '',
+        data_nascimento: guardian.data_nascimento ?? '',
       });
     }
   }, [guardian]);
@@ -96,6 +97,7 @@ const GuardianMeusDadosCard = () => {
         bairro: form.bairro?.trim() || null,
         cidade: form.cidade?.trim() || null,
         estado: form.estado?.trim() || null,
+        data_nascimento: form.data_nascimento ? form.data_nascimento : null,
       };
 
       // Só envia CPF se ainda não tem um válido cadastrado
@@ -123,6 +125,14 @@ const GuardianMeusDadosCard = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Bloco de diagnóstico (beta) — confirma se a versão do app já tem o card */}
+        <div className="mb-4 rounded-md bg-muted/50 border border-border p-2 text-[11px] text-muted-foreground space-y-0.5">
+          <div className="font-mono">build: meus-dados v2 ✓</div>
+          <div>
+            Carregado do banco — nome: <strong>{guardian.nome || '—'}</strong> · cpf: <strong>{guardian.cpf || '—'}</strong> · tel: <strong>{guardian.telefone || '—'}</strong> · cidade: <strong>{guardian.cidade || '—'}</strong>
+          </div>
+        </div>
+
         {cpfMissing && (
           <Alert className="mb-4 border-warning/50 bg-warning/10">
             <AlertCircle className="h-4 w-4 text-warning" />
@@ -184,7 +194,17 @@ const GuardianMeusDadosCard = () => {
             />
           </div>
 
-          {/* Endereço */}
+          {/* Data de nascimento */}
+          <div>
+            <Label htmlFor="data_nascimento">Data de nascimento</Label>
+            <Input
+              id="data_nascimento"
+              type="date"
+              value={form.data_nascimento ?? ''}
+              onChange={(e) => handleChange('data_nascimento', e.target.value)}
+            />
+          </div>
+
           <div className="pt-2 border-t">
             <h4 className="text-sm font-semibold mb-3 text-foreground">Endereço</h4>
             <div className="space-y-3">
