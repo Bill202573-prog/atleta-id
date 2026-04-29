@@ -13,6 +13,8 @@ import {
   type Responsavel,
 } from '@/hooks/useSchoolData';
 import { validateCPF, formatCPF, cleanCPF } from '@/lib/cpf-validator';
+// Badge import removed — beta tag retired now that the feature is GA.
+import { Badge as _UnusedBadge } from '@/components/ui/badge';
 
 const formatPhone = (v: string) => {
   const d = v.replace(/\D/g, '').slice(0, 11);

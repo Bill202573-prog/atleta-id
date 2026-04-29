@@ -108,13 +108,6 @@ serve(async (req) => {
       });
     }
 
-    if (String(currentGuardian.email).toLowerCase() !== "wnogueira@hotmail.com") {
-      return new Response(JSON.stringify({ error: "Atualização liberada apenas para o perfil de teste" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { data, error } = await supabaseAdmin
       .from("responsaveis")
       .update(safeUpdates)
