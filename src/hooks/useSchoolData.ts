@@ -109,6 +109,7 @@ export interface Responsavel {
   bairro?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  data_nascimento?: string | null;
 }
 
 // Hook para o responsável atualizar seu próprio cadastro
