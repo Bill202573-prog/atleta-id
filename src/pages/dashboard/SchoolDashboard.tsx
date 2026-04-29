@@ -104,6 +104,9 @@ const SchoolDashboard = () => {
         <p className="text-muted-foreground">Painel de gestão da escolinha</p>
       </div>
 
+      {/* Notificações push (default ativo via auto-subscribe) */}
+      <PushNotificationToggle />
+
       {/* Mural de Avisos do Sistema */}
       {user?.escolinhaId && (
         <MuralAvisosSchool escolinhaId={user.escolinhaId} />
