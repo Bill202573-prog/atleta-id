@@ -147,7 +147,7 @@ const ChildPhotoUpload = ({ childId, childName, currentPhotoUrl, size = 'md' }: 
   return (
     <div className="relative group">
       <Avatar className={sizeClasses[size]}>
-        {currentPhotoUrl && <AvatarImage src={currentPhotoUrl} alt={childName} className="object-cover" />}
+        {resolvedPhotoUrl && <AvatarImage src={resolvedPhotoUrl} alt={childName} className="object-cover" />}
         <AvatarFallback className={fallbackSizeClasses[size]}>{childName.charAt(0)}</AvatarFallback>
       </Avatar>
       
