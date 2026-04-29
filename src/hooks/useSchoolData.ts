@@ -101,7 +101,43 @@ export interface Responsavel {
   ativo: boolean;
   senha_temporaria?: string | null;
   senha_temporaria_ativa?: boolean | null;
+  cpf?: string | null;
+  cep?: string | null;
+  rua?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
 }
+
+// Hook para o responsável atualizar seu próprio cadastro
+export const useUpdateGuardianProfile = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updates: Partial<Responsavel>) => {
+      if (!user?.id) throw new Error('Usuário não autenticado');
+
+      // Nunca permitir alterar campos de vínculo
+      const { id, user_id, email, ativo, senha_temporaria, senha_temporaria_ativa, ...safe } = updates as any;
+
+      const { data, error } = await supabase
+        .from('responsaveis')
+        .update(safe)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Responsavel;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guardian-profile', user?.id] });
+    },
+  });
+};
 
 export interface EscolinhaBasic {
   id: string;
