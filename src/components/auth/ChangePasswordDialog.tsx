@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { Loader2, Key, Fingerprint, Shield, Smartphone, ChevronRight, HelpCircle, Flame, ShieldCheck, Wallet, LifeBuoy, Mail, MessageCircle } from 'lucide-react';
 import { z } from 'zod';
 import PasswordInput from '@/components/shared/PasswordInput';
+import GuardianMeusDadosCard from '@/components/guardian/GuardianMeusDadosCard';
+import { PushNotificationToggle } from '@/components/guardian/PushNotificationToggle';
 import {
   canUseBiometricOnCurrentDomain,
   getBiometricUnavailableReason,
@@ -44,6 +46,7 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
   const biometricUnavailableReason = getBiometricUnavailableReason();
   const [biometricOn, setBiometricOn] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const isGuardian = user?.role === 'guardian';
 
   const helpTopics = [
     {
@@ -216,6 +219,24 @@ const ChangePasswordDialog = ({ trigger }: ChangePasswordDialogProps) => {
             </div>
           </div>
         </div>
+
+        {isGuardian && (
+          <>
+            <div className="space-y-3 pt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Meus dados
+              </h3>
+              <GuardianMeusDadosCard />
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Notificações
+              </h3>
+              <PushNotificationToggle />
+            </div>
+          </>
+        )}
 
         {/* Senha */}
         <div className="space-y-3 pt-2">
