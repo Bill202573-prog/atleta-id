@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Teste wnogueira pode atualizar seu cadastro" ON public.responsaveis;

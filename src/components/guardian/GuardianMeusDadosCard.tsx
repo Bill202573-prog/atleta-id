@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Loader2, UserCog, AlertCircle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -124,7 +123,6 @@ const GuardianMeusDadosCard = () => {
         <CardTitle className="flex items-center gap-2 text-base">
           <UserCog className="w-5 h-5 text-primary" />
           Meus Dados
-          <Badge variant="outline" className="ml-auto text-xs">Beta</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
