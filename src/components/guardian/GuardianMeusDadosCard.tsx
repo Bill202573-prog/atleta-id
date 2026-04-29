@@ -50,6 +50,7 @@ const GuardianMeusDadosCard = () => {
         bairro: guardian.bairro ?? '',
         cidade: guardian.cidade ?? '',
         estado: guardian.estado ?? '',
+        data_nascimento: guardian.data_nascimento ?? '',
       });
     }
   }, [guardian]);
