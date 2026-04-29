@@ -1,95 +1,72 @@
+## Contexto verificado no banco
 
-Objetivo: corrigir a renovação de sessão após o desbloqueio biométrico sem mexer no login atual por e-mail/senha.
+Confirmei consultando direto o Postgres que **os dados do William Nogueira ESTÃO salvos** em `responsaveis`:
 
-Diagnóstico do estado atual
-- A biometria já está como camada local e o ponto de falha real está em `src/lib/biometric.ts`, no trecho que chama `supabase.auth.refreshSession({ refresh_token })`.
-- Pelo código, o risco mais provável hoje é uso de `refresh_token` desatualizado/rotacionado, combinado com pouca telemetria para saber se o erro é `invalid_grant`, token revogado, token mal salvo ou perda de sincronização entre sessão e cofre local.
-- Há também deriva de estado entre:
-  - flag em `localStorage`
-  - credencial WebAuthn em `localStorage`
-  - token criptografado no IndexedDB
-- O fluxo atual mantém a biometria visível, mas ainda responde com erro genérico demais quando o refresh falha.
+- nome: William Nogueira
+- email: wnogueira@hotmail.com
+- cpf: 34343456789
+- telefone: 21981089100
+- endereço: Rua Mapendi, 660 — Taquara — Rio de Janeiro/RJ — CEP 22710255
 
-Plano de implementação
-1. Endurecer o cofre local
-- Revisar `src/lib/biometric-storage.ts`.
-- Expandir o registro salvo para incluir, além do `refresh_token` criptografado:
-  - `access_token` criptografado
-  - `expires_at`
-  - `updatedAt`
-  - metadados de diagnóstico mínimos
-- Criar helpers explícitos:
-  - `hasBiometricVault(email)`
-  - `getMaskedBiometricDiagnostics(email)`
-  - `storeBiometricSessionTokens(session)`
-  - atualização atômica para evitar sobrescrita parcial.
+A RLS de SELECT (`user_id = auth.uid()`) está ativa e o `useGuardianProfile` faz `select('*')`, então o front recebe tudo. O card `GuardianMeusDadosCard` é montado em `GuardianPerfilPage` quando `useMeusDadosEnabled` retorna true para esse e-mail.
 
-2. Corrigir a restauração da sessão
-- Ajustar `src/lib/biometric.ts` para separar claramente:
-  - desbloqueio local por biometria
-  - restauração da sessão Supabase
-- Fluxo final:
-  - biometria aprovada
-  - ler tokens do cofre
-  - se `access_token` ainda estiver válido, restaurar de forma direta
-  - se não estiver, usar `refreshSession({ refresh_token })`
-  - ao obter nova sessão, regravar imediatamente os tokens rotacionados no cofre
-- Se o refresh falhar:
-  - não desativar biometria
-  - não limpar toggle
-  - manter credencial ativa
-  - exibir fallback para login manual com mensagem real e clara.
+**Conclusão:** o componente está correto e os dados existem. Se não aparecem na tela, o motivo mais provável é o **service worker do PWA servindo um bundle antigo** (anterior à criação do card). Vamos forçar o refresh e adicionar um diagnóstico visível para confirmar.
 
-3. Sincronizar melhor com o Supabase
-- Revisar `src/contexts/AuthContext.tsx`.
-- Garantir atualização do cofre em todos os eventos relevantes:
-  - `SIGNED_IN`
-  - `TOKEN_REFRESHED`
-  - `INITIAL_SESSION`
-  - `USER_UPDATED`
-- Após login manual com senha, capturar a sessão já resolvida e persistir tokens corretos no cofre sem depender de timing do listener.
-- Confirmar que logout manual continua apenas local e não revoga o token remotamente.
+`responsaveis` **não tem** coluna `data_nascimento`. Vamos adicionar.
 
-4. Corrigir a UI da biometria
-- Revisar `src/pages/Auth.tsx` e `src/components/auth/ChangePasswordDialog.tsx`.
-- Fazer o botão/toggle refletirem o estado real do cofre + credencial, sem “desmarcar sozinho”.
-- Trocar erro genérico por mensagens específicas:
-  - token inválido
-  - token expirado/revogado
-  - token ausente
-  - falha de leitura do cofre
-- Manter a biometria disponível mesmo após falha de refresh, como solicitado.
+---
 
-5. Validar se o problema é de código ou de configuração do Supabase
-- Conferir logs de Auth para descobrir o erro exato retornado pelo refresh.
-- Se aparecer `invalid_grant`/revogação recorrente, validar configuração de sessão/refresh token no Supabase antes de mexer em mais lógica.
-- Só ajustar configuração do Supabase se os logs mostrarem que o token está sendo invalidado cedo demais.
+## Como funcionam as notificações push hoje
 
-Logs que vou adicionar
-- estado do cofre ao abrir o app
-- presença de `refresh_token` e `access_token` mascarados
-- hora da última atualização do cofre
-- início da tentativa de refresh
-- erro exato retornado pelo Supabase
-- confirmação de rotação bem-sucedida do token após refresh
+```text
+Navegador  ──permission──►  usePushNotifications  ──upsert──►  push_subscriptions (Supabase)
+                                  │
+                                  └─ usado por:
+                                     • PushAutoSubscribe (invisível) — já plugado em MobileGuardianLayout
+                                     • PushNotificationToggle (cartão visual com botão) — NÃO está em lugar nenhum hoje
+```
 
-Arquivos que pretendo ajustar
-- `src/lib/biometric-storage.ts`
-- `src/lib/biometric.ts`
-- `src/contexts/AuthContext.tsx`
-- `src/pages/Auth.tsx`
-- `src/components/auth/ChangePasswordDialog.tsx`
+- O **auto-subscribe silencioso** já existe e roda em todo layout do responsável: se o navegador estiver com permissão `granted` ou `default`, ele já tenta inscrever.
+- O **toggle visual** (`PushNotificationToggle`) está implementado mas **não foi colocado em nenhuma página** — é por isso que você não vê onde "aceitar".
+- Para o **admin da escola** não existe nem o auto-subscribe, nem toggle.
 
-Validação obrigatória após implementar
-1. Login com senha → ativar biometria → fechar app → reabrir → biometria restaura sessão.
-2. Logout manual → abrir app → biometria continua disponível → restaura sessão.
-3. Token expirado/revogado → biometria desbloqueia localmente → app cai em fallback sem desativar biometria.
-4. Confirmar que o login normal continua intacto.
-5. Confirmar em logs qual era a causa real do erro atual.
+---
 
-Resultado esperado
-- biometria continua ativa no dispositivo
-- toggle não desmarca sozinho
-- sessão é restaurada automaticamente após biometria
-- quando houver falha real no refresh, o app faz fallback limpo sem “quebrar” a biometria
-- o login por e-mail/senha permanece exatamente funcionando como hoje
+## O que vou fazer
+
+### 1. Push para responsáveis — default ligado, com toggle em Configurações
+- Manter o `PushAutoSubscribe` rodando no layout (já está) — assim, no primeiro acesso, o navegador pede permissão automaticamente e a inscrição já fica salva.
+- Adicionar o `PushNotificationToggle` na **aba Configurações do responsável** (vou identificar a página de configurações; se não houver uma dedicada, acrescento uma seção "Notificações" no Perfil, abaixo de "Meus Dados").
+- O toggle mostra estado atual (Ativas/Desativadas) e permite desligar quando quiser. Como o auto-subscribe já tentou ativar, virá ligado por padrão para quem não negou no navegador.
+
+### 2. Push para administradores da escola
+- Plugar o mesmo `PushAutoSubscribe` no layout do admin (`SchoolDashboardLayout`).
+- Adicionar o `PushNotificationToggle` em uma seção "Notificações" dentro das configurações da escola.
+- Assim, quando o admin da Bandeirantes logar, o navegador já pede permissão e a inscrição fica salva — habilitando os pushes de aniversariantes do dia.
+
+### 3. "Meus Dados" do William — diagnóstico e melhoria
+- Adicionar coluna `data_nascimento date` na tabela `responsaveis` e o campo correspondente no formulário "Meus Dados".
+- Adicionar um pequeno bloco de diagnóstico no topo do card (apenas no beta) mostrando: "Carregado: nome, cpf, telefone…" — para confirmarmos no preview se o componente está rodando ou se é cache do PWA.
+- Subir a versão do service worker para forçar atualização (já temos a estratégia `PWAUpdatePrompt` em memória) — o usuário verá o aviso de "Nova versão disponível" e ao aceitar pega o bundle novo com o card.
+- Verificar via reprodução (browser tools) que o card aparece com os dados preenchidos para wnogueira@hotmail.com após o refresh.
+
+### 4. Liberação geral (opcional, depois do OK)
+- Quando você confirmar que está OK no perfil do William, basta remover a checagem de e-mail em `useMeusDadosEnabled` e ajustar a policy RLS para permitir UPDATE para qualquer responsável no próprio cadastro.
+
+---
+
+## Detalhes técnicos
+
+**Migrações:**
+- `ALTER TABLE responsaveis ADD COLUMN data_nascimento date;`
+
+**Arquivos a editar/criar:**
+- `src/components/layout/SchoolDashboardLayout.tsx` — montar `<PushAutoSubscribe />` (ou variante para admin).
+- `src/pages/dashboard/guardian/GuardianPerfilPage.tsx` (ou página de Configurações se existir) — adicionar seção "Notificações" com `<PushNotificationToggle />`.
+- Página de configurações da escola — adicionar mesma seção.
+- `src/components/guardian/GuardianMeusDadosCard.tsx` — adicionar campo `data_nascimento` (input date) e bloco de diagnóstico temporário.
+- Bump do SW para forçar atualização do PWA.
+
+**RLS:** nenhuma mudança nesta etapa (a policy de teste para wnogueira já cobre UPDATE).
+
+**Push delivery:** o cron `process-push-reminders` já está pronto para enviar aniversariantes a admins; só faltava o admin estar inscrito — o que esta entrega resolve.
