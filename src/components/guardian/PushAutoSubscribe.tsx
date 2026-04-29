@@ -7,18 +7,19 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
  * If the user has denied permission at browser level, nothing happens.
  */
 export function PushAutoSubscribe() {
-  const { isSupported, isSubscribed, isLoading, subscribe } = usePushNotifications();
+  const { isSupported, isSubscribed, isOptedOut, isLoading, subscribe } = usePushNotifications();
   const attempted = useRef(false);
 
   useEffect(() => {
-    if (!isSupported || isSubscribed || isLoading || attempted.current) return;
+    if (!isSupported || isSubscribed || isOptedOut || isLoading || attempted.current) return;
     attempted.current = true;
 
-    // Only auto-subscribe if permission is already granted or default (will prompt once)
-    if (Notification.permission !== 'denied') {
+    // Browsers do not allow truly invisible first-time permission grants.
+    // If permission was already granted, keep push configured silently.
+    if (Notification.permission === 'granted') {
       subscribe().catch(() => {});
     }
-  }, [isSupported, isSubscribed, isLoading, subscribe]);
+  }, [isSupported, isSubscribed, isOptedOut, isLoading, subscribe]);
 
   return null;
 }
