@@ -5,6 +5,7 @@ import { Camera, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSignedUrl } from '@/hooks/useSignedUrl';
 import heic2any from 'heic2any';
 
 interface ChildPhotoUploadProps {
@@ -42,19 +43,21 @@ const ChildPhotoUpload = ({ childId, childName, currentPhotoUrl, size = 'md' }: 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const resolvedPhotoUrl = useSignedUrl(currentPhotoUrl, 'child-photos');
 
+  // Tamanhos aumentados ~30% para destaque no perfil
   const sizeClasses = {
-    sm: 'w-12 h-12',
-    md: 'w-16 h-16',
-    lg: 'w-24 h-24 ring-4 ring-primary-foreground/30 shadow-lg',
-    xl: 'w-32 h-32 ring-4 ring-primary-foreground/30 shadow-lg',
+    sm: 'w-16 h-16',
+    md: 'w-20 h-20',
+    lg: 'w-32 h-32 ring-4 ring-primary-foreground/30 shadow-lg',
+    xl: 'w-40 h-40 ring-4 ring-primary-foreground/30 shadow-lg',
   };
 
   const fallbackSizeClasses = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-3xl font-bold bg-primary-foreground/20 text-primary-foreground',
-    xl: 'text-4xl font-bold bg-primary-foreground/20 text-primary-foreground',
+    sm: 'text-2xl',
+    md: 'text-3xl',
+    lg: 'text-4xl font-bold bg-primary-foreground/20 text-primary-foreground',
+    xl: 'text-5xl font-bold bg-primary-foreground/20 text-primary-foreground',
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,7 +147,7 @@ const ChildPhotoUpload = ({ childId, childName, currentPhotoUrl, size = 'md' }: 
   return (
     <div className="relative group">
       <Avatar className={sizeClasses[size]}>
-        {currentPhotoUrl && <AvatarImage src={currentPhotoUrl} alt={childName} className="object-cover" />}
+        {resolvedPhotoUrl && <AvatarImage src={resolvedPhotoUrl} alt={childName} className="object-cover" />}
         <AvatarFallback className={fallbackSizeClasses[size]}>{childName.charAt(0)}</AvatarFallback>
       </Avatar>
       

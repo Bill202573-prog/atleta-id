@@ -363,6 +363,62 @@ Deno.serve(async (req) => {
             }
           }
         }
+
+        // ========== PROFESSORES ANIVERSARIANTES (envia ao admin da escola) ==========
+        const { data: profsRaw } = await supabase
+          .from('professores')
+          .select('id, nome, user_id, data_nascimento')
+          .eq('escolinha_id', config.escolinha_id)
+          .eq('ativo', true);
+
+        const aniversariantesProfs = (profsRaw || []).filter((p: any) => {
+          if (!p.data_nascimento) return false;
+          const parts = String(p.data_nascimento).split('-');
+          return parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayDay;
+        });
+
+        if (aniversariantesProfs.length > 0) {
+          const { data: escolaProf } = await supabase
+            .from('escolinhas')
+            .select('admin_user_id, nome')
+            .eq('id', config.escolinha_id)
+            .single();
+
+          for (const prof of aniversariantesProfs) {
+            const profNome = prof.nome || 'professor(a)';
+
+            // Notifica o próprio professor
+            if (prof.user_id && !(await alreadySent(prof.user_id, 'aniversario', prof.id, 0))) {
+              totalSent += await sendPush(
+                prof.user_id,
+                '🎂 Feliz Aniversário!',
+                `Parabéns, ${profNome}! Desejamos um dia incrível! 🎉`,
+                '/dashboard',
+                `aniversario-prof-${prof.id}-${todayStr}`,
+                'aniversario',
+                prof.id,
+                0,
+                config.escolinha_id
+              );
+            }
+
+            // Notifica admin da escola
+            if (escolaProf?.admin_user_id && !(await alreadySent(escolaProf.admin_user_id, 'aniversario_admin_prof', prof.id, 0))) {
+              totalSent += await sendPush(
+                escolaProf.admin_user_id,
+                '🎂 Aniversário de Professor!',
+                `Hoje é aniversário do(a) Prof. ${profNome}! Não esqueça de parabenizar. 🎉`,
+                '/dashboard/professores',
+                `aniversario-admin-prof-${prof.id}-${todayStr}`,
+                'aniversario_admin_prof',
+                prof.id,
+                0,
+                config.escolinha_id
+              );
+            }
+          }
+        }
+      }
       }
 
       // ========== AULA REMINDERS ==========
