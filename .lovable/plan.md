@@ -1,73 +1,54 @@
-## Resumo das melhorias feitas até aqui (perfil "Meus Dados")
+## Push de pagamento recebido para administradores
 
-1. **Banner "Meus dados"** dentro de Configurações (estilo igual ao da Central de Ajuda) abrindo um sub-dialog com o formulário completo.
-2. **Formulário completo** do responsável: nome, CPF, telefone, data de nascimento e endereço completo (CEP, rua, número, complemento, bairro, cidade, UF). E-mail mostrado como somente leitura.
-3. **Validação inteligente de CPF**: só bloqueia se o usuário alterar o CPF; dados legados inválidos não impedem o salvamento dos demais campos. CPF válido fica travado (alteração só pela escola).
-4. **Aviso "Complete seu cadastro"** quando o CPF está faltando (necessário para cobranças).
-5. **Push notifications silencioso**: removida a UI de pedir permissão. O `PushAutoSubscribe` registra a inscrição automaticamente quando a permissão do navegador já está concedida — sem perguntar nada ao usuário.
-6. **Edge function `update-guardian-profile`** criada para fazer o update via service role, contornando RLS. Hoje está **restrita ao e-mail `wnogueira@hotmail.com`** (modo de teste).
-7. **Migration de RLS** específica para o usuário de teste no `responsaveis`.
+Quando um responsável paga uma mensalidade via PIX, o admin da escolinha recebe um push em tempo real:
 
----
+> "O responsável por João Guilherme pagou R$ 170,00 de Mensalidade Maio/26"
 
-## O que falta para liberar para todos
+### 1. Banco de dados
 
-### 1. Edge function `update-guardian-profile`
-- Remover o bloqueio que só aceita `wnogueira@hotmail.com`.
-- Manter as proteções: exigir JWT válido, atualizar **somente** o `responsaveis` cujo `user_id = auth.uid()`, lista branca de campos (`ALLOWED_FIELDS`), normalização de telefone/CPF/CEP e `nome` obrigatório.
-- Manter o `service_role` apenas dentro da função (nunca exposto ao frontend).
+Adicionar nova coluna em `escola_push_config`:
 
-### 2. RLS do `responsaveis`
-- Substituir a policy específica do usuário de teste por uma policy genérica:
-  `UPDATE` permitido quando `user_id = auth.uid()`, restrito às colunas de perfil (a função continua sendo o caminho oficial — a policy é só rede de segurança).
-- Conferir que não existe outra policy mais restritiva conflitando.
+- `pagamento_recebido_admin_push BOOLEAN DEFAULT true`
 
-### 3. Frontend
-- Tirar o badge "Beta" do título "Meus Dados".
-- Mensagem de erro genérica caso a função retorne 403/404 (ex: responsável não vinculado ainda).
-- Nenhuma outra mudança no fluxo — o hook `useUpdateGuardianProfile` já usa `supabase.functions.invoke`.
+Default `true` para já liberar o recebimento para todas as escolas existentes (e novas) sem ação manual.
 
-### 4. Verificação pós-liberação
-- Testar com **2 a 3 responsáveis** diferentes (incluindo um sem CPF e um com CPF já válido) para confirmar:
-  - Salva data de nascimento, telefone e endereço.
-  - CPF travado continua não sendo sobrescrito.
-  - Logs da função mostram o `userId` correto em cada update.
+### 2. Edge Function `asaas-webhook`
 
----
+No bloco que processa o evento `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` de mensalidades (tanto o caminho via `asaas_payment_id` quanto via `externalReference`), depois de marcar a mensalidade como `pago`:
 
-## Push dos administradores da Escolinha Bandeirantes
+1. Buscar `mensalidades.escolinha_id`, `crianca_id`, `mes_referencia`, `valor_pago`.
+2. Buscar `criancas.nome` e `escolinhas.admin_user_id`.
+3. Buscar `escola_push_config.pagamento_recebido_admin_push` (se não existir registro, assumir `true`).
+4. Se ativo e `admin_user_id` presente, chamar `send-push-notification` com:
+   - `user_ids: [admin_user_id]`
+   - `title: "💰 Pagamento recebido"`
+   - `body: "O responsável por {nome} pagou R$ {valor} de Mensalidade {Mês/AA}"`
+   - `url: "/dashboard/financeiro"`
+   - `tag: pagamento-{mensalidade_id}` (idempotente)
+   - `tipo: 'pagamento_recebido'`, `referencia_id: mensalidade_id`, `escolinha_id`
 
-**Diagnóstico (consultado agora no banco):**
+Formatação:
+- Valor em `pt-BR`: `R$ 170,00`.
+- Mês em pt-BR a partir de `mes_referencia` (`2026-05-01` → "Maio/26").
 
-- Escola: `Bandeirantes Futebol Recreio` — admin: `bandeirantesfr@hotmail.com` (`user_id 5c333f6d…`).
-- Tabela `push_subscriptions` para esse usuário: **0 registros**.
-- `user_roles`: tem `role = 'school'` (correto).
-- `PushAutoSubscribe` já está montado no `SchoolDashboardLayout`, então o código tenta inscrever — mas só efetivamente se inscreve quando `Notification.permission === 'granted'` no navegador/dispositivo do admin.
+Escopo: apenas mensalidades nesta entrega (que é o exemplo do usuário). Matrícula/amistoso/campeonato/loja podem ser estendidos depois.
 
-**Conclusão:** o admin da Bandeirantes hoje **não recebe push**, porque nunca houve permissão concedida no navegador/PWA dele. O componente atual é totalmente silencioso (não pede permissão) — então sem uma ação do usuário, nada é registrado.
+### 3. UI de configuração
 
-**Proposta para resolver (sem voltar a ser um "toggle"):**
+Em `PushConfigSection.tsx`, adicionar nova seção (visível independente do `push_ativo` master, que hoje controla apenas lembretes para responsáveis):
 
-1. **Auto-pedido de permissão one-shot para administradores de escola**, na primeira vez que abrirem o painel após esta liberação:
-   - Se `Notification.permission === 'default'` e o usuário tem role `school` → chamar `Notification.requestPermission()` automaticamente uma única vez (controlado por uma flag em `localStorage`, ex.: `atleta_id_push_prompted:{userId}`).
-   - Se conceder → `subscribe()` automático (silencioso depois disso).
-   - Se negar → não pergunta de novo; podemos só logar.
-2. **Não mexer no fluxo dos responsáveis** que já está silencioso e funcionando.
-3. **Diagnóstico rápido no painel admin** (opcional, mas útil): mostrar para o admin um pequeno indicador "Notificações ativas neste dispositivo: ✓ / ✗" no menu/configurações da escola, com botão para ativar caso esteja negado/pendente. Sem ser intrusivo.
-4. Após a liberação, validar com a Bandeirantes:
-   - Pedir para o admin abrir o painel uma vez no celular/desktop e aceitar o pop-up nativo.
-   - Conferir no banco se aparece linha em `push_subscriptions` para o `user_id 5c333f6d…`.
-   - Disparar um push de teste via `send-push-notification` com `user_ids: ['5c333f6d-e845-417c-8e30-dfdb4d92de82']`.
+- Bloco "🔔 Notificações para o Administrador"
+- Switch "Receber push quando um pagamento de mensalidade for confirmado" (chave `pagamento_recebido_admin_push`, default `true`)
 
----
+Incluir a chave no payload do `upsert` e no `getValue`.
 
-## Detalhes técnicos (resumo)
+### 4. Garantir entrega
 
-- **Arquivos a alterar:**
-  - `supabase/functions/update-guardian-profile/index.ts` — remover whitelist de e-mail.
-  - `src/components/guardian/GuardianMeusDadosCard.tsx` — remover badge "Beta".
-  - `src/components/guardian/PushAutoSubscribe.tsx` — adicionar lógica de auto-prompt para role `school` (one-shot, controlado por `localStorage`).
-- **Migration nova:** policy `UPDATE` em `responsaveis` para `auth.uid() = user_id` (e drop da policy do usuário de teste).
-- **Sem mudanças** no fluxo de login, no `usePushNotifications` ou nas demais áreas.
+- O componente `PushAutoSubscribe` já dispara o prompt nativo uma vez para `role === 'school'`, então admins que ainda não habilitaram serão solicitados na próxima visita.
+- Nada mais é necessário — assim que o admin aceitar o pop-up, o push chega em tempo real via webhook do Asaas.
 
-Posso implementar tudo isso assim que aprovar.
+### Detalhes técnicos
+
+- Migração simples `ALTER TABLE public.escola_push_config ADD COLUMN pagamento_recebido_admin_push boolean NOT NULL DEFAULT true;`
+- A leitura no webhook usa `maybeSingle()` e default `true` se não houver linha.
+- Idempotência já é garantida pelo guard `if (mensalidade.status === 'pago') skip` antes do update — se o webhook chegar duplicado, não disparamos push duas vezes.
