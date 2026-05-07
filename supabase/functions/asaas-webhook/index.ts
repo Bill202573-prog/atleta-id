@@ -36,6 +36,72 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Helper: notifica admin da escola que uma mensalidade foi paga
+    async function notifyAdminMensalidadePaga(mensalidadeId: string, valorPago: number | string) {
+      try {
+        const { data: m } = await supabase
+          .from("mensalidades")
+          .select("id, escolinha_id, crianca_id, mes_referencia")
+          .eq("id", mensalidadeId)
+          .single();
+        if (!m?.escolinha_id) return;
+
+        const { data: cfg } = await supabase
+          .from("escola_push_config")
+          .select("pagamento_recebido_admin_push")
+          .eq("escolinha_id", m.escolinha_id)
+          .maybeSingle();
+        if (cfg && cfg.pagamento_recebido_admin_push === false) return;
+
+        const { data: escola } = await supabase
+          .from("escolinhas")
+          .select("admin_user_id")
+          .eq("id", m.escolinha_id)
+          .single();
+        if (!escola?.admin_user_id) return;
+
+        const { data: crianca } = await supabase
+          .from("criancas")
+          .select("nome")
+          .eq("id", m.crianca_id)
+          .single();
+
+        const meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+        let refLabel = "";
+        if (m.mes_referencia) {
+          const [y, mo] = String(m.mes_referencia).split("-");
+          const mi = parseInt(mo, 10) - 1;
+          if (mi >= 0 && mi < 12 && y) refLabel = ` ${meses[mi]}/${y.slice(-2)}`;
+        }
+        const valorNum = Number(valorPago) || 0;
+        const valorFmt = valorNum.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const nome = crianca?.nome || "atleta";
+
+        const body = `O responsável por ${nome} pagou ${valorFmt} de Mensalidade${refLabel}`;
+
+        await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            user_ids: [escola.admin_user_id],
+            title: "💰 Pagamento recebido",
+            body,
+            url: "/dashboard/financeiro",
+            tag: `pagamento-${m.id}`,
+            tipo: "pagamento_recebido",
+            referencia_id: m.id,
+            dias_antes: 0,
+            escolinha_id: m.escolinha_id,
+          }),
+        });
+      } catch (e) {
+        console.error("notifyAdminMensalidadePaga error:", e);
+      }
+    }
+
     const payload = await req.json();
     console.log("Asaas webhook received:", JSON.stringify(payload));
 
