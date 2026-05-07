@@ -445,6 +445,9 @@ serve(async (req) => {
               .update({ status_financeiro: "ativo" })
               .eq("id", mensalidade.crianca_id);
           }
+
+          // Push para o admin da escola
+          await notifyAdminMensalidadePaga(mensalidade.id, payment.netValue || payment.value);
         }
 
         return new Response(
