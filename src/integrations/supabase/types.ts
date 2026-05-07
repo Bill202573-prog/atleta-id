@@ -1505,6 +1505,7 @@ export type Database = {
           created_at: string
           escolinha_id: string
           id: string
+          pagamento_recebido_admin_push: boolean
           push_ativo: boolean
           updated_at: string
         }
@@ -1525,6 +1526,7 @@ export type Database = {
           created_at?: string
           escolinha_id: string
           id?: string
+          pagamento_recebido_admin_push?: boolean
           push_ativo?: boolean
           updated_at?: string
         }
@@ -1545,6 +1547,7 @@ export type Database = {
           created_at?: string
           escolinha_id?: string
           id?: string
+          pagamento_recebido_admin_push?: boolean
           push_ativo?: boolean
           updated_at?: string
         }

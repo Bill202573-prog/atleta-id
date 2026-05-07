@@ -1,0 +1,1 @@
+ALTER TABLE public.escola_push_config ADD COLUMN IF NOT EXISTS pagamento_recebido_admin_push boolean NOT NULL DEFAULT true;

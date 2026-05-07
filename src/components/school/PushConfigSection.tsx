@@ -59,6 +59,7 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
         aula_no_dia: getValue('aula_no_dia', true),
         comunicado_push: getValue('comunicado_push', true),
         aniversario_push: getValue('aniversario_push', true),
+        pagamento_recebido_admin_push: getValue('pagamento_recebido_admin_push', true),
       };
 
       const { error } = await supabase
@@ -110,6 +111,23 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
             checked={getValue('push_ativo', false)}
             onCheckedChange={(v) => setField('push_ativo', v)}
           />
+        </div>
+
+        {/* Notificações para o Administrador (independente do master toggle) */}
+        <div className="space-y-3">
+          <h4 className="font-semibold text-sm text-foreground">🔔 Notificações para o Administrador</h4>
+          <p className="text-xs text-muted-foreground pl-2">
+            Receba um push em tempo real quando um responsável pagar a mensalidade.
+          </p>
+          <div className="space-y-2 pl-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Pagamento de mensalidade recebido</Label>
+              <Switch
+                checked={getValue('pagamento_recebido_admin_push', true)}
+                onCheckedChange={(v) => setField('pagamento_recebido_admin_push', v)}
+              />
+            </div>
+          </div>
         </div>
 
         {getValue('push_ativo', false) && (
