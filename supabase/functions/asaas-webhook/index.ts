@@ -55,10 +55,11 @@ serve(async (req) => {
 
         const { data: escola } = await supabase
           .from("escolinhas")
-          .select("admin_user_id")
+          .select("admin_user_id, socio_user_id")
           .eq("id", m.escolinha_id)
           .single();
-        if (!escola?.admin_user_id) return;
+        const adminIds = [escola?.admin_user_id, escola?.socio_user_id].filter(Boolean) as string[];
+        if (adminIds.length === 0) return;
 
         const { data: crianca } = await supabase
           .from("criancas")
