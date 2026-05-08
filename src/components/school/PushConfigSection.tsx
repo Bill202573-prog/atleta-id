@@ -120,16 +120,26 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
         <div className="space-y-3">
           <h4 className="font-semibold text-sm text-foreground">🔔 Notificações para o Administrador</h4>
           <p className="text-xs text-muted-foreground pl-2">
-            Receba um push em tempo real quando um responsável pagar a mensalidade.
+            Pushes em tempo real para o administrador e sócio da escola. Cada item pode ser ligado/desligado.
           </p>
-          <div className="space-y-2 pl-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Pagamento de mensalidade recebido</Label>
-              <Switch
-                checked={getValue('pagamento_recebido_admin_push', true)}
-                onCheckedChange={(v) => setField('pagamento_recebido_admin_push', v)}
-              />
-            </div>
+          <div className="space-y-3 pl-2">
+            {[
+              { key: 'pagamento_recebido_admin_push', label: '💰 Pagamento de mensalidade recebido', hint: 'Avisa quando um responsável paga via PIX.' },
+              { key: 'aniversario_admin_push', label: '🎂 Aniversariantes do dia', hint: 'Alunos e professores que fazem aniversário hoje.' },
+              { key: 'comunicado_admin_push', label: '📋 Comunicados enviados pela escola', hint: 'Confirma que o comunicado foi disparado para os responsáveis.' },
+              { key: 'presenca_confirmada_admin_push', label: '✅ Confirmação de presença na aula', hint: 'Avisa sempre que um responsável confirma presença do aluno.' },
+            ].map(item => (
+              <div key={item.key} className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <Label className="text-sm">{item.label}</Label>
+                  <p className="text-xs text-muted-foreground">{item.hint}</p>
+                </div>
+                <Switch
+                  checked={getValue(item.key, true)}
+                  onCheckedChange={(v) => setField(item.key, v)}
+                />
+              </div>
+            ))}
           </div>
         </div>
 
