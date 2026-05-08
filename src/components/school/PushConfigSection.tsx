@@ -60,6 +60,9 @@ export function PushConfigSection({ escolinhaId }: PushConfigSectionProps) {
         comunicado_push: getValue('comunicado_push', true),
         aniversario_push: getValue('aniversario_push', true),
         pagamento_recebido_admin_push: getValue('pagamento_recebido_admin_push', true),
+        aniversario_admin_push: getValue('aniversario_admin_push', true),
+        comunicado_admin_push: getValue('comunicado_admin_push', true),
+        presenca_confirmada_admin_push: getValue('presenca_confirmada_admin_push', true),
       };
 
       const { error } = await supabase
