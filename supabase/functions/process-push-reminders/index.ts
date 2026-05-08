@@ -19,11 +19,10 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const filterEscolinhaId = url.searchParams.get('escolinha_id');
 
-    // Get schools with push enabled
+    // Get all schools' push configs (admin-facing toggles work even if push_ativo is off)
     let configQuery = supabase
       .from('escola_push_config')
-      .select('*')
-      .eq('push_ativo', true);
+      .select('*');
 
     if (filterEscolinhaId) {
       configQuery = configQuery.eq('escolinha_id', filterEscolinhaId);
@@ -32,7 +31,7 @@ Deno.serve(async (req) => {
     const { data: configs, error: configError } = await configQuery;
     if (configError) throw configError;
     if (!configs || configs.length === 0) {
-      return new Response(JSON.stringify({ message: 'No schools with push enabled' }), {
+      return new Response(JSON.stringify({ message: 'No push configs found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
