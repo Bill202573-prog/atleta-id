@@ -369,7 +369,7 @@ export const useCreateComunicadoEscola = () => {
           // Check if push is enabled for this school
           const { data: pushConfig } = await supabase
             .from('escola_push_config')
-            .select('push_ativo, comunicado_push')
+            .select('push_ativo, comunicado_push, comunicado_admin_push')
             .eq('escolinha_id', escolinhaId)
             .maybeSingle();
 
@@ -405,6 +405,30 @@ export const useCreateComunicadoEscola = () => {
                   });
                 }
               }
+            }
+          }
+
+          // Notifica também os admins da escola (independente do push_ativo)
+          if (!pushConfig || pushConfig.comunicado_admin_push !== false) {
+            const { data: escola } = await supabase
+              .from('escolinhas')
+              .select('admin_user_id, socio_user_id')
+              .eq('id', escolinhaId)
+              .maybeSingle();
+            const adminIds = [escola?.admin_user_id, escola?.socio_user_id].filter(Boolean) as string[];
+            if (adminIds.length > 0) {
+              await supabase.functions.invoke('send-push-notification', {
+                body: {
+                  user_ids: adminIds,
+                  title: '📨 Comunicado enviado',
+                  body: `Seu comunicado "${result.titulo}" foi disparado para os responsáveis.`,
+                  url: '/dashboard/comunicados',
+                  tag: `comunicado-admin-${result.id}`,
+                  tipo: 'comunicado_admin',
+                  referencia_id: result.id,
+                  escolinha_id: escolinhaId,
+                },
+              });
             }
           }
         } catch (pushError) {

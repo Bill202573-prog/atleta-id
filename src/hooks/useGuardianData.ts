@@ -322,6 +322,51 @@ export const useConfirmPresence = () => {
 
         if (error) throw error;
       }
+
+      // Notify school admins when guardian confirms presence
+      if (confirmar) {
+        try {
+          const { data: aula } = await supabase
+            .from('aulas')
+            .select('id, data, turmas!inner(id, nome, escolinha_id)')
+            .eq('id', aulaId)
+            .maybeSingle();
+          const turmas: any = (aula as any)?.turmas;
+          const escolinhaId = turmas?.escolinha_id;
+          if (escolinhaId) {
+            const [{ data: cfg }, { data: escola }, { data: crianca }] = await Promise.all([
+              supabase.from('escola_push_config')
+                .select('presenca_confirmada_admin_push')
+                .eq('escolinha_id', escolinhaId)
+                .maybeSingle(),
+              supabase.from('escolinhas')
+                .select('admin_user_id, socio_user_id')
+                .eq('id', escolinhaId)
+                .maybeSingle(),
+              supabase.from('criancas').select('nome').eq('id', criancaId).maybeSingle(),
+            ]);
+            if (!cfg || cfg.presenca_confirmada_admin_push !== false) {
+              const adminIds = [escola?.admin_user_id, escola?.socio_user_id].filter(Boolean) as string[];
+              if (adminIds.length) {
+                await supabase.functions.invoke('send-push-notification', {
+                  body: {
+                    user_ids: adminIds,
+                    title: '✅ Presença confirmada',
+                    body: `${crianca?.nome || 'Atleta'} confirmou presença na aula de "${turmas?.nome || 'turma'}"`,
+                    url: '/dashboard/chamada',
+                    tag: `presenca-${aulaId}-${criancaId}`,
+                    tipo: 'presenca_confirmada',
+                    referencia_id: aulaId,
+                    escolinha_id: escolinhaId,
+                  },
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Push presença admin error:', e);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guardian-next-aulas'] });

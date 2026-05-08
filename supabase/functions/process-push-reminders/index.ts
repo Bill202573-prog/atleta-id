@@ -19,11 +19,10 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const filterEscolinhaId = url.searchParams.get('escolinha_id');
 
-    // Get schools with push enabled
+    // Get all schools' push configs (admin-facing toggles work even if push_ativo is off)
     let configQuery = supabase
       .from('escola_push_config')
-      .select('*')
-      .eq('push_ativo', true);
+      .select('*');
 
     if (filterEscolinhaId) {
       configQuery = configQuery.eq('escolinha_id', filterEscolinhaId);
@@ -32,7 +31,7 @@ Deno.serve(async (req) => {
     const { data: configs, error: configError } = await configQuery;
     if (configError) throw configError;
     if (!configs || configs.length === 0) {
-      return new Response(JSON.stringify({ message: 'No schools with push enabled' }), {
+      return new Response(JSON.stringify({ message: 'No push configs found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -97,6 +96,8 @@ Deno.serve(async (req) => {
     }
 
     for (const config of configs) {
+      // Parent-facing reminders gated on master push_ativo toggle
+      if (config.push_ativo) {
       // ========== COBRANÇA REMINDERS ==========
       const diasCobranca: number[] = [];
       if (config.cobranca_3_dias_antes) diasCobranca.push(3);
@@ -295,40 +296,42 @@ Deno.serve(async (req) => {
           }
         }
       }
+      } // end if (config.push_ativo) — parent reminders block
 
       // ========== BIRTHDAY REMINDERS ==========
-      if (config.aniversario_push !== false) {
+      {
         const todayDate = new Date();
         const todayDay = todayDate.getDate();
         const todayMonth = todayDate.getMonth() + 1; // 1-based
 
-        // Get active children for this school whose birthday is today
+        // Get school admin + sócio user ids (used by admin pushes below)
+        const { data: escolaAdmins } = await supabase
+          .from('escolinhas')
+          .select('admin_user_id, socio_user_id, nome')
+          .eq('id', config.escolinha_id)
+          .single();
+        const adminIds = [escolaAdmins?.admin_user_id, escolaAdmins?.socio_user_id].filter(Boolean) as string[];
+
+        // ----- Crianças aniversariantes -----
         const { data: allChildren } = await supabase
           .from('crianca_escolinha')
           .select('crianca_id, criancas!inner(id, nome, data_nascimento)')
           .eq('escolinha_id', config.escolinha_id)
           .eq('ativo', true);
 
-        if (allChildren && allChildren.length > 0) {
-          const birthdayChildren = allChildren.filter((ce: any) => {
-            const dob = ce.criancas?.data_nascimento;
-            if (!dob) return false;
-            const parts = dob.split('-');
-            return parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayDay;
-          });
+        const birthdayChildren = (allChildren || []).filter((ce: any) => {
+          const dob = ce.criancas?.data_nascimento;
+          if (!dob) return false;
+          const parts = dob.split('-');
+          return parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayDay;
+        });
 
-          // Get school admin user id
-          const { data: escola } = await supabase
-            .from('escolinhas')
-            .select('admin_user_id, nome')
-            .eq('id', config.escolinha_id)
-            .single();
+        for (const ce of birthdayChildren) {
+          const childName = (ce as any).criancas?.nome || 'atleta';
+          const criancaId = ce.crianca_id;
 
-          for (const ce of birthdayChildren) {
-            const childName = (ce as any).criancas?.nome || 'atleta';
-            const criancaId = ce.crianca_id;
-
-            // Send to guardians
+          // Push para responsáveis (depende de aniversario_push)
+          if (config.aniversario_push !== false) {
             const userIds = await getGuardianUserIds(criancaId);
             for (const userId of userIds) {
               if (await alreadySent(userId, 'aniversario', criancaId, 0)) continue;
@@ -344,27 +347,28 @@ Deno.serve(async (req) => {
                 config.escolinha_id
               );
             }
+          }
 
-            // Send to school admin
-            if (escola?.admin_user_id) {
-              if (!(await alreadySent(escola.admin_user_id, 'aniversario_admin', criancaId, 0))) {
-                totalSent += await sendPush(
-                  escola.admin_user_id,
-                  '🎂 Aniversariante do dia!',
-                  `Hoje é aniversário do(a) ${childName}! Já enviamos uma mensagem de felicitação para a família. 🎉`,
-                  '/dashboard/chamada',
-                  `aniversario-admin-${criancaId}-${todayStr}`,
-                  'aniversario_admin',
-                  criancaId,
-                  0,
-                  config.escolinha_id
-                );
-              }
+          // Push para administradores (depende de aniversario_admin_push)
+          if (config.aniversario_admin_push !== false) {
+            for (const adminId of adminIds) {
+              if (await alreadySent(adminId, 'aniversario_admin', criancaId, 0)) continue;
+              totalSent += await sendPush(
+                adminId,
+                '🎂 Aniversariante do dia!',
+                `Hoje é aniversário do(a) ${childName}! Já enviamos uma mensagem de felicitação para a família. 🎉`,
+                '/dashboard/chamada',
+                `aniversario-admin-${criancaId}-${todayStr}`,
+                'aniversario_admin',
+                criancaId,
+                0,
+                config.escolinha_id
+              );
             }
           }
         }
 
-        // ========== PROFESSORES ANIVERSARIANTES (envia ao admin da escola) ==========
+        // ----- Professores aniversariantes -----
         const { data: profsRaw } = await supabase
           .from('professores')
           .select('id, nome, user_id, data_nascimento')
@@ -377,18 +381,12 @@ Deno.serve(async (req) => {
           return parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayDay;
         });
 
-        if (aniversariantesProfs.length > 0) {
-          const { data: escolaProf } = await supabase
-            .from('escolinhas')
-            .select('admin_user_id, nome')
-            .eq('id', config.escolinha_id)
-            .single();
+        for (const prof of aniversariantesProfs) {
+          const profNome = prof.nome || 'professor(a)';
 
-          for (const prof of aniversariantesProfs) {
-            const profNome = prof.nome || 'professor(a)';
-
-            // Notifica o próprio professor
-            if (prof.user_id && !(await alreadySent(prof.user_id, 'aniversario', prof.id, 0))) {
+          // Notifica o próprio professor (depende de aniversario_push)
+          if (config.aniversario_push !== false && prof.user_id) {
+            if (!(await alreadySent(prof.user_id, 'aniversario', prof.id, 0))) {
               totalSent += await sendPush(
                 prof.user_id,
                 '🎂 Feliz Aniversário!',
@@ -401,11 +399,14 @@ Deno.serve(async (req) => {
                 config.escolinha_id
               );
             }
+          }
 
-            // Notifica admin da escola
-            if (escolaProf?.admin_user_id && !(await alreadySent(escolaProf.admin_user_id, 'aniversario_admin_prof', prof.id, 0))) {
+          // Notifica administradores (depende de aniversario_admin_push)
+          if (config.aniversario_admin_push !== false) {
+            for (const adminId of adminIds) {
+              if (await alreadySent(adminId, 'aniversario_admin_prof', prof.id, 0)) continue;
               totalSent += await sendPush(
-                escolaProf.admin_user_id,
+                adminId,
                 '🎂 Aniversário de Professor!',
                 `Hoje é aniversário do(a) Prof. ${profNome}! Não esqueça de parabenizar. 🎉`,
                 '/dashboard/professores',
@@ -419,9 +420,9 @@ Deno.serve(async (req) => {
           }
         }
       }
-      }
 
-      // ========== AULA REMINDERS ==========
+      // ========== AULA REMINDERS (parent-facing, gated by push_ativo) ==========
+      if (!config.push_ativo) continue;
       const diasAula: number[] = [];
       if (config.aula_3_dias_antes) diasAula.push(3);
       if (config.aula_1_dia_antes) diasAula.push(1);
