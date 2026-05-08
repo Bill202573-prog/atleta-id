@@ -296,6 +296,7 @@ Deno.serve(async (req) => {
           }
         }
       }
+      } // end if (config.push_ativo) — parent reminders block
 
       // ========== BIRTHDAY REMINDERS ==========
       {
