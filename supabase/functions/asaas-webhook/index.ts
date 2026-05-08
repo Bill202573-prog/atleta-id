@@ -87,7 +87,7 @@ serve(async (req) => {
             "Authorization": `Bearer ${supabaseServiceKey}`,
           },
           body: JSON.stringify({
-            user_ids: [escola.admin_user_id],
+            user_ids: adminIds,
             title: "💰 Pagamento recebido",
             body,
             url: "/dashboard/financeiro",
