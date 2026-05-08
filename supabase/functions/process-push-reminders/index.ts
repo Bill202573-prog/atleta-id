@@ -96,6 +96,8 @@ Deno.serve(async (req) => {
     }
 
     for (const config of configs) {
+      // Parent-facing reminders gated on master push_ativo toggle
+      if (config.push_ativo) {
       // ========== COBRANÇA REMINDERS ==========
       const diasCobranca: number[] = [];
       if (config.cobranca_3_dias_antes) diasCobranca.push(3);
