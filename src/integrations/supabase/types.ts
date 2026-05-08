@@ -1489,6 +1489,7 @@ export type Database = {
       }
       escola_push_config: {
         Row: {
+          aniversario_admin_push: boolean
           aniversario_push: boolean
           aula_1_dia_antes: boolean
           aula_3_dias_antes: boolean
@@ -1497,6 +1498,7 @@ export type Database = {
           cobranca_1_dia_depois: boolean
           cobranca_3_dias_antes: boolean
           cobranca_no_dia: boolean
+          comunicado_admin_push: boolean
           comunicado_push: boolean
           convocacao_1_dia_antes: boolean
           convocacao_2_dias_antes: boolean
@@ -1506,10 +1508,12 @@ export type Database = {
           escolinha_id: string
           id: string
           pagamento_recebido_admin_push: boolean
+          presenca_confirmada_admin_push: boolean
           push_ativo: boolean
           updated_at: string
         }
         Insert: {
+          aniversario_admin_push?: boolean
           aniversario_push?: boolean
           aula_1_dia_antes?: boolean
           aula_3_dias_antes?: boolean
@@ -1518,6 +1522,7 @@ export type Database = {
           cobranca_1_dia_depois?: boolean
           cobranca_3_dias_antes?: boolean
           cobranca_no_dia?: boolean
+          comunicado_admin_push?: boolean
           comunicado_push?: boolean
           convocacao_1_dia_antes?: boolean
           convocacao_2_dias_antes?: boolean
@@ -1527,10 +1532,12 @@ export type Database = {
           escolinha_id: string
           id?: string
           pagamento_recebido_admin_push?: boolean
+          presenca_confirmada_admin_push?: boolean
           push_ativo?: boolean
           updated_at?: string
         }
         Update: {
+          aniversario_admin_push?: boolean
           aniversario_push?: boolean
           aula_1_dia_antes?: boolean
           aula_3_dias_antes?: boolean
@@ -1539,6 +1546,7 @@ export type Database = {
           cobranca_1_dia_depois?: boolean
           cobranca_3_dias_antes?: boolean
           cobranca_no_dia?: boolean
+          comunicado_admin_push?: boolean
           comunicado_push?: boolean
           convocacao_1_dia_antes?: boolean
           convocacao_2_dias_antes?: boolean
@@ -1548,6 +1556,7 @@ export type Database = {
           escolinha_id?: string
           id?: string
           pagamento_recebido_admin_push?: boolean
+          presenca_confirmada_admin_push?: boolean
           push_ativo?: boolean
           updated_at?: string
         }
