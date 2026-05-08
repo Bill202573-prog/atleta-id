@@ -421,7 +421,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // ========== AULA REMINDERS ==========
+      // ========== AULA REMINDERS (parent-facing, gated by push_ativo) ==========
+      if (!config.push_ativo) continue;
       const diasAula: number[] = [];
       if (config.aula_3_dias_antes) diasAula.push(3);
       if (config.aula_1_dia_antes) diasAula.push(1);
