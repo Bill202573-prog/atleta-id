@@ -95,23 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Se for escola, buscar a escolinha
       if (roleData.role === 'school') {
-        // Primeiro tenta como admin principal
         const { data: escolinhaAdmin } = await supabase
           .from('escolinhas')
           .select('id, nome')
           .eq('admin_user_id', userId)
-          .single();
+          .maybeSingle();
 
         if (escolinhaAdmin) {
           escolinhaId = escolinhaAdmin.id;
           escolinhaNome = escolinhaAdmin.nome;
         } else {
-          // Se não encontrou como admin, tenta como sócio
           const { data: escolinhaSocio } = await supabase
             .from('escolinhas')
             .select('id, nome')
             .eq('socio_user_id', userId)
-            .single();
+            .maybeSingle();
           escolinhaId = escolinhaSocio?.id;
           escolinhaNome = escolinhaSocio?.nome;
         }
@@ -123,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('professores')
           .select('escolinha_id')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
         escolinhaId = professorData?.escolinha_id;
       }
 
