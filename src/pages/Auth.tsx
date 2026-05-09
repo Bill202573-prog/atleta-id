@@ -41,6 +41,13 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && user.role) navigate('/dashboard');
+    else if (user && !user.role) {
+      toast({
+        title: 'Conta sem perfil de acesso',
+        description: 'Sua conta existe mas não tem um perfil configurado (responsável, professor, escola ou admin). Fale com o suporte.',
+        variant: 'destructive',
+      });
+    }
   }, [user, navigate]);
 
   // Mostrar botão biometria se houver passkey local para o email digitado (ou último email salvo)

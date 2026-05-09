@@ -58,17 +58,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('user_roles')
           .select('role')
           .eq('user_id', userId)
-          .single(),
+          .maybeSingle(),
         supabase
           .from('profiles')
           .select('nome, avatar_url, email, password_needs_change')
           .eq('user_id', userId)
-          .single(),
+          .maybeSingle(),
       ]);
 
-      if (!roleData || !profileData) {
-        console.warn('[AuthContext] fetchUserData: missing data', { roleData, roleError, profileData, profileError });
-        return null;
+      if (!profileData) {
+        console.warn('[AuthContext] fetchUserData: missing profile', { profileError });
+        // Return a minimal user so the app can render an "incomplete account" screen
+        // instead of staying stuck on /login with a success toast.
+        return {
+          id: userId,
+          email: '',
+          role: null as unknown as UserRole,
+          name: 'Conta incompleta',
+        };
+      }
+
+      if (!roleData) {
+        console.warn('[AuthContext] fetchUserData: missing role for user', userId, roleError);
+        return {
+          id: userId,
+          email: profileData.email,
+          role: null as unknown as UserRole,
+          name: profileData.nome,
+          avatarUrl: profileData.avatar_url,
+          passwordNeedsChange: profileData.password_needs_change || false,
+        };
       }
 
       let escolinhaId: string | undefined;
@@ -76,23 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Se for escola, buscar a escolinha
       if (roleData.role === 'school') {
-        // Primeiro tenta como admin principal
         const { data: escolinhaAdmin } = await supabase
           .from('escolinhas')
           .select('id, nome')
           .eq('admin_user_id', userId)
-          .single();
+          .maybeSingle();
 
         if (escolinhaAdmin) {
           escolinhaId = escolinhaAdmin.id;
           escolinhaNome = escolinhaAdmin.nome;
         } else {
-          // Se não encontrou como admin, tenta como sócio
           const { data: escolinhaSocio } = await supabase
             .from('escolinhas')
             .select('id, nome')
             .eq('socio_user_id', userId)
-            .single();
+            .maybeSingle();
           escolinhaId = escolinhaSocio?.id;
           escolinhaNome = escolinhaSocio?.nome;
         }
@@ -104,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .from('professores')
           .select('escolinha_id')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();
         escolinhaId = professorData?.escolinha_id;
       }
 

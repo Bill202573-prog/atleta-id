@@ -8,9 +8,10 @@ import { useDiagnosticoData, DiagnosticoResult } from '@/hooks/useDiagnosticoDat
 import { supabase } from '@/integrations/supabase/client';
 import {
   RefreshCw, Copy, CheckCircle2, XCircle, Clock, User, Shield, Database,
-  AlertTriangle, Zap, HardDrive, Activity, Server, Users, ImageIcon, FileText,
+  AlertTriangle, Zap, HardDrive, Activity, Server, Users, ImageIcon, FileText, Heart,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SaudeEscolaTab } from '@/components/admin/SaudeEscolaTab';
 
 const StatusIcon = ({ status }: { status: DiagnosticoResult['status'] }) => {
   switch (status) {
@@ -740,9 +741,12 @@ const DiagnosticoAcessoPage = () => {
       </div>
 
       <Tabs defaultValue="acesso">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="acesso" className="gap-1 text-xs sm:text-sm">
             <Database className="w-3.5 h-3.5 hidden sm:block" /> Acesso
+          </TabsTrigger>
+          <TabsTrigger value="saude-escola" className="gap-1 text-xs sm:text-sm">
+            <Heart className="w-3.5 h-3.5 hidden sm:block" /> Saúde Escola
           </TabsTrigger>
           <TabsTrigger value="seguranca" className="gap-1 text-xs sm:text-sm">
             <Shield className="w-3.5 h-3.5 hidden sm:block" /> Segurança
@@ -876,6 +880,10 @@ const DiagnosticoAcessoPage = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="saude-escola">
+          <SaudeEscolaTab />
         </TabsContent>
 
         <TabsContent value="seguranca">
