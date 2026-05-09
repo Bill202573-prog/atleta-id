@@ -882,6 +882,10 @@ const DiagnosticoAcessoPage = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="saude-escola">
+          <SaudeEscolaTab />
+        </TabsContent>
+
         <TabsContent value="seguranca">
           <SecurityTab />
         </TabsContent>
