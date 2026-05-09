@@ -741,9 +741,12 @@ const DiagnosticoAcessoPage = () => {
       </div>
 
       <Tabs defaultValue="acesso">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="acesso" className="gap-1 text-xs sm:text-sm">
             <Database className="w-3.5 h-3.5 hidden sm:block" /> Acesso
+          </TabsTrigger>
+          <TabsTrigger value="saude-escola" className="gap-1 text-xs sm:text-sm">
+            <Heart className="w-3.5 h-3.5 hidden sm:block" /> Saúde Escola
           </TabsTrigger>
           <TabsTrigger value="seguranca" className="gap-1 text-xs sm:text-sm">
             <Shield className="w-3.5 h-3.5 hidden sm:block" /> Segurança
