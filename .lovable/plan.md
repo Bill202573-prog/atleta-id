@@ -1,54 +1,60 @@
-## Push de pagamento recebido para administradores
 
-Quando um responsável paga uma mensalidade via PIX, o admin da escolinha recebe um push em tempo real:
+## Contexto
 
-> "O responsável por João Guilherme pagou R$ 170,00 de Mensalidade Maio/26"
+Investiguei o caso do `bandeirantesfr@hotmail.com` (Hygor — admin Bandeirantes): a conta tem profile, role `school` e vínculo de admin com a escolinha — ou seja, o fluxo *deveria* completar. O toast "Login realizado!" aparece porque o `signInWithPassword` retornou sem erro, mas a tela não muda quando o `fetchUserData` falha silenciosamente.
 
-### 1. Banco de dados
+Rodando uma varredura geral, encontrei **14 usuários com profile mas SEM linha em `user_roles`** (entre eles `alessandrobarroso.imoveis@gmail.com`, que apareceu no fix anterior). Como o `AuthContext.fetchUserData` usa `.single()` em `user_roles`, qualquer usuário sem role cai no `catch`, retorna `null`, e o app fica preso na tela de login exibindo só o toast de sucesso.
 
-Adicionar nova coluna em `escola_push_config`:
+Ou seja, **o problema ainda existe** para outros usuários — só foi resolvido para os 3 que faltavam *profile*, não para os que faltam *role*.
 
-- `pagamento_recebido_admin_push BOOLEAN DEFAULT true`
+## Plano
 
-Default `true` para já liberar o recebimento para todas as escolas existentes (e novas) sem ação manual.
+### 1. Corrigir o bug estrutural do login
 
-### 2. Edge Function `asaas-webhook`
+**a) Tornar o `fetchUserData` resiliente** (`src/contexts/AuthContext.tsx`)
+- Trocar `.single()` por `.maybeSingle()` em `user_roles`, `profiles`, `escolinhas` (admin/sócio) e `professores`.
+- Se faltar `role`, retornar um `AuthUser` com `role: null` + um novo flag `accountIncomplete: true` (em vez de `null`), para o app conseguir renderizar uma tela de erro amigável ("Sua conta está sem perfil de acesso configurado — fale com o suporte") em vez de travar no /login.
+- Manter o log de console que já temos para diagnóstico.
 
-No bloco que processa o evento `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` de mensalidades (tanto o caminho via `asaas_payment_id` quanto via `externalReference`), depois de marcar a mensalidade como `pago`:
+**b) Backfill + trigger de role**
+- Migration que insere `role = 'guardian'` (default seguro, igual ao fluxo de cadastro normal de responsáveis) para todos os usuários órfãos *que tenham vínculo em `responsaveis`*; para os demais (logins de teste, contas externas), gerar um relatório mas não atribuir role automaticamente.
+- Garantir que o trigger `on_auth_user_created` continua criando profile, e adicionar criação automática de role `guardian` apenas quando o signup vem do fluxo público de responsáveis (já existe `handle_new_user` — vamos estendê-lo apenas para criar role quando `raw_user_meta_data->>'auto_role' = 'guardian'`, mantendo o fluxo de import/admin intocado).
 
-1. Buscar `mensalidades.escolinha_id`, `crianca_id`, `mes_referencia`, `valor_pago`.
-2. Buscar `criancas.nome` e `escolinhas.admin_user_id`.
-3. Buscar `escola_push_config.pagamento_recebido_admin_push` (se não existir registro, assumir `true`).
-4. Se ativo e `admin_user_id` presente, chamar `send-push-notification` com:
-   - `user_ids: [admin_user_id]`
-   - `title: "💰 Pagamento recebido"`
-   - `body: "O responsável por {nome} pagou R$ {valor} de Mensalidade {Mês/AA}"`
-   - `url: "/dashboard/financeiro"`
-   - `tag: pagamento-{mensalidade_id}` (idempotente)
-   - `tipo: 'pagamento_recebido'`, `referencia_id: mensalidade_id`, `escolinha_id`
+### 2. Novo painel: **Saúde da Escola** (admin)
 
-Formatação:
-- Valor em `pt-BR`: `R$ 170,00`.
-- Mês em pt-BR a partir de `mes_referencia` (`2026-05-01` → "Maio/26").
+Adicionar uma nova aba dentro de `DiagnosticoAcessoPage.tsx` chamada **"Saúde por Escola"** (mantém tudo num lugar só, evita criar página nova). Seletor de escolinha no topo + cards:
 
-Escopo: apenas mensalidades nesta entrega (que é o exemplo do usuário). Matrícula/amistoso/campeonato/loja podem ser estendidos depois.
+**Card 1 — Acessos (últimos 30 dias)**
+- Total de logins por role (admin, sócio, responsáveis, professores)
+- Lista dos responsáveis/professores **que nunca acessaram** (já existe `get_school_parent_access_analytics`; reaproveitar)
+- Último acesso de cada admin/sócio da escola
 
-### 3. UI de configuração
+**Card 2 — Tentativas de login com falha**
+- Consulta via `supabase--analytics_query` em `auth_logs` filtrando `status >= 400` e `path = '/token'`, agrupando por email — mostra os últimos 7 dias.
+- Marca em vermelho emails que pertencem à escola selecionada (admin/sócio/responsáveis/professores).
+- Como `auth_logs` não é exposto via RLS, criar uma Edge Function `admin-auth-failures` (verify_jwt + check `has_role(auth.uid(),'admin')`) que executa a query analítica e devolve o resultado.
 
-Em `PushConfigSection.tsx`, adicionar nova seção (visível independente do `push_ativo` master, que hoje controla apenas lembretes para responsáveis):
+**Card 3 — Push notifications**
+- Para cada admin/sócio/responsável/professor da escola: quantas `push_subscriptions` ativas tem (0 = não recebe).
+- Últimos 10 envios em `push_notifications_log` com `entregue` true/false.
+- Estado dos toggles em `escola_push_config` (mensalidade / aniversário / comunicado / presença) — verde se ativo.
+- Botão **"Enviar push de teste"** que dispara um push para o admin/sócio selecionado (chama `send-push-notification` com uma mensagem fixa de teste).
 
-- Bloco "🔔 Notificações para o Administrador"
-- Switch "Receber push quando um pagamento de mensalidade for confirmado" (chave `pagamento_recebido_admin_push`, default `true`)
+**Card 4 — Cobranças**
+- Resumo do mês: mensalidades geradas vs. pagas vs. vencidas (consulta direta em `mensalidades` filtrando por `escolinha_id` e `mes_referencia` atual).
+- Cobranças com `asaas_payment_id IS NULL` em status `pendente` (indica falha na geração no Asaas) — lista os atletas afetados.
+- Status do `escola_cadastro_bancario` / subconta Asaas (já existe `get_escola_asaas_status`).
+- Últimas 5 entradas em `escola_asaas_admin_notifications` (erros já registrados).
 
-Incluir a chave no payload do `upsert` e no `getValue`.
+### 3. Verificação interna (após implementar)
 
-### 4. Garantir entrega
+- Rodar a query de orfãos para confirmar zero usuários ativos sem role.
+- Logar um teste manual para `bandeirantesfr@hotmail.com` na aba nova confirmando: 1 admin com 3 push subs, 1 sócio (Miguel) com 0 push subs, último login OK.
+- Conferir que `alessandrobarroso.imoveis@gmail.com` agora consegue avançar (após o backfill de role, se aplicável) ou aparece corretamente na lista "conta incompleta".
 
-- O componente `PushAutoSubscribe` já dispara o prompt nativo uma vez para `role === 'school'`, então admins que ainda não habilitaram serão solicitados na próxima visita.
-- Nada mais é necessário — assim que o admin aceitar o pop-up, o push chega em tempo real via webhook do Asaas.
+## Detalhes técnicos
 
-### Detalhes técnicos
-
-- Migração simples `ALTER TABLE public.escola_push_config ADD COLUMN pagamento_recebido_admin_push boolean NOT NULL DEFAULT true;`
-- A leitura no webhook usa `maybeSingle()` e default `true` se não houver linha.
-- Idempotência já é garantida pelo guard `if (mensalidade.status === 'pago') skip` antes do update — se o webhook chegar duplicado, não disparamos push duas vezes.
+- **Arquivos novos**: `src/components/admin/SaudeEscolaTab.tsx`, `supabase/functions/admin-auth-failures/index.ts`, hook `src/hooks/useSaudeEscolaData.ts`.
+- **Arquivos editados**: `src/contexts/AuthContext.tsx` (resiliência), `src/pages/dashboard/admin/DiagnosticoAcessoPage.tsx` (nova aba), `supabase/functions/handle_new_user` (não — vamos só rodar migration de backfill seletivo).
+- **Migration**: backfill de roles para usuários com vínculo em `responsaveis`/`professores`/`escolinhas`; nada destrutivo.
+- **Sem mudança visual** fora do admin — usuários finais só sentem o efeito do login mais resiliente.
