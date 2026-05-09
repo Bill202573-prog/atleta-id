@@ -8,9 +8,10 @@ import { useDiagnosticoData, DiagnosticoResult } from '@/hooks/useDiagnosticoDat
 import { supabase } from '@/integrations/supabase/client';
 import {
   RefreshCw, Copy, CheckCircle2, XCircle, Clock, User, Shield, Database,
-  AlertTriangle, Zap, HardDrive, Activity, Server, Users, ImageIcon, FileText,
+  AlertTriangle, Zap, HardDrive, Activity, Server, Users, ImageIcon, FileText, Heart,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SaudeEscolaTab } from '@/components/admin/SaudeEscolaTab';
 
 const StatusIcon = ({ status }: { status: DiagnosticoResult['status'] }) => {
   switch (status) {
