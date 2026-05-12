@@ -60,12 +60,13 @@ const ymNow = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-export function useSaudeEscolaData(escolinhaId: string | null) {
+export function useSaudeEscolaData(escolinhaId: string | null, mesReferencia?: string) {
   return useQuery({
-    queryKey: ['saude-escola', escolinhaId],
+    queryKey: ['saude-escola', escolinhaId, mesReferencia],
     enabled: !!escolinhaId,
     queryFn: async (): Promise<SaudeEscolaData | null> => {
       if (!escolinhaId) return null;
+      const ym = mesReferencia || ymNow();
 
       const { data: esc } = await supabase
         .from('escolinhas')
