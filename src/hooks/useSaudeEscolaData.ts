@@ -76,11 +76,12 @@ export function useSaudeEscolaData(escolinhaId: string | null, mesReferencia?: s
 
       if (!esc) return null;
 
-      // ---- Responsáveis & Professores ----
+      // ---- Responsáveis & Professores (somente atletas ATIVOS) ----
       const { data: respLinks } = await supabase
         .from('crianca_responsavel')
         .select('responsavel_id, criancas!inner(crianca_escolinha!inner(escolinha_id, ativo))')
-        .eq('criancas.crianca_escolinha.escolinha_id', escolinhaId);
+        .eq('criancas.crianca_escolinha.escolinha_id', escolinhaId)
+        .eq('criancas.crianca_escolinha.ativo', true);
       const respIds = Array.from(new Set((respLinks || []).map((r: any) => r.responsavel_id)));
 
       const { data: responsaveis } = respIds.length
