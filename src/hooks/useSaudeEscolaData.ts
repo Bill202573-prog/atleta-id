@@ -158,8 +158,7 @@ export function useSaudeEscolaData(escolinhaId: string | null, mesReferencia?: s
         .order('enviado_em', { ascending: false })
         .limit(10);
 
-      // ---- Cobranças ----
-      const ym = ymNow();
+      // ---- Cobranças (mês selecionado) ----
       const { data: mens } = await supabase
         .from('mensalidades')
         .select('id, status, asaas_payment_id, valor, data_vencimento, data_pagamento, crianca_id, criancas(nome)')
