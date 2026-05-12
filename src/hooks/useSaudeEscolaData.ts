@@ -171,42 +171,48 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
         .filter((m: any) => !m.asaas_payment_id && m.status === 'pendente')
         .map((m: any) => ({ crianca_nome: m.criancas?.nome || '?', valor: m.valor }));
 
-      // Cruzar responsável por criança
+      // Cruzar responsável (nome + user_id) por criança
       const criancaIds = Array.from(new Set((mens || []).map((m: any) => m.crianca_id).filter(Boolean)));
       const { data: respLinksMap } = criancaIds.length
         ? await supabase
             .from('crianca_responsavel')
-            .select('crianca_id, responsaveis(nome)')
+            .select('crianca_id, responsaveis(nome, user_id)')
             .in('crianca_id', criancaIds)
         : { data: [] as any[] };
-      const respPorCrianca = new Map<string, string>();
+      const respPorCrianca = new Map<string, { nome: string; user_id: string | null }>();
       (respLinksMap || []).forEach((l: any) => {
         if (!respPorCrianca.has(l.crianca_id) && l.responsaveis?.nome) {
-          respPorCrianca.set(l.crianca_id, l.responsaveis.nome);
+          respPorCrianca.set(l.crianca_id, { nome: l.responsaveis.nome, user_id: l.responsaveis.user_id || null });
         }
       });
 
-      // Push de cobrança enviado por criança (mês corrente)
+      // Push de cobrança enviado por user_id (mês corrente)
       const monthStart = new Date(`${ym}-01T00:00:00Z`).toISOString();
-      const { data: pushCobrancas } = await supabase
-        .from('push_notifications_log')
-        .select('crianca_id, tipo')
-        .eq('escolinha_id', escolinhaId)
-        .gte('enviado_em', monthStart)
-        .ilike('tipo', '%cobranca%');
-      const pushPorCrianca = new Set<string>((pushCobrancas || []).map((p: any) => p.crianca_id).filter(Boolean));
+      const respUserIds = Array.from(new Set(Array.from(respPorCrianca.values()).map(v => v.user_id).filter(Boolean))) as string[];
+      const { data: pushCobrancas } = respUserIds.length
+        ? await supabase
+            .from('push_notifications_log')
+            .select('user_id, tipo')
+            .in('user_id', respUserIds)
+            .gte('enviado_em', monthStart)
+            .ilike('tipo', '%cobranca%')
+        : { data: [] as any[] };
+      const pushPorUser = new Set<string>((pushCobrancas || []).map((p: any) => p.user_id).filter(Boolean));
 
-      const detalhes: CobrancaDetalhe[] = (mens || []).map((m: any) => ({
-        id: m.id,
-        crianca_nome: m.criancas?.nome || '?',
-        responsavel_nome: respPorCrianca.get(m.crianca_id) || null,
-        valor: m.valor,
-        status: m.status,
-        data_vencimento: m.data_vencimento,
-        data_pagamento: m.data_pagamento,
-        asaas_payment_id: m.asaas_payment_id,
-        push_enviado: pushPorCrianca.has(m.crianca_id),
-      }));
+      const detalhes: CobrancaDetalhe[] = (mens || []).map((m: any) => {
+        const resp = respPorCrianca.get(m.crianca_id);
+        return {
+          id: m.id,
+          crianca_nome: m.criancas?.nome || '?',
+          responsavel_nome: resp?.nome || null,
+          valor: m.valor,
+          status: m.status,
+          data_vencimento: m.data_vencimento,
+          data_pagamento: m.data_pagamento,
+          asaas_payment_id: m.asaas_payment_id,
+          push_enviado: !!(resp?.user_id && pushPorUser.has(resp.user_id)),
+        };
+      });
 
       const { data: asaasStatus } = await supabase.rpc('get_escola_asaas_status', { p_escolinha_id: escolinhaId });
 
