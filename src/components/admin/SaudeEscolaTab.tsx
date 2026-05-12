@@ -330,7 +330,19 @@ export function SaudeEscolaTab() {
           {/* COBRANÇAS */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4" /> Cobranças ({data.cobrancas.mes_referencia})</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4" /> Cobranças ({data.cobrancas.mes_referencia})</CardTitle>
+                <div className="w-full sm:w-56">
+                  <Select value={mesCobranca} onValueChange={setMesCobranca}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map(o => (
+                        <SelectItem key={o.value} value={o.value} className="text-xs capitalize">{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
