@@ -142,18 +142,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .limit(1)
             .maybeSingle();
 
-          const crianca = Array.isArray((vinculoEscola as any)?.criancas)
-            ? (vinculoEscola as any).criancas[0]
-            : (vinculoEscola as any)?.criancas;
-          const criancaEscola = Array.isArray(crianca?.crianca_escolinha)
-            ? crianca.crianca_escolinha[0]
-            : crianca?.crianca_escolinha;
-          const escola = Array.isArray(criancaEscola?.escolinhas)
-            ? criancaEscola.escolinhas[0]
-            : criancaEscola?.escolinhas;
+          const asRecord = (value: unknown): Record<string, unknown> | null =>
+            value && typeof value === 'object' ? value as Record<string, unknown> : null;
+          const firstOrValue = (value: unknown): unknown => Array.isArray(value) ? value[0] : value;
+          const crianca = asRecord(firstOrValue(asRecord(vinculoEscola)?.criancas));
+          const criancaEscola = asRecord(firstOrValue(crianca?.crianca_escolinha));
+          const escola = asRecord(firstOrValue(criancaEscola?.escolinhas));
 
-          escolinhaId = criancaEscola?.escolinha_id;
-          escolinhaNome = escola?.nome;
+          escolinhaId = typeof criancaEscola?.escolinha_id === 'string' ? criancaEscola.escolinha_id : undefined;
+          escolinhaNome = typeof escola?.nome === 'string' ? escola.nome : undefined;
         }
       }
 
@@ -394,7 +391,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('[AuthContext] changePassword: status', res.status);
 
-      let payload: any = null;
+      let payload: unknown = null;
       try {
         payload = await res.json();
         console.log('[AuthContext] changePassword: payload', payload);
@@ -404,7 +401,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!res.ok) {
-        const message = payload?.error || payload?.message || `Erro (${res.status}) ao alterar senha`;
+        const payloadRecord = payload && typeof payload === 'object' ? payload as Record<string, unknown> : null;
+        const message =
+          (typeof payloadRecord?.error === 'string' && payloadRecord.error) ||
+          (typeof payloadRecord?.message === 'string' && payloadRecord.message) ||
+          `Erro (${res.status}) ao alterar senha`;
         console.error('[AuthContext] changePassword: error', message);
         return { success: false, error: message };
       }
