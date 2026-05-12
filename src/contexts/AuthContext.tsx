@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const sessionRef = useRef<Session | null>(null);
   const fetchingRef = useRef(false);
+  const lastAccessLogRef = useRef<string | null>(null);
 
   // Mantém referência atualizada para comparar eventos de auth (ex: TOKEN_REFRESHED)
   useEffect(() => {
@@ -125,6 +126,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         escolinhaId = professorData?.escolinha_id;
       }
 
+      // Se for responsável, buscar a escolinha pelo vínculo do filho para registrar acesso por escola
+      if (roleData.role === 'guardian') {
+        const { data: responsavelData } = await supabase
+          .from('responsaveis')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (responsavelData?.id) {
+          const { data: vinculoEscola } = await supabase
+            .from('crianca_responsavel')
+            .select('criancas!inner(crianca_escolinha!inner(escolinha_id, escolinhas!inner(nome)))')
+            .eq('responsavel_id', responsavelData.id)
+            .limit(1)
+            .maybeSingle();
+
+          const asRecord = (value: unknown): Record<string, unknown> | null =>
+            value && typeof value === 'object' ? value as Record<string, unknown> : null;
+          const firstOrValue = (value: unknown): unknown => Array.isArray(value) ? value[0] : value;
+          const crianca = asRecord(firstOrValue(asRecord(vinculoEscola)?.criancas));
+          const criancaEscola = asRecord(firstOrValue(crianca?.crianca_escolinha));
+          const escola = asRecord(firstOrValue(criancaEscola?.escolinhas));
+
+          escolinhaId = typeof criancaEscola?.escolinha_id === 'string' ? criancaEscola.escolinha_id : undefined;
+          escolinhaNome = typeof escola?.nome === 'string' ? escola.nome : undefined;
+        }
+      }
+
       console.log('[AuthContext] fetchUserData success:', roleData.role, profileData.nome);
 
       return {
@@ -141,6 +170,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[AuthContext] fetchUserData error:', error);
       return null;
     }
+  };
+
+  const hydrateAuthenticatedUser = async (
+    nextSession: Session,
+    source: 'SIGNED_IN' | 'INITIAL_SESSION' | 'USER_UPDATED' | 'MANUAL_LOGIN'
+  ) => {
+    setSession(nextSession);
+    sessionRef.current = nextSession;
+    setIsLoading(true);
+    fetchingRef.current = true;
+
+    const userData = await fetchUserData(nextSession.user.id);
+    setUser(userData);
+
+    if ((source === 'SIGNED_IN' || source === 'MANUAL_LOGIN') && userData) {
+      const logKey = `${nextSession.user.id}:${Math.floor(Date.now() / 10000)}`;
+      if (lastAccessLogRef.current !== logKey) {
+        lastAccessLogRef.current = logKey;
+        registrarAcesso(nextSession.user.id, userData.role || 'unknown', userData.escolinhaId || null).catch(() => {});
+      }
+    }
+
+    setIsLoading(false);
+    fetchingRef.current = false;
+    return userData;
   };
 
   const refreshUser = async () => {
@@ -197,23 +251,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Para SIGNED_IN / INITIAL_SESSION / USER_UPDATED, atualiza dados do usuário
         console.log('[AuthContext] Setting isLoading=true, fetching user data...');
-        setIsLoading(true);
-        fetchingRef.current = true;
-
-        fetchUserData(nextSession.user.id)
-          .then((userData) => {
-            console.log('[AuthContext] onAuthStateChange fetchUserData result:', userData?.role);
-            setUser(userData);
-
-            // Fire-and-forget: registra acesso apenas em novo login
-            if (event === 'SIGNED_IN' && userData) {
-              registrarAcesso(nextSession.user.id, userData.role, userData.escolinhaId || null).catch(() => {});
-            }
-          })
-          .finally(() => {
-            setIsLoading(false);
-            fetchingRef.current = false;
-          });
+        setTimeout(() => {
+          hydrateAuthenticatedUser(nextSession, event === 'USER_UPDATED' ? 'USER_UPDATED' : event === 'INITIAL_SESSION' ? 'INITIAL_SESSION' : 'SIGNED_IN')
+            .then((userData) => console.log('[AuthContext] onAuthStateChange hydrate result:', userData?.role))
+            .catch((error) => {
+              console.error('[AuthContext] onAuthStateChange hydrate error:', error);
+              setIsLoading(false);
+              fetchingRef.current = false;
+            });
+        }, 0);
       }
     );
 
@@ -236,13 +282,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('[AuthContext] getSession: already fetching from onAuthStateChange, skipping');
           return;
         }
-        setIsLoading(true);
-        fetchingRef.current = true;
-        fetchUserData(session.user.id).then(userData => {
-          console.log('[AuthContext] getSession fetchUserData result:', userData?.role);
-          setUser(userData);
-          setIsLoading(false);
-          fetchingRef.current = false;
+        hydrateAuthenticatedUser(session, 'INITIAL_SESSION').then(userData => {
+          console.log('[AuthContext] getSession hydrate result:', userData?.role);
         }).catch(() => {
           setIsLoading(false);
           fetchingRef.current = false;
@@ -287,8 +328,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: error.message };
       }
 
-      // O carregamento do perfil é tratado pelo onAuthStateChange
-      // para evitar corridas entre login(), listener e redirecionamento.
+      if (data.session) {
+        await hydrateAuthenticatedUser(data.session, 'MANUAL_LOGIN');
+      }
 
       return { success: true };
     } catch (error) {
@@ -349,7 +391,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('[AuthContext] changePassword: status', res.status);
 
-      let payload: any = null;
+      let payload: unknown = null;
       try {
         payload = await res.json();
         console.log('[AuthContext] changePassword: payload', payload);
@@ -359,7 +401,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!res.ok) {
-        const message = payload?.error || payload?.message || `Erro (${res.status}) ao alterar senha`;
+        const payloadRecord = payload && typeof payload === 'object' ? payload as Record<string, unknown> : null;
+        const message =
+          (typeof payloadRecord?.error === 'string' && payloadRecord.error) ||
+          (typeof payloadRecord?.message === 'string' && payloadRecord.message) ||
+          `Erro (${res.status}) ao alterar senha`;
         console.error('[AuthContext] changePassword: error', message);
         return { success: false, error: message };
       }
