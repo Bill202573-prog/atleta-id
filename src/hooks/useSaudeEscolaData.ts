@@ -1,6 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface LoginAttemptRow {
+  id: string;
+  email: string;
+  user_id: string | null;
+  user_role: string | null;
+  success: boolean;
+  failure_reason: string | null;
+  error_message: string | null;
+  ip: string | null;
+  attempted_at: string;
+}
+
+export interface CobrancaDetalhe {
+  id: string;
+  crianca_nome: string;
+  responsavel_nome: string | null;
+  valor: number;
+  status: string;
+  data_vencimento: string | null;
+  data_pagamento: string | null;
+  asaas_payment_id: string | null;
+  push_enviado: boolean;
+}
+
 export interface SaudeEscolaData {
   escolinha: { id: string; nome: string; admin_user_id: string | null; socio_user_id: string | null };
   acessos: {
@@ -14,8 +38,8 @@ export interface SaudeEscolaData {
     config: any;
     admin_subs: number;
     socio_subs: number;
-    responsaveis_sem_sub: { id: string; nome: string }[];
-    professores_sem_sub: { id: string; nome: string }[];
+    responsaveis_sem_sub: { id: string; nome: string; user_id: string | null; motivo: string }[];
+    professores_sem_sub: { id: string; nome: string; user_id: string | null; motivo: string }[];
     ultimos_envios: { titulo: string; tipo: string; entregue: boolean | null; enviado_em: string }[];
   };
   cobrancas: {
@@ -26,7 +50,9 @@ export interface SaudeEscolaData {
     sem_payment_id: { crianca_nome: string; valor: number }[];
     asaas_status: any;
     erros_recentes: { tipo: string; mensagem: string; created_at: string }[];
+    detalhes: CobrancaDetalhe[];
   };
+  login_attempts: LoginAttemptRow[];
 }
 
 const ymNow = () => {
