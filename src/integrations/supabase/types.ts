@@ -2209,6 +2209,48 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          email: string
+          error_message: string | null
+          escolinha_id: string | null
+          failure_reason: string | null
+          id: string
+          ip: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          email: string
+          error_message?: string | null
+          escolinha_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip?: string | null
+          success: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          email?: string
+          error_message?: string | null
+          escolinha_id?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       mensalidades: {
         Row: {
           asaas_payment_id: string | null

@@ -312,6 +312,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    const logAttempt = (success: boolean, error_message?: string | null) => {
+      supabase.functions.invoke('log-login-attempt', {
+        body: { email, success, error_message: error_message || null },
+      }).catch(() => {});
+    };
+
     try {
       // Clear all cached queries before login to ensure fresh data
       queryClient.clear();
@@ -322,6 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
+        logAttempt(false, error.message);
         if (error.message.includes('Invalid login credentials')) {
           return { success: false, error: 'Email ou senha incorretos' };
         }
@@ -329,11 +336,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.session) {
+        logAttempt(true);
         await hydrateAuthenticatedUser(data.session, 'MANUAL_LOGIN');
       }
 
       return { success: true };
     } catch (error) {
+      logAttempt(false, (error as Error)?.message || 'Erro ao fazer login');
       return { success: false, error: 'Erro ao fazer login' };
     }
   };

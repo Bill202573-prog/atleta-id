@@ -34,8 +34,8 @@ export function PushAutoSubscribe() {
 
     if (permission === 'denied') return;
 
-    // permission === 'default' → only school admins get an automatic one-shot prompt.
-    if (user.role !== 'school') return;
+    // permission === 'default' → pedir automaticamente para school admins, responsáveis e professores.
+    if (user.role !== 'school' && user.role !== 'guardian' && user.role !== 'teacher') return;
 
     const promptedKey = getPromptedKey(user.id);
     if (localStorage.getItem(promptedKey) === 'true') return;

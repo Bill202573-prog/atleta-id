@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.passkey-login-verify]
 verify_jwt = false
+
+[functions.log-login-attempt]
+verify_jwt = false

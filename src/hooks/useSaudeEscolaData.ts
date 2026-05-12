@@ -1,6 +1,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface LoginAttemptRow {
+  id: string;
+  email: string;
+  user_id: string | null;
+  user_role: string | null;
+  success: boolean;
+  failure_reason: string | null;
+  error_message: string | null;
+  ip: string | null;
+  attempted_at: string;
+}
+
+export interface CobrancaDetalhe {
+  id: string;
+  crianca_nome: string;
+  responsavel_nome: string | null;
+  valor: number;
+  status: string;
+  data_vencimento: string | null;
+  data_pagamento: string | null;
+  asaas_payment_id: string | null;
+  push_enviado: boolean;
+}
+
 export interface SaudeEscolaData {
   escolinha: { id: string; nome: string; admin_user_id: string | null; socio_user_id: string | null };
   acessos: {
@@ -14,8 +38,8 @@ export interface SaudeEscolaData {
     config: any;
     admin_subs: number;
     socio_subs: number;
-    responsaveis_sem_sub: { id: string; nome: string }[];
-    professores_sem_sub: { id: string; nome: string }[];
+    responsaveis_sem_sub: { id: string; nome: string; user_id: string | null; motivo: string }[];
+    professores_sem_sub: { id: string; nome: string; user_id: string | null; motivo: string }[];
     ultimos_envios: { titulo: string; tipo: string; entregue: boolean | null; enviado_em: string }[];
   };
   cobrancas: {
@@ -26,7 +50,9 @@ export interface SaudeEscolaData {
     sem_payment_id: { crianca_nome: string; valor: number }[];
     asaas_status: any;
     erros_recentes: { tipo: string; mensagem: string; created_at: string }[];
+    detalhes: CobrancaDetalhe[];
   };
+  login_attempts: LoginAttemptRow[];
 }
 
 const ymNow = () => {
@@ -103,12 +129,19 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
       const subsByUser = new Map<string, number>();
       (subs || []).forEach((s: any) => subsByUser.set(s.user_id, (subsByUser.get(s.user_id) || 0) + 1));
 
+      // Razão provável de não ter push: nunca acessou > permissão (não temos como saber sem signal do client) > sem app
+      const inferMotivo = (userId: string | null) => {
+        if (!userId) return 'sem_conta';
+        if (!userIdsComAcesso.has(userId)) return 'nunca_acessou';
+        return 'permissao_pendente';
+      };
+
       const responsaveis_sem_sub = (responsaveis || [])
         .filter((r: any) => r.user_id && !subsByUser.has(r.user_id))
-        .map((r: any) => ({ id: r.id, nome: r.nome }));
+        .map((r: any) => ({ id: r.id, nome: r.nome, user_id: r.user_id, motivo: inferMotivo(r.user_id) }));
       const professores_sem_sub = (professores || [])
         .filter((p: any) => p.user_id && !subsByUser.has(p.user_id))
-        .map((p: any) => ({ id: p.id, nome: p.nome }));
+        .map((p: any) => ({ id: p.id, nome: p.nome, user_id: p.user_id, motivo: inferMotivo(p.user_id) }));
 
       const { data: pushConfig } = await supabase
         .from('escola_push_config')
@@ -127,7 +160,7 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
       const ym = ymNow();
       const { data: mens } = await supabase
         .from('mensalidades')
-        .select('id, status, asaas_payment_id, valor, criancas(nome)')
+        .select('id, status, asaas_payment_id, valor, data_vencimento, data_pagamento, crianca_id, criancas(nome)')
         .eq('escolinha_id', escolinhaId)
         .eq('mes_referencia', ym);
 
@@ -138,6 +171,49 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
         .filter((m: any) => !m.asaas_payment_id && m.status === 'pendente')
         .map((m: any) => ({ crianca_nome: m.criancas?.nome || '?', valor: m.valor }));
 
+      // Cruzar responsável (nome + user_id) por criança
+      const criancaIds = Array.from(new Set((mens || []).map((m: any) => m.crianca_id).filter(Boolean)));
+      const { data: respLinksMap } = criancaIds.length
+        ? await supabase
+            .from('crianca_responsavel')
+            .select('crianca_id, responsaveis(nome, user_id)')
+            .in('crianca_id', criancaIds)
+        : { data: [] as any[] };
+      const respPorCrianca = new Map<string, { nome: string; user_id: string | null }>();
+      (respLinksMap || []).forEach((l: any) => {
+        if (!respPorCrianca.has(l.crianca_id) && l.responsaveis?.nome) {
+          respPorCrianca.set(l.crianca_id, { nome: l.responsaveis.nome, user_id: l.responsaveis.user_id || null });
+        }
+      });
+
+      // Push de cobrança enviado por user_id (mês corrente)
+      const monthStart = new Date(`${ym}-01T00:00:00Z`).toISOString();
+      const respUserIds = Array.from(new Set(Array.from(respPorCrianca.values()).map(v => v.user_id).filter(Boolean))) as string[];
+      const { data: pushCobrancas } = respUserIds.length
+        ? await supabase
+            .from('push_notifications_log')
+            .select('user_id, tipo')
+            .in('user_id', respUserIds)
+            .gte('enviado_em', monthStart)
+            .ilike('tipo', '%cobranca%')
+        : { data: [] as any[] };
+      const pushPorUser = new Set<string>((pushCobrancas || []).map((p: any) => p.user_id).filter(Boolean));
+
+      const detalhes: CobrancaDetalhe[] = (mens || []).map((m: any) => {
+        const resp = respPorCrianca.get(m.crianca_id);
+        return {
+          id: m.id,
+          crianca_nome: m.criancas?.nome || '?',
+          responsavel_nome: resp?.nome || null,
+          valor: m.valor,
+          status: m.status,
+          data_vencimento: m.data_vencimento,
+          data_pagamento: m.data_pagamento,
+          asaas_payment_id: m.asaas_payment_id,
+          push_enviado: !!(resp?.user_id && pushPorUser.has(resp.user_id)),
+        };
+      });
+
       const { data: asaasStatus } = await supabase.rpc('get_escola_asaas_status', { p_escolinha_id: escolinhaId });
 
       const { data: errosRecentes } = await supabase
@@ -146,6 +222,15 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
         .eq('escolinha_id', escolinhaId)
         .order('created_at', { ascending: false })
         .limit(5);
+
+      // ---- Login attempts (últimos 30d) ----
+      const { data: loginAttempts } = await supabase
+        .from('login_attempts')
+        .select('id, email, user_id, user_role, success, failure_reason, error_message, ip, attempted_at')
+        .eq('escolinha_id', escolinhaId)
+        .gte('attempted_at', since)
+        .order('attempted_at', { ascending: false })
+        .limit(200);
 
       return {
         escolinha: esc as any,
@@ -172,7 +257,9 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
           sem_payment_id,
           asaas_status: asaasStatus?.[0] || null,
           erros_recentes: (errosRecentes || []) as any,
+          detalhes,
         },
+        login_attempts: (loginAttempts || []) as any,
       };
     },
   });
