@@ -60,12 +60,13 @@ const ymNow = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-export function useSaudeEscolaData(escolinhaId: string | null) {
+export function useSaudeEscolaData(escolinhaId: string | null, mesReferencia?: string) {
   return useQuery({
-    queryKey: ['saude-escola', escolinhaId],
+    queryKey: ['saude-escola', escolinhaId, mesReferencia],
     enabled: !!escolinhaId,
     queryFn: async (): Promise<SaudeEscolaData | null> => {
       if (!escolinhaId) return null;
+      const ym = mesReferencia || ymNow();
 
       const { data: esc } = await supabase
         .from('escolinhas')
@@ -75,11 +76,12 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
 
       if (!esc) return null;
 
-      // ---- Responsáveis & Professores ----
+      // ---- Responsáveis & Professores (somente atletas ATIVOS) ----
       const { data: respLinks } = await supabase
         .from('crianca_responsavel')
         .select('responsavel_id, criancas!inner(crianca_escolinha!inner(escolinha_id, ativo))')
-        .eq('criancas.crianca_escolinha.escolinha_id', escolinhaId);
+        .eq('criancas.crianca_escolinha.escolinha_id', escolinhaId)
+        .eq('criancas.crianca_escolinha.ativo', true);
       const respIds = Array.from(new Set((respLinks || []).map((r: any) => r.responsavel_id)));
 
       const { data: responsaveis } = respIds.length
@@ -156,8 +158,7 @@ export function useSaudeEscolaData(escolinhaId: string | null) {
         .order('enviado_em', { ascending: false })
         .limit(10);
 
-      // ---- Cobranças ----
-      const ym = ymNow();
+      // ---- Cobranças (mês selecionado) ----
       const { data: mens } = await supabase
         .from('mensalidades')
         .select('id, status, asaas_payment_id, valor, data_vencimento, data_pagamento, crianca_id, criancas(nome)')

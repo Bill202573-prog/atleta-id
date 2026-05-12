@@ -37,13 +37,31 @@ const STATUS_COBRANCA: Record<string, { label: string; classes: string }> = {
   cancelado: { label: 'Cancelado', classes: 'bg-muted text-muted-foreground' },
 };
 
+const ymNow = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const monthOptions = (() => {
+  const opts: { value: string; label: string }[] = [];
+  const now = new Date();
+  for (let i = 0; i < 18; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    opts.push({ value, label });
+  }
+  return opts;
+})();
+
 export function SaudeEscolaTab() {
   const { data: escolinhas } = useEscolinhasList();
   const [escolinhaId, setEscolinhaId] = useState<string | null>(null);
   const [sendingTest, setSendingTest] = useState<string | null>(null);
   const [loginFilter, setLoginFilter] = useState<'all' | 'success' | 'fail'>('all');
+  const [mesCobranca, setMesCobranca] = useState<string>(ymNow());
 
-  const { data, isLoading, refetch } = useSaudeEscolaData(escolinhaId);
+  const { data, isLoading, refetch } = useSaudeEscolaData(escolinhaId, mesCobranca);
 
   const sendTestPush = async (userId: string, label: string) => {
     setSendingTest(userId);
@@ -312,7 +330,19 @@ export function SaudeEscolaTab() {
           {/* COBRANÇAS */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4" /> Cobranças ({data.cobrancas.mes_referencia})</CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <CardTitle className="text-base flex items-center gap-2"><DollarSign className="w-4 h-4" /> Cobranças ({data.cobrancas.mes_referencia})</CardTitle>
+                <div className="w-full sm:w-56">
+                  <Select value={mesCobranca} onValueChange={setMesCobranca}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map(o => (
+                        <SelectItem key={o.value} value={o.value} className="text-xs capitalize">{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
