@@ -41,21 +41,18 @@ const GuardianInicioPage = () => {
       {/* Enrollment Payment Popup - shows when there's a pending enrollment */}
       <EnrollmentPaymentPopup onPaymentComplete={() => refetch()} />
       
-      <div className="p-4 space-y-4 animate-fade-in">
+      <div className="p-4 space-y-3 animate-fade-in">
         {/* PWA Install Banner */}
         <PwaInstallBanner />
 
-        
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Olá!</h1>
-          <p className="text-muted-foreground">
-            Acompanhe os avisos da escola
-          </p>
+          <h1 className="text-base font-semibold text-foreground leading-tight">Olá!</h1>
+          <p className="text-xs text-muted-foreground">Acompanhe os avisos da escola</p>
         </div>
 
         {hasChildren ? (
           isConsolidatedView ? (
-            <MuralConsolidado 
+            <MuralConsolidado
               children={children.map(c => ({
                 id: c.id,
                 nome: c.nome,
@@ -77,7 +74,8 @@ const GuardianInicioPage = () => {
           </Card>
         )}
 
-        {hasChildren && <BannersCarrossel />}
+        {hasChildren && <BannersCarrossel posicao="topo" />}
+        {hasChildren && <BannersCarrossel posicao="produtos" />}
       </div>
     </MobileGuardianLayout>
   );
