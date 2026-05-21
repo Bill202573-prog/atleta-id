@@ -12,6 +12,7 @@ import { MobileGuardianLayout } from '@/components/layout/MobileGuardianLayout';
 import MuralAvisosEscolaInicio from '@/components/guardian/MuralAvisosEscolaInicio';
 import MuralConsolidado from '@/components/guardian/MuralConsolidado';
 import EnrollmentPaymentPopup from '@/components/guardian/EnrollmentPaymentPopup';
+import BannersCarrossel from '@/components/guardian/BannersCarrossel';
 
 import PwaInstallBanner from '@/components/shared/PwaInstallBanner';
 
@@ -75,6 +76,8 @@ const GuardianInicioPage = () => {
             </CardContent>
           </Card>
         )}
+
+        {hasChildren && <BannersCarrossel />}
       </div>
     </MobileGuardianLayout>
   );
