@@ -1,87 +1,64 @@
-# Plano: Logs de Login, Fluxo de Cobrança e Push por Padrão
+# Cobrança PIX vencida — solução com juros e multa via Asaas
 
-## 1. Por que o painel "tentativas com falha" está vazio hoje
+## Como funciona hoje no Asaas (validado contra a API)
 
-A edge function `admin-auth-failures` tenta consultar a Management API da Supabase usando o `SUPABASE_SERVICE_ROLE_KEY` como bearer — ela exige um Personal Access Token (PAT) real. A chamada falha silenciosamente e cai no fallback que retorna `{ failures: [] }`, daí "Nenhuma tentativa registrada".
+- Quando geramos a cobrança em `POST /v3/payments` com `billingType: 'PIX'`, o Asaas devolve um QR Code dinâmico associado àquele `payment_id`.
+- O QR Code PIX tem um campo `expirationDate`. Por padrão, ele expira **no fim do dia da data de vencimento** (`dueDate` 23:59).
+- Depois disso, **o QR Code antigo deixa de ser pago**, e é por isso que o pai recebe erro ao tentar pagar fora do prazo. O `payment` continua existindo no Asaas com status `OVERDUE`, mas sem PIX válido.
+- A API permite **gerar um novo QR Code para o mesmo payment** chamando `GET /v3/payments/{id}/pixQrCode` novamente — o Asaas retorna um QR com nova `expirationDate` e o valor atualizado (incluindo juros e multa configurados).
+- O Asaas calcula automaticamente **multa (`fine`)** e **juros (`interest`)** desde que sejam enviados no momento da criação do payment. Não precisamos calcular nada no nosso código.
 
-Solução: parar de depender da Management API e passar a **registrar nós mesmos cada tentativa** (sucesso e falha), com motivo, no banco. Assim conseguimos ver tudo, por escola, por usuário, com timeline.
+## Conclusão
 
-## 2. O que vou construir
+Não dá para "reaproveitar" o QR Code velho — ele realmente expira. Mas dá para reaproveitar a **mesma cobrança** (mesmo `asaas_payment_id`), gerando um novo QR sob demanda e cobrando juros + multa automaticamente.
 
-### A. Tabela `login_attempts`
-Campos: `email`, `user_id` (quando identificável), `escolinha_id` (quando identificável), `success` (bool), `failure_reason` (texto: "senha_incorreta", "usuario_inexistente", "email_nao_confirmado", "rate_limited", "outro"), `error_message` (texto bruto), `ip`, `user_agent`, `attempted_at`.
+## Solução proposta (prática e definitiva)
 
-RLS: somente `admin` pode ler. Inserção feita por edge function com service role.
+### 1. Configurar juros e multa por escola (uma vez)
+Adicionar dois campos na tabela `escola_cadastro_bancario`:
+- `multa_percentual` (default `2.00` — 2% sobre o valor após vencimento)
+- `juros_mes_percentual` (default `1.00` — 1% ao mês, Asaas calcula pro-rata por dia)
 
-### B. Edge function `log-login-attempt` (pública, `verify_jwt = false`)
-Recebe `{ email, success, error_message }` do `Auth.tsx`. Resolve `user_id` e `escolinha_id` a partir do email (via `auth.users` + `responsaveis` / `professores` / `escolinhas`). Classifica `failure_reason` a partir da mensagem do Supabase ("Invalid login credentials" → senha_incorreta, "Email not confirmed" → email_nao_confirmado, etc).
+Tela: card "Configurações de cobrança" no painel financeiro da escola, com os dois campos editáveis e textos explicativos ("padrão de mercado: 2% multa + 1% ao mês").
 
-### C. Instrumentar `AuthContext.login` e `Auth.tsx`
-Após `signInWithPassword`, chamar `log-login-attempt` com sucesso/falha e a mensagem original. Também registrar quando o usuário entra mas fica sem `role` (caso já corrigido) como `success=true, failure_reason='sem_role'`.
+### 2. Enviar juros e multa ao Asaas ao gerar a cobrança
+Na função `generate-mensalidade-pix` (e nas equivalentes de matrícula/amistoso/campeonato), incluir no payload:
 
-### D. Reformular o card "Tentativas de login" no `SaudeEscolaTab`
-- Trocar a chamada `admin-auth-failures` por uma query direta a `login_attempts` filtrada por `escolinha_id` (últimos 30 dias).
-- Mostrar três blocos: **Sucessos**, **Falhas com motivo**, **Emails desconhecidos** (tentativas com email que não bate com nenhum usuário da escola).
-- Para cada linha: data, email, motivo (badge colorido), mensagem original, IP.
-- Filtro rápido: só falhas / só sucessos / todos.
-- Manter o card de "Acessos (30 dias)" que já existe (vem de `acessos_log`, é só logins com sucesso autenticado).
+```text
+fine:     { value: multa_percentual,    type: 'PERCENTAGE' }
+interest: { value: juros_mes_percentual, type: 'PERCENTAGE' }
+```
 
-### E. Aposentar/limpar `admin-auth-failures`
-Reescrever para apenas ler `login_attempts` (mantendo o nome para não quebrar nada) ou remover a invocação e ler do client direto. Vou pelo caminho de ler do client direto (mais simples e em tempo real).
+A partir daí o Asaas aplica multa + juros automaticamente em qualquer pagamento feito após o vencimento.
 
-## 3. Fluxo de cobrança — quem recebeu, quem pagou, quem não pagou
+### 3. Regerar QR Code expirado automaticamente
+Atualizar `generate-mensalidade-pix` para o caso de a mensalidade já ter `asaas_payment_id`:
+- Buscar o payment no Asaas (`GET /payments/{id}`).
+- Se status for `PENDING` ou `OVERDUE`: chamar `GET /payments/{id}/pixQrCode` para obter um QR Code novo e válido, com o valor já atualizado (principal + multa + juros).
+- Devolver para o front exatamente como hoje (mesmo formato de resposta).
+- Só criar uma cobrança nova no Asaas se o payment original tiver sido cancelado.
 
-O card "Cobranças" hoje só mostra contadores. Vou expandir, sem mexer em lógica de geração:
+Isso resolve o erro que o pai vê hoje ao tentar pagar atrasado: o app simplesmente gera um QR novo com o valor corrigido.
 
-### Novo card "Detalhe de Cobranças do Mês" no `SaudeEscolaTab`
-Lendo `mensalidades` + `criancas` + `crianca_responsavel` + `responsaveis` para o `escolinha_id` e `mes_referencia` atual:
+### 4. Baixa automática de pagamentos atrasados
+O webhook `asaas-webhook-handler` já existe. Garantir que ele trata os eventos `PAYMENT_RECEIVED` e `PAYMENT_CONFIRMED` mesmo para pagamentos vencidos, marcando a mensalidade como paga e gravando o valor efetivamente recebido (com juros/multa) num campo `valor_pago` — assim a baixa manual deixa de ser necessária.
 
-- **Pagas**: lista de criança → responsável → data de pagamento → valor.
-- **Pendentes (em dia)**: cobrança gerada no Asaas, ainda no prazo. Mostrar vencimento e link Asaas se houver.
-- **Vencidas**: dias de atraso por aluno.
-- **Sem cobrança gerada**: alunos ativos do mês sem mensalidade (gap de geração).
-- **Falha Asaas**: mensalidade existe mas `asaas_payment_id` nulo (já temos, só amplio com botão "Reprocessar" que invoca a função existente de geração).
-- **Push de cobrança enviado?**: cruzar com `push_notifications_log` (tipo cobrança) para ver se o responsável recebeu lembrete.
+### 5. UI do responsável
+No diálogo de pagamento (`MensalidadePixCheckoutDialog`), quando o valor retornado for maior que o valor original da mensalidade, mostrar uma linha discreta:
+- "Valor original: R$ X,XX"
+- "Multa + juros por atraso: R$ Y,YY"
+- "Total a pagar: R$ Z,ZZ"
 
-Tudo agrupado em `<Collapsible>` para não poluir e exportável em CSV (botão simples no card).
+Sem bloquear, sem fricção — o pai abre, vê o QR atualizado e paga.
 
-## 4. Por que tantos responsáveis aparecem "sem push" e como resolver
+## Detalhes técnicos
 
-### Diagnóstico (varredura)
-`PushAutoSubscribe.tsx` hoje **NÃO pede permissão para responsáveis** — só para `role === 'school'`. Para guardian, ele só registra a subscription se a permissão já estiver `granted` no navegador. Como a maioria dos pais nunca recebeu o pop-up, `Notification.permission` continua `default` e nenhum dispositivo é registrado → daí os 38 "Responsáveis sem push".
+- Migração: adicionar `multa_percentual numeric(5,2) default 2.00` e `juros_mes_percentual numeric(5,2) default 1.00` em `escola_cadastro_bancario`. Backfill nas escolas existentes com os defaults.
+- `generate-mensalidade-pix`: refatorar para o fluxo "buscar payment existente → regerar QR" antes do fluxo "criar payment novo". Aplicar a mesma lógica em `generate-enrollment-pix`, `generate-amistoso-pix`, `generate-campeonato-pix`, `generate-pedido-pix`.
+- `check-mensalidade-payment` e `asaas-webhook-handler`: aceitar `value` recebido do Asaas (com juros/multa) e salvar em `mensalidades.valor_pago` (criar coluna se não existir).
+- Painel "Saúde Escola" (cobrança): exibir `valor_pago` quando diferente do `valor` original.
 
-Outros motivos secundários que vou checar e exibir no painel:
-- iOS Safari < 16.4 não suporta Web Push (alguns pais entram pelo browser, não pelo PWA instalado).
-- PWA não instalado em iOS (no iOS o push só funciona dentro do PWA instalado na tela inicial).
-- `isOptedOut` (usuário desligou explicitamente).
-- Permissão `denied` no navegador (precisa o próprio usuário reverter — não dá pra forçar).
+## Fora do escopo deste plano
 
-### Solução proposta (push "ligado por padrão")
-1. **Estender `PushAutoSubscribe` para responsáveis e professores também**: na primeira sessão após esta release, dispara `Notification.requestPermission()` automaticamente (mesma lógica de "pedir uma vez, gravar flag em localStorage, nunca mais incomodar"). Funciona em Android/Chrome/Edge/Firefox e em iOS quando o app está como PWA instalado.
-2. **Banner persistente** quando permission for `default` (não `denied`): pequeno aviso amarelo no topo do dashboard do responsável dizendo "Ative as notificações para receber avisos da escola" com botão CTA. Some quando virar `granted`.
-3. **Para iOS sem PWA instalado**: mostrar instrução de "Instalar o app" usando o `PwaInstallBanner` que já existe, com texto explicando que sem instalar não rola push no iOS.
-4. **No painel admin**, ao lado de cada responsável "sem push", mostrar a razão provável quando puder ser inferida: `permissão negada` (se temos registro), `nunca abriu o app` (cruzar com `acessos_log`), `iOS sem PWA` (heurística pelo último user-agent registrado em `acessos_log`).
-
-Importante: notificação no navegador exige consentimento do usuário pelas regras do W3C/Apple/Google — não dá para tecnicamente "ligar sem perguntar". O que conseguimos é **perguntar automaticamente para todos** (não só admins) e tornar o caminho de aceitar bem mais visível.
-
-## 5. Arquivos afetados
-
-**Migração nova**
-- `login_attempts` (tabela + RLS admin-only + índice em `escolinha_id, attempted_at`).
-
-**Edge functions**
-- Nova: `supabase/functions/log-login-attempt/index.ts` (`verify_jwt = false`).
-- Reescrita: `supabase/functions/admin-auth-failures/index.ts` → lê de `login_attempts` (ou removida se ler direto do client).
-
-**Frontend**
-- `src/contexts/AuthContext.tsx`: instrumenta `login()` para logar tentativa.
-- `src/pages/Auth.tsx`: loga falhas capturadas localmente.
-- `src/hooks/useSaudeEscolaData.ts`: adiciona blocos `loginAttempts` e `cobrancasDetalhadas`.
-- `src/components/admin/SaudeEscolaTab.tsx`: novos cards (Tentativas de login com motivos, Detalhe de Cobranças, razão provável de "sem push").
-- `src/components/guardian/PushAutoSubscribe.tsx`: estende auto-prompt para `guardian` e `teacher`.
-- Novo: banner "Ative notificações" no layout do guardian quando `Notification.permission === 'default'`.
-
-## 6. O que NÃO vou fazer
-- Não vou tocar na lógica de geração de cobrança nem no envio de push em si — só observabilidade e UI.
-- Não vou criar tela nova; tudo entra no `DiagnosticoAcessoPage` na aba "Saúde Escola" já existente.
-- Não vou mudar o `acessos_log` (logins com sucesso já estão lá).
+- Não vamos calcular juros/multa no nosso código — quem calcula é o Asaas.
+- Não vamos mudar o fluxo de geração inicial da cobrança nem o cron de geração mensal.
