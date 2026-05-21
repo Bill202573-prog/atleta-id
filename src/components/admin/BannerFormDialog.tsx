@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Upload } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Upload, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { compressImage } from '@/lib/image-compressor';
-import { BannerComEscolas, useSaveBanner } from '@/hooks/useBannersData';
+import { BannerComEscolas, BannerPosicao, BannerSlide, useSaveBanner } from '@/hooks/useBannersData';
 
 interface Props {
   open: boolean;
@@ -19,19 +20,20 @@ interface Props {
   banner: BannerComEscolas | null;
 }
 
+const MAX_SLIDES = 5;
+
 export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
   const { user } = useAuth();
   const saveMutation = useSaveBanner();
   const [titulo, setTitulo] = useState('');
-  const [imagemUrl, setImagemUrl] = useState('');
-  const [linkUrl, setLinkUrl] = useState('');
-  const [abrirNovaAba, setAbrirNovaAba] = useState(true);
+  const [posicao, setPosicao] = useState<BannerPosicao>('topo');
+  const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [ordem, setOrdem] = useState(0);
   const [ativo, setAtivo] = useState(true);
   const [inicioEm, setInicioEm] = useState('');
   const [fimEm, setFimEm] = useState('');
   const [escolinhaIds, setEscolinhaIds] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   const { data: escolinhas = [] } = useQuery({
     queryKey: ['admin-escolinhas-list'],
@@ -48,9 +50,8 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
   useEffect(() => {
     if (open) {
       setTitulo(banner?.titulo ?? '');
-      setImagemUrl(banner?.imagem_url ?? '');
-      setLinkUrl(banner?.link_url ?? '');
-      setAbrirNovaAba(banner?.abrir_nova_aba ?? true);
+      setPosicao((banner?.posicao as BannerPosicao) ?? 'topo');
+      setSlides(banner?.slides?.length ? banner.slides : []);
       setOrdem(banner?.ordem ?? 0);
       setAtivo(banner?.ativo ?? true);
       setInicioEm(banner?.inicio_em ? banner.inicio_em.slice(0, 16) : '');
@@ -59,25 +60,46 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
     }
   }, [open, banner]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const addSlide = () => {
+    if (slides.length >= MAX_SLIDES) return;
+    setSlides([...slides, { imagem_url: '', link_url: '', abrir_nova_aba: true }]);
+  };
+
+  const removeSlide = (idx: number) => {
+    setSlides(slides.filter((_, i) => i !== idx));
+  };
+
+  const moveSlide = (idx: number, dir: -1 | 1) => {
+    const next = [...slides];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setSlides(next);
+  };
+
+  const updateSlide = (idx: number, patch: Partial<BannerSlide>) => {
+    setSlides(slides.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  };
+
+  const handleFileUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
-    setUploading(true);
+    setUploadingIdx(idx);
     try {
       const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 });
       const ext = compressed.name.split('.').pop() || 'jpg';
-      const path = `${user.id}/${Date.now()}.${ext}`;
+      const path = `${user.id}/${Date.now()}-${idx}.${ext}`;
       const { error } = await supabase.storage
         .from('banners-publicitarios')
         .upload(path, compressed, { upsert: false, contentType: compressed.type });
       if (error) throw error;
       const { data } = supabase.storage.from('banners-publicitarios').getPublicUrl(path);
-      setImagemUrl(data.publicUrl);
+      updateSlide(idx, { imagem_url: data.publicUrl });
       toast.success('Imagem enviada!');
     } catch (err: any) {
       toast.error(err.message || 'Erro no upload');
     } finally {
-      setUploading(false);
+      setUploadingIdx(null);
       e.target.value = '';
     }
   };
@@ -89,17 +111,21 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (!titulo.trim() || !imagemUrl || !linkUrl.trim()) {
-      toast.error('Preencha título, imagem e link');
+    if (!titulo.trim()) {
+      toast.error('Preencha o título');
+      return;
+    }
+    const validSlides = slides.filter((s) => s.imagem_url && s.link_url.trim());
+    if (validSlides.length === 0) {
+      toast.error('Adicione ao menos 1 slide com imagem e link');
       return;
     }
     try {
       await saveMutation.mutateAsync({
         id: banner?.id,
         titulo: titulo.trim(),
-        imagem_url: imagemUrl,
-        link_url: linkUrl.trim(),
-        abrir_nova_aba: abrirNovaAba,
+        posicao,
+        slides: validSlides,
         ordem,
         ativo,
         inicio_em: inicioEm ? new Date(inicioEm).toISOString() : null,
@@ -119,59 +145,105 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
         <DialogHeader>
           <DialogTitle>{banner ? 'Editar Banner' : 'Novo Banner'}</DialogTitle>
           <DialogDescription>
-            Recomendado: imagem 1200x675 (proporção 16:9), até 500KB. JPG ou PNG.
+            Cada banner aceita até {MAX_SLIDES} imagens (carrossel). Recomendado: 1200x675 (16:9), até 500KB. JPG, PNG ou WebP.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label>Título (interno)</Label>
-            <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex: Promoção Fluminense" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Título (interno)</Label>
+              <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex: Promoção Fluminense" />
+            </div>
+            <div className="space-y-2">
+              <Label>Posição na tela inicial</Label>
+              <Select value={posicao} onValueChange={(v) => setPosicao(v as BannerPosicao)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="topo">Topo (acima)</SelectItem>
+                  <SelectItem value="produtos">Produtos (abaixo)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Imagem</Label>
-            {imagemUrl && (
-              <img src={imagemUrl} alt="Preview" className="w-full aspect-video object-cover rounded border" />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Slides ({slides.length}/{MAX_SLIDES})</Label>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={addSlide}
+                disabled={slides.length >= MAX_SLIDES}
+              >
+                <Plus className="w-4 h-4 mr-1" /> Adicionar slide
+              </Button>
+            </div>
+
+            {slides.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4 border rounded">
+                Nenhum slide. Clique em "Adicionar slide".
+              </p>
             )}
-            <div>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileUpload}
-                disabled={uploading}
-                className="hidden"
-                id="banner-upload"
-              />
-              <Label htmlFor="banner-upload" className="cursor-pointer">
-                <Button type="button" variant="outline" disabled={uploading} asChild>
-                  <span>
-                    {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                    {imagemUrl ? 'Trocar imagem' : 'Enviar imagem'}
-                  </span>
-                </Button>
-              </Label>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Link de destino (URL)</Label>
-            <Input
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              placeholder="https://... ou /dashboard/loja"
-            />
-            <p className="text-xs text-muted-foreground">
-              URLs externas começam com https://. Links internos (mesmo app) começam com /.
-            </p>
-          </div>
+            {slides.map((slide, idx) => (
+              <div key={idx} className="rounded border p-3 space-y-3 bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Slide {idx + 1}</span>
+                  <div className="flex items-center gap-1">
+                    <Button type="button" size="icon" variant="ghost" onClick={() => moveSlide(idx, -1)} disabled={idx === 0}>
+                      <ArrowUp className="w-4 h-4" />
+                    </Button>
+                    <Button type="button" size="icon" variant="ghost" onClick={() => moveSlide(idx, 1)} disabled={idx === slides.length - 1}>
+                      <ArrowDown className="w-4 h-4" />
+                    </Button>
+                    <Button type="button" size="icon" variant="ghost" className="text-destructive" onClick={() => removeSlide(idx)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
 
-          <div className="flex items-center justify-between rounded border p-3">
-            <div>
-              <Label>Abrir em nova aba</Label>
-              <p className="text-xs text-muted-foreground">Aplica somente a URLs externas.</p>
-            </div>
-            <Switch checked={abrirNovaAba} onCheckedChange={setAbrirNovaAba} />
+                {slide.imagem_url && (
+                  <img src={slide.imagem_url} alt="" className="w-full aspect-video object-cover rounded border" />
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleFileUpload(idx, e)}
+                    disabled={uploadingIdx !== null}
+                    className="hidden"
+                    id={`banner-upload-${idx}`}
+                  />
+                  <Label htmlFor={`banner-upload-${idx}`} className="cursor-pointer">
+                    <Button type="button" variant="outline" size="sm" disabled={uploadingIdx !== null} asChild>
+                      <span>
+                        {uploadingIdx === idx ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                        {slide.imagem_url ? 'Trocar imagem' : 'Enviar imagem'}
+                      </span>
+                    </Button>
+                  </Label>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Link de destino</Label>
+                  <Input
+                    value={slide.link_url}
+                    onChange={(e) => updateSlide(idx, { link_url: e.target.value })}
+                    placeholder="https://... ou /dashboard/loja"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded border bg-background p-2">
+                  <Label className="text-xs">Abrir em nova aba (URLs externas)</Label>
+                  <Switch
+                    checked={slide.abrir_nova_aba}
+                    onCheckedChange={(v) => updateSlide(idx, { abrir_nova_aba: v })}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
