@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Activity,
   Settings,
+  Image,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
