@@ -435,6 +435,81 @@ export type Database = {
           },
         ]
       }
+      banner_escolas: {
+        Row: {
+          banner_id: string
+          escolinha_id: string
+        }
+        Insert: {
+          banner_id: string
+          escolinha_id: string
+        }
+        Update: {
+          banner_id?: string
+          escolinha_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banner_escolas_banner_id_fkey"
+            columns: ["banner_id"]
+            isOneToOne: false
+            referencedRelation: "banners_publicitarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banner_escolas_escolinha_id_fkey"
+            columns: ["escolinha_id"]
+            isOneToOne: false
+            referencedRelation: "escolinhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banners_publicitarios: {
+        Row: {
+          abrir_nova_aba: boolean
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          fim_em: string | null
+          id: string
+          imagem_url: string
+          inicio_em: string | null
+          link_url: string
+          ordem: number
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          abrir_nova_aba?: boolean
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          fim_em?: string | null
+          id?: string
+          imagem_url: string
+          inicio_em?: string | null
+          link_url: string
+          ordem?: number
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          abrir_nova_aba?: boolean
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          fim_em?: string | null
+          id?: string
+          imagem_url?: string
+          inicio_em?: string | null
+          link_url?: string
+          ordem?: number
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       campeonato_convocacoes: {
         Row: {
           asaas_payment_id: string | null
@@ -3656,6 +3731,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_banner: { Args: { _banner_id: string }; Returns: boolean }
       cancel_pedido: { Args: { p_pedido_id: string }; Returns: undefined }
       check_carreira_atividade_limit: {
         Args: { p_crianca_id: string; p_user_id: string }
