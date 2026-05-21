@@ -76,10 +76,21 @@ create table public.banners_publicitarios (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Segmentação por escola (N:N). Se um banner NÃO tem linha aqui, vale para todas as escolas.
+create table public.banner_escolas (
+  banner_id uuid references public.banners_publicitarios(id) on delete cascade,
+  escolinha_id uuid references public.escolinhas(id) on delete cascade,
+  primary key (banner_id, escolinha_id)
+);
 ```
 
-- RLS: `select` público para usuários autenticados onde `ativo = true` e dentro da janela de datas. `insert/update/delete` apenas para `has_role(auth.uid(), 'admin')`.
-- Bucket de storage: `banners-publicitarios` (público), com upload via cliente comprimido pelo `compressImage` existente.
+- RLS `banners_publicitarios.select`: usuário autenticado, `ativo = true`, dentro da janela de datas E (sem segmentação OU possui filho ativo em escola listada via `banner_escolas`, reaproveitando `guardian_can_access_escolinha`).
+- RLS `banner_escolas.select`: mesma lógica (visível se o banner for visível).
+- `insert/update/delete` em ambas: apenas `has_role(auth.uid(), 'admin')`.
+- Bucket de storage: `banners-publicitarios` (público), upload comprimido client-side via `compressImage`.
+- **Seed Fase 1**: ao criar o primeiro banner pelo admin, marcar somente a escola do Fluminense na segmentação.
+
 
 **Frontend:**
 
