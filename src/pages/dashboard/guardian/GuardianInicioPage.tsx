@@ -76,6 +76,8 @@ const GuardianInicioPage = () => {
             </CardContent>
           </Card>
         )}
+
+        {hasChildren && <BannersCarrossel />}
       </div>
     </MobileGuardianLayout>
   );
