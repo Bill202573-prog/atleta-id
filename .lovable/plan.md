@@ -51,7 +51,7 @@ Campos por banner:
 - Ordem de exibição (drag & drop ou número)
 - Ativo (switch)
 - Data de início / Data de fim (opcionais — permite agendar)
-- Segmentação (opcional, fase 2): "todas escolas" ou escolas específicas
+- **Segmentação por escola** (multi-select). Se vazio = todas as escolas. **Fase 1: cadastraremos apenas a escola do Fluminense**, então só os responsáveis dessa escola verão os banners.
 
 Ações: criar, editar, ativar/desativar, excluir, reordenar.
 
