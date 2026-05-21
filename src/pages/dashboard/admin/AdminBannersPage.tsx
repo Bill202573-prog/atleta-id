@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Edit, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { BannerComEscolas, useAdminBanners, useDeleteBanner } from '@/hooks/useBannersData';
@@ -57,24 +57,23 @@ export default function AdminBannersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {banners.map((b) => (
                 <div key={b.id} className="rounded-lg border bg-card overflow-hidden">
-                  <img src={b.imagem_url} alt={b.titulo} className="w-full aspect-video object-cover" />
+                  <img src={b.slides[0]?.imagem_url || b.imagem_url} alt={b.titulo} className="w-full aspect-video object-cover" />
                   <div className="p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold truncate">{b.titulo}</p>
-                        <a
-                          href={b.link_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-muted-foreground truncate flex items-center gap-1 hover:underline"
-                        >
-                          <ExternalLink className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{b.link_url}</span>
-                        </a>
+                        <p className="text-xs text-muted-foreground">
+                          {b.slides.length} slide{b.slides.length !== 1 ? 's' : ''}
+                        </p>
                       </div>
-                      <Badge variant={b.ativo ? 'default' : 'secondary'}>
-                        {b.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant={b.ativo ? 'default' : 'secondary'}>
+                          {b.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {b.posicao === 'produtos' ? 'Produtos' : 'Topo'}
+                        </Badge>
+                      </div>
                     </div>
 
                     <div className="text-xs text-muted-foreground space-y-0.5">

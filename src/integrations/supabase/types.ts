@@ -477,6 +477,8 @@ export type Database = {
           inicio_em: string | null
           link_url: string
           ordem: number
+          posicao: string
+          slides: Json
           titulo: string
           updated_at: string
         }
@@ -491,6 +493,8 @@ export type Database = {
           inicio_em?: string | null
           link_url: string
           ordem?: number
+          posicao?: string
+          slides?: Json
           titulo: string
           updated_at?: string
         }
@@ -505,6 +509,8 @@ export type Database = {
           inicio_em?: string | null
           link_url?: string
           ordem?: number
+          posicao?: string
+          slides?: Json
           titulo?: string
           updated_at?: string
         }

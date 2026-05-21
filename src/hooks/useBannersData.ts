@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+export type BannerPosicao = 'topo' | 'produtos';
+
+export interface BannerSlide {
+  imagem_url: string;
+  link_url: string;
+  abrir_nova_aba: boolean;
+}
+
 export interface Banner {
   id: string;
   titulo: string;
@@ -9,6 +17,8 @@ export interface Banner {
   abrir_nova_aba: boolean;
   ordem: number;
   ativo: boolean;
+  posicao: BannerPosicao;
+  slides: BannerSlide[];
   inicio_em: string | null;
   fim_em: string | null;
   created_at: string;
@@ -19,19 +29,44 @@ export interface BannerComEscolas extends Banner {
   escolinha_ids: string[];
 }
 
+function normalizeSlides(row: any): BannerSlide[] {
+  const raw = Array.isArray(row?.slides) ? row.slides : [];
+  const slides: BannerSlide[] = raw
+    .filter((s: any) => s && s.imagem_url)
+    .map((s: any) => ({
+      imagem_url: String(s.imagem_url),
+      link_url: String(s.link_url ?? ''),
+      abrir_nova_aba: Boolean(s.abrir_nova_aba ?? true),
+    }));
+  if (slides.length === 0 && row?.imagem_url) {
+    slides.push({
+      imagem_url: row.imagem_url,
+      link_url: row.link_url ?? '',
+      abrir_nova_aba: Boolean(row.abrir_nova_aba ?? true),
+    });
+  }
+  return slides.slice(0, 5);
+}
+
 // Banners ativos visíveis para o usuário (responsável). RLS faz o filtro.
-export function useBannersAtivos() {
+export function useBannersAtivos(posicao?: BannerPosicao) {
   return useQuery({
-    queryKey: ['banners-ativos'],
+    queryKey: ['banners-ativos', posicao ?? 'all'],
     queryFn: async (): Promise<Banner[]> => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('banners_publicitarios')
         .select('*')
         .eq('ativo', true)
         .order('ordem', { ascending: true })
         .order('created_at', { ascending: false });
+      if (posicao) q = q.eq('posicao', posicao);
+      const { data, error } = await q;
       if (error) throw error;
-      return (data as Banner[]) ?? [];
+      return ((data as any[]) ?? []).map((b) => ({
+        ...b,
+        posicao: (b.posicao ?? 'topo') as BannerPosicao,
+        slides: normalizeSlides(b),
+      })) as Banner[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -50,6 +85,8 @@ export function useAdminBanners() {
       if (error) throw error;
       return (data ?? []).map((b: any) => ({
         ...b,
+        posicao: (b.posicao ?? 'topo') as BannerPosicao,
+        slides: normalizeSlides(b),
         escolinha_ids: (b.banner_escolas ?? []).map((be: any) => be.escolinha_id),
       }));
     },
@@ -59,9 +96,8 @@ export function useAdminBanners() {
 export interface SaveBannerInput {
   id?: string;
   titulo: string;
-  imagem_url: string;
-  link_url: string;
-  abrir_nova_aba: boolean;
+  posicao: BannerPosicao;
+  slides: BannerSlide[];
   ordem: number;
   ativo: boolean;
   inicio_em: string | null;
@@ -73,12 +109,18 @@ export function useSaveBanner() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: SaveBannerInput) => {
+      const slides = input.slides.slice(0, 5);
+      if (slides.length === 0) throw new Error('Adicione ao menos 1 imagem');
+      const first = slides[0];
       let bannerId = input.id;
-      const payload = {
+      const payload: any = {
         titulo: input.titulo,
-        imagem_url: input.imagem_url,
-        link_url: input.link_url,
-        abrir_nova_aba: input.abrir_nova_aba,
+        posicao: input.posicao,
+        slides: slides as any,
+        // espelha o primeiro slide nas colunas legadas para compatibilidade
+        imagem_url: first.imagem_url,
+        link_url: first.link_url,
+        abrir_nova_aba: first.abrir_nova_aba,
         ordem: input.ordem,
         ativo: input.ativo,
         inicio_em: input.inicio_em,
@@ -101,7 +143,6 @@ export function useSaveBanner() {
         bannerId = data.id;
       }
 
-      // Replace segmentações
       const { error: delErr } = await supabase
         .from('banner_escolas')
         .delete()
