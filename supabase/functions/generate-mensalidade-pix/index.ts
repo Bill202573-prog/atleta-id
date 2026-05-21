@@ -319,7 +319,7 @@ Deno.serve(async (req) => {
     // Step 2: Create PIX payment
     const dueDate = mensalidade.data_vencimento || new Date().toISOString().split('T')[0];
     
-    const paymentPayload = {
+    const paymentPayload: Record<string, unknown> = {
       customer: customerId,
       billingType: 'PIX',
       value: mensalidade.valor,
@@ -327,6 +327,14 @@ Deno.serve(async (req) => {
       description: `Mensalidade - ${criancaNome || 'Aluno'} - ${mesFormatado}`,
       externalReference: mensalidade_id,
     };
+
+    // Multa e juros: Asaas aplica automaticamente após o vencimento.
+    if (multaPct > 0) {
+      paymentPayload.fine = { value: multaPct, type: 'PERCENTAGE' };
+    }
+    if (jurosPct > 0) {
+      paymentPayload.interest = { value: jurosPct, type: 'PERCENTAGE' };
+    }
 
     console.log('Creating payment:', JSON.stringify(paymentPayload));
 
