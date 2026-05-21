@@ -22,7 +22,9 @@ interface PixData {
   qrCodeUrl: string;
   expiresAt: string;
   valor: number;
+  valorOriginal?: number;
   mesReferencia: string;
+  status?: string;
 }
 
 type CheckoutStep = 'loading' | 'qrcode' | 'checking' | 'success' | 'error';
