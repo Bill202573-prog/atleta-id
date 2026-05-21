@@ -1370,6 +1370,8 @@ export type Database = {
           estado: string | null
           id: string
           income_value: number | null
+          juros_mes_percentual: number
+          multa_percentual: number
           nome: string
           numero: string | null
           rua: string | null
@@ -1399,6 +1401,8 @@ export type Database = {
           estado?: string | null
           id?: string
           income_value?: number | null
+          juros_mes_percentual?: number
+          multa_percentual?: number
           nome: string
           numero?: string | null
           rua?: string | null
@@ -1428,6 +1432,8 @@ export type Database = {
           estado?: string | null
           id?: string
           income_value?: number | null
+          juros_mes_percentual?: number
+          multa_percentual?: number
           nome?: string
           numero?: string | null
           rua?: string | null
