@@ -22,7 +22,9 @@ interface PixData {
   qrCodeUrl: string;
   expiresAt: string;
   valor: number;
+  valorOriginal?: number;
   mesReferencia: string;
+  status?: string;
 }
 
 type CheckoutStep = 'loading' | 'qrcode' | 'checking' | 'success' | 'error';
@@ -190,11 +192,19 @@ export default function MensalidadePixCheckoutDialog({
             <div className="space-y-4">
               {/* Value */}
               <Card className="bg-primary/5 border-primary/20">
-                <CardContent className="p-4 text-center">
+                <CardContent className="p-4 text-center space-y-1">
                   <p className="text-sm text-muted-foreground">Valor a pagar</p>
                   <p className="text-2xl font-bold text-primary">
                     R$ {pixData.valor.toFixed(2).replace('.', ',')}
                   </p>
+                  {pixData.valorOriginal != null && pixData.valor > pixData.valorOriginal + 0.009 && (
+                    <div className="text-xs text-muted-foreground pt-1 border-t border-primary/10 mt-2">
+                      <div>Valor original: R$ {pixData.valorOriginal.toFixed(2).replace('.', ',')}</div>
+                      <div className="text-amber-600 font-medium">
+                        + Multa e juros por atraso: R$ {(pixData.valor - pixData.valorOriginal).toFixed(2).replace('.', ',')}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

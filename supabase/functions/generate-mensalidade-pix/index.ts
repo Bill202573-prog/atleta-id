@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
     // Get the school's own API key directly from the database
     const { data: cadastroBancarioFull, error: cadastroError } = await supabase
       .from('escola_cadastro_bancario')
-      .select('asaas_account_id, asaas_api_key, asaas_status')
+      .select('asaas_account_id, asaas_api_key, asaas_status, multa_percentual, juros_mes_percentual')
       .eq('escolinha_id', mensalidade.escolinha_id)
       .maybeSingle();
     
@@ -142,7 +142,59 @@ Deno.serve(async (req) => {
     }
 
     const activeApiKey = cadastroBancarioFull.asaas_api_key;
-    console.log("Using school's Asaas subconta API key for escola:", mensalidade.escolinha_id, "Account ID:", cadastroBancarioFull.asaas_account_id);
+    const multaPct = Number(cadastroBancarioFull.multa_percentual ?? 2);
+    const jurosPct = Number(cadastroBancarioFull.juros_mes_percentual ?? 1);
+    console.log("Using school's Asaas subconta. Multa%:", multaPct, "Juros%/mês:", jurosPct);
+
+    // ============================================================
+    // REAPROVEITAR COBRANÇA EXISTENTE quando já há asaas_payment_id.
+    // Resolve o erro de "pagamento vencido": busca o payment e, se
+    // ainda for pagável (PENDING/OVERDUE), pede um QR novo ao Asaas
+    // já com multa + juros embutidos no valor.
+    // ============================================================
+    if (mensalidade.asaas_payment_id) {
+      try {
+        const existingResp = await fetch(`${ASAAS_API_URL}/payments/${mensalidade.asaas_payment_id}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json', 'access_token': activeApiKey },
+        });
+        const existing = await existingResp.json();
+        console.log('Existing payment status:', existing?.status, 'id:', existing?.id);
+
+        const reusableStatuses = ['PENDING', 'OVERDUE', 'AWAITING_RISK_ANALYSIS'];
+        if (existing?.id && reusableStatuses.includes(String(existing.status ?? '').toUpperCase())) {
+          const qrResp = await fetch(`${ASAAS_API_URL}/payments/${existing.id}/pixQrCode`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json', 'access_token': activeApiKey },
+          });
+          const qr = await qrResp.json();
+          if (qr?.payload && qr?.encodedImage) {
+            const valorAtual = Number(existing.value ?? mensalidade.valor);
+            return new Response(
+              JSON.stringify({
+                success: true,
+                data: {
+                  pixId: existing.id,
+                  brCode: qr.payload,
+                  qrCodeUrl: `data:image/png;base64,${qr.encodedImage}`,
+                  expiresAt: qr.expirationDate,
+                  valor: valorAtual,
+                  valorOriginal: Number(mensalidade.valor),
+                  mesReferencia: mensalidade.mes_referencia,
+                  status: existing.status,
+                },
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          console.warn('Não foi possível regerar QR — prosseguindo para criar payment novo');
+        } else {
+          console.log('Payment existente não é reaproveitável (status:', existing?.status, ') — criando novo');
+        }
+      } catch (e) {
+        console.error('Erro ao reaproveitar payment existente, criando novo:', e);
+      }
+    }
 
     // Extract names from relations - handle Supabase's dynamic relation types
     const criancaRaw = mensalidade.crianca as unknown;
@@ -267,7 +319,7 @@ Deno.serve(async (req) => {
     // Step 2: Create PIX payment
     const dueDate = mensalidade.data_vencimento || new Date().toISOString().split('T')[0];
     
-    const paymentPayload = {
+    const paymentPayload: Record<string, unknown> = {
       customer: customerId,
       billingType: 'PIX',
       value: mensalidade.valor,
@@ -275,6 +327,14 @@ Deno.serve(async (req) => {
       description: `Mensalidade - ${criancaNome || 'Aluno'} - ${mesFormatado}`,
       externalReference: mensalidade_id,
     };
+
+    // Multa e juros: Asaas aplica automaticamente após o vencimento.
+    if (multaPct > 0) {
+      paymentPayload.fine = { value: multaPct, type: 'PERCENTAGE' };
+    }
+    if (jurosPct > 0) {
+      paymentPayload.interest = { value: jurosPct, type: 'PERCENTAGE' };
+    }
 
     console.log('Creating payment:', JSON.stringify(paymentPayload));
 
