@@ -104,8 +104,8 @@ create table public.banner_escolas (
 
 ## Fases sugeridas
 
-1. **Fase 1 (entrega agora)**: tabela, RLS, storage, carrossel na tela início, CRUD admin com upload + agendamento. Sem segmentação, sem métricas.
-2. **Fase 2 (depois, se quiser)**: segmentação por escola e contagem de impressões/cliques.
+1. **Fase 1 (entrega agora)**: tabela + segmentação por escola, RLS, storage, carrossel na tela início, CRUD admin com upload, agendamento e seletor de escolas. Banner inicial restrito ao **Fluminense**.
+2. **Fase 2 (depois, se quiser)**: contagem de impressões e cliques por banner.
 
 ## O que NÃO muda
 
