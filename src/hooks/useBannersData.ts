@@ -67,6 +67,7 @@ export function useBannersAtivos(posicao?: BannerPosicao) {
         ...b,
         posicao: (b.posicao ?? 'topo') as BannerPosicao,
         slides: normalizeSlides(b),
+        autoplay_segundos: Number(b.autoplay_segundos ?? 5),
       })) as Banner[];
     },
     staleTime: 5 * 60 * 1000,
