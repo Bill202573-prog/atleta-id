@@ -19,6 +19,7 @@ export interface Banner {
   ativo: boolean;
   posicao: BannerPosicao;
   slides: BannerSlide[];
+  autoplay_segundos: number;
   inicio_em: string | null;
   fim_em: string | null;
   created_at: string;
