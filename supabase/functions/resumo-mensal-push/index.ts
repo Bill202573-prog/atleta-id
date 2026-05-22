@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
           tag: `resumo-${anoRef}-${mesRef}-${criancaId}`,
           tipo: 'resumo_mensal',
           referencia_id: criancaId,
-          escolinha_id: ESCOLINHA_FLUMINENSE,
+          escolinha_id: escolaDaCrianca.get(criancaId),
         }),
       });
 
