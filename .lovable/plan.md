@@ -1,55 +1,36 @@
-# Banners: múltiplas imagens, segundo espaço e header reduzido
+# Diagnóstico e blindagem do filtro de banners por escola
 
-## O que muda na tela inicial do responsável
+## Conclusão da auditoria
 
-```text
-[Header compacto: "Olá!" + subtítulo em 1 linha menor]
-[Avisos da Escola]          <- espaço 1
-[Banner Carrossel - Topo]   <- espaço 2 (existente, agora com várias imagens)
-[Banner Carrossel - Produtos] <- espaço 3 (novo, mesmo formato)
-```
+- `wnogueira@hotmail.com` (id `838d5e73-…`) tem **role `guardian`** e está vinculado a **apenas 1 escola: Bandeirantes Futebol Recreio**. Não é admin nem professor de nenhuma escola.
+- Os 3 banners ativos hoje estão segmentados **somente** para *Escolinha de Esportes Fluminense*.
+- A política RLS de leitura (`Banners visíveis para usuários autorizados`) avaliada manualmente para esse usuário retorna **0 banners** — ou seja, no servidor o filtro está correto.
 
-Os três blocos ficam com altura visual equivalente (mesma proporção 16:9 nos carrosséis e header reduzido).
+Se mesmo assim ele está vendo banners no celular, as causas prováveis são:
 
-## Mudanças no admin (página Banners)
+1. **Cache do React Query** (`staleTime: 5 min`) e/ou cache do Service Worker do PWA, mantendo banners antigos quando a segmentação ainda não existia.
+2. Os banners foram criados inicialmente **sem segmentação** (visíveis a todos) e o filtro de escola foi adicionado depois — o app dele ainda guarda a resposta anterior.
+3. Sessão antiga em outro perfil no mesmo dispositivo (admin/preview).
 
-- Cada banner passa a ter um campo **Posição**: `Topo` ou `Produtos`.
-- Cada banner aceita **até 5 slides** (imagem + link de destino + abrir em nova aba), gerenciados dentro do mesmo formulário (adicionar / remover / reordenar).
-- Recomendação de tamanho continua **1200x675 (16:9), até 500KB, JPG/PNG/WebP**.
-- Lista de banners mostra a posição e o nº de slides.
+Não há, hoje, nenhum usuário da Bandeirantes que deveria estar vendo esses 3 banners pelo RLS.
 
-Resultado: o admin pode montar um carrossel real com várias imagens dentro de UM banner, e ainda escolher se ele aparece no espaço de Topo ou no de Produtos.
+## O que vamos fazer
 
-## Mudanças na home do responsável
+1. **Eliminar a janela de cache do banner**: trocar `staleTime` para `0` no hook `useBannersAtivos` e adicionar `refetchOnWindowFocus: true`. Banners são poucos e leves; vale ter sempre frescos.
+2. **Forçar revalidação após qualquer alteração no admin**: já invalidamos `banners-ativos`, mas vamos também passar a invalidar em alterações de `banner_escolas` (segmentação) explicitamente.
+3. **Criar uma RPC `debug_my_visible_banners()`** (SECURITY INVOKER) que retorna a lista exata que o usuário logado consegue ler. Vamos chamá-la temporariamente em uma tela de diagnóstico admin acessível em `/dashboard/admin/diagnostico-banners`, onde o admin pode digitar o email do responsável e ver:
+   - escolas vinculadas
+   - banners que o RLS retornaria para aquele usuário
+   - banners atualmente cacheados no app dele (instruções para limpar)
+4. **Botão "Forçar atualização" no carrossel do responsável** (somente visível para admins logados como responsável) — opcional, apenas se útil.
 
-- `BannersCarrossel` recebe prop `posicao` e renderiza só os banners daquela posição.
-- Cada slide do carrossel é uma imagem clicável (com seu próprio link).
-- Autoplay 5s, swipe, dots e loop continuam iguais.
-- Bloco "Olá!" reduzido (título menor, subtítulo compacto, menos padding) para liberar espaço.
-- Renderiza dois carrosséis: `posicao="topo"` acima e `posicao="produtos"` abaixo do mural.
+## Como o usuário valida
+
+- Pedir ao `wnogueira` para fechar o app e abrir de novo (ou puxar para atualizar). Com `staleTime: 0`, os banners desaparecem na próxima abertura.
+- Abrir `/dashboard/admin/diagnostico-banners`, digitar `wnogueira@hotmail.com` e confirmar que a lista vem vazia.
 
 ## Detalhes técnicos
 
-Banco (migration):
-- `ALTER TABLE banners_publicitarios`
-  - `ADD COLUMN posicao text NOT NULL DEFAULT 'topo' CHECK (posicao IN ('topo','produtos'))`
-  - `ADD COLUMN slides jsonb NOT NULL DEFAULT '[]'::jsonb` — array `[{ imagem_url, link_url, abrir_nova_aba }]`, máx. 5 (validado via CHECK `jsonb_array_length(slides) <= 5`).
-- Backfill: para cada banner existente, popular `slides` com 1 item a partir das colunas atuais (`imagem_url`, `link_url`, `abrir_nova_aba`). Colunas antigas mantidas como espelho do primeiro slide para compatibilidade.
-- `can_view_banner()` e RLS permanecem inalterados.
-- Storage `banners-publicitarios` permanece.
-
-Hook `useBannersData.ts`:
-- Tipo `Banner` ganha `posicao` e `slides: { imagem_url, link_url, abrir_nova_aba }[]`.
-- `useBannersAtivos(posicao)` filtra por posição.
-- `SaveBannerInput` ganha `posicao` e `slides`; salva primeiro slide também nas colunas antigas para compatibilidade.
-
-Componentes:
-- `BannerFormDialog.tsx`: seletor de Posição, lista de slides com upload (reutiliza `compressImage`), link, switch "nova aba", botões "Adicionar slide" (até 5) e remover.
-- `BannersCarrossel.tsx`: aceita `posicao`; itera `banner.slides` (não só `banner.imagem_url`).
-- `AdminBannersPage.tsx`: badge de posição e contagem de slides no card.
-- `GuardianInicioPage.tsx`: header compacto + dois `<BannersCarrossel posicao="topo|produtos" />`.
-
-## Fora de escopo
-
-- Nenhuma mudança em outras áreas (financeiro, escolas, push, etc.).
-- Sem alteração nas regras de segmentação por escola — continuam por banner.
+- `src/hooks/useBannersData.ts`: `staleTime: 0`, `refetchOnWindowFocus: true`, `refetchOnMount: 'always'` em `useBannersAtivos`.
+- Nova migração: função SQL `public.debug_banners_for_user(p_email text)` SECURITY DEFINER, restrita a `has_role(auth.uid(),'admin')`, retornando `id,titulo,posicao,ativo,segmentado_para[],visivel_para_user(bool)`.
+- Nova página `src/pages/dashboard/admin/AdminDiagnosticoBannersPage.tsx` + rota no `Dashboard.tsx`.
