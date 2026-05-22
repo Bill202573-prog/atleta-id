@@ -115,9 +115,11 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
       toast.error('Preencha o título');
       return;
     }
-    const validSlides = slides.filter((s) => s.imagem_url && s.link_url.trim());
+    const validSlides = slides
+      .filter((s) => s.imagem_url)
+      .map((s) => ({ ...s, link_url: (s.link_url ?? '').trim() }));
     if (validSlides.length === 0) {
-      toast.error('Adicione ao menos 1 slide com imagem e link');
+      toast.error('Adicione ao menos 1 slide com imagem');
       return;
     }
     try {
