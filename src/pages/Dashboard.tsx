@@ -40,6 +40,7 @@ const GuardianPerfilPage = lazy(() => import('./dashboard/guardian/GuardianPerfi
 const GuardianFrequenciaPage = lazy(() => import('./dashboard/guardian/GuardianFrequenciaPage'));
 const GuardianFinanceiroPage = lazy(() => import('./dashboard/guardian/GuardianFinanceiroPage'));
 const GuardianJornadaPage = lazy(() => import('./dashboard/guardian/GuardianJornadaPage'));
+const GuardianResumoMesPage = lazy(() => import('./dashboard/guardian/GuardianResumoMesPage'));
 const GuardianConvocacoesPage = lazy(() => import('./dashboard/guardian/GuardianConvocacoesPage'));
 const GuardianLojaPage = lazy(() => import('./dashboard/guardian/GuardianLojaPage'));
 const EventosManagement = lazy(() => import('./dashboard/school/EventosManagement'));
