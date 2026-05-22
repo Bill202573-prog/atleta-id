@@ -103,6 +103,7 @@ export interface SaveBannerInput {
   slides: BannerSlide[];
   ordem: number;
   ativo: boolean;
+  autoplay_segundos: number;
   inicio_em: string | null;
   fim_em: string | null;
   escolinha_ids: string[];
@@ -116,6 +117,7 @@ export function useSaveBanner() {
       if (slides.length === 0) throw new Error('Adicione ao menos 1 imagem');
       const first = slides[0];
       let bannerId = input.id;
+      const autoplay = Math.min(60, Math.max(2, Math.round(input.autoplay_segundos || 5)));
       const payload: any = {
         titulo: input.titulo,
         posicao: input.posicao,
@@ -126,9 +128,11 @@ export function useSaveBanner() {
         abrir_nova_aba: first.abrir_nova_aba,
         ordem: input.ordem,
         ativo: input.ativo,
+        autoplay_segundos: autoplay,
         inicio_em: input.inicio_em,
         fim_em: input.fim_em,
       };
+
 
       if (bannerId) {
         const { error } = await supabase
