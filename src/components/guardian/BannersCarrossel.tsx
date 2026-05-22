@@ -53,6 +53,8 @@ export function BannersCarrossel({ posicao }: Props) {
   if (isLoading || slides.length === 0) return null;
 
   const isInternalLink = (url: string) => url.startsWith('/');
+  const delayMs =
+    Math.min(60, Math.max(2, Number(banners[0]?.autoplay_segundos ?? 5))) * 1000;
 
   return (
     <div className="space-y-2">
@@ -61,7 +63,7 @@ export function BannersCarrossel({ posicao }: Props) {
         opts={{ loop: slides.length > 1, align: 'start' }}
         plugins={
           slides.length > 1
-            ? [Autoplay({ delay: 5000, stopOnInteraction: true })]
+            ? [Autoplay({ delay: delayMs, stopOnInteraction: true })]
             : []
         }
       >
