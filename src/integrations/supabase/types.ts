@@ -3566,6 +3566,32 @@ export type Database = {
         }
         Relationships: []
       }
+      resumo_mensal_escolas_habilitadas: {
+        Row: {
+          escolinha_id: string
+          habilitado_em: string
+          habilitado_por: string | null
+        }
+        Insert: {
+          escolinha_id: string
+          habilitado_em?: string
+          habilitado_por?: string | null
+        }
+        Update: {
+          escolinha_id?: string
+          habilitado_em?: string
+          habilitado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resumo_mensal_escolas_habilitadas_escolinha_id_fkey"
+            columns: ["escolinha_id"]
+            isOneToOne: true
+            referencedRelation: "escolinhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saas_config: {
         Row: {
           chave: string
