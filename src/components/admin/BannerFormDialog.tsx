@@ -263,6 +263,21 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <Label>Tempo entre slides (segundos)</Label>
+            <Input
+              type="number"
+              min={2}
+              max={60}
+              value={autoplaySegundos}
+              onChange={(e) => setAutoplaySegundos(Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Entre 2 e 60 segundos. Aplica-se ao carrossel desta posição.
+            </p>
+          </div>
+
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início (opcional)</Label>
