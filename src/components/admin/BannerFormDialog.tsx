@@ -137,14 +137,15 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
       toast.success(banner ? 'Banner atualizado!' : 'Banner criado!');
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar');
+      console.error('[BannerFormDialog] save error', err);
+      toast.error(err?.message || 'Erro ao salvar');
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="p-6 pb-2 border-b shrink-0">
           <DialogTitle>{banner ? 'Editar Banner' : 'Novo Banner'}</DialogTitle>
           <DialogDescription>
             Cada banner aceita até {MAX_SLIDES} imagens (carrossel). Recomendado: 1200x675 (16:9), até 500KB. JPG, PNG ou WebP.
