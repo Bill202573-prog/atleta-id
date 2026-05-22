@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MobileGuardianLayout } from '@/components/layout/MobileGuardianLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
