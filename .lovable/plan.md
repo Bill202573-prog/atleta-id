@@ -1,36 +1,74 @@
-# Diagnóstico e blindagem do filtro de banners por escola
+## Resumo Mensal do Atleta — V1 (teste Fluminense)
 
-## Conclusão da auditoria
+Feature isolada, aditiva, sem tocar em fluxos existentes (pagamentos, agenda, jogos, frequência, jornada atual).
 
-- `wnogueira@hotmail.com` (id `838d5e73-…`) tem **role `guardian`** e está vinculado a **apenas 1 escola: Bandeirantes Futebol Recreio**. Não é admin nem professor de nenhuma escola.
-- Os 3 banners ativos hoje estão segmentados **somente** para *Escolinha de Esportes Fluminense*.
-- A política RLS de leitura (`Banners visíveis para usuários autorizados`) avaliada manualmente para esse usuário retorna **0 banners** — ou seja, no servidor o filtro está correto.
+### Escopo V1
+- Card "Resumo do Mês" no topo de `GuardianJornadaPage`.
+- Tela dedicada `/dashboard/jornada/resumo/:criancaId/:ano/:mes` com cabeçalho, presença, participações, mensagem emocional e botão compartilhar.
+- Push notification no dia 01 de cada mês com deep link para o resumo do mês anterior.
+- Liberado **apenas para responsáveis com filhos vinculados à Escolinha de Esportes Fluminense** (id `1717c373-f039-4179-9839-b749abf0b882`).
 
-Se mesmo assim ele está vendo banners no celular, as causas prováveis são:
+### Onde entra
+- `src/pages/dashboard/guardian/GuardianJornadaPage.tsx` → renderiza `<ResumoMesCard />` acima das tabs (somente se feature liberada para a criança selecionada).
+- Novos arquivos, sem alterar componentes/hook existentes:
+  - `src/components/guardian/resumo-mes/ResumoMesCard.tsx` (bloco compacto na Jornada)
+  - `src/components/guardian/resumo-mes/ResumoMesShareCard.tsx` (card visual exportável)
+  - `src/pages/dashboard/guardian/GuardianResumoMesPage.tsx` (tela completa)
+  - `src/hooks/useResumoMensal.ts` (busca dados agregados via RPC)
+- Rota nova registrada em `src/pages/Dashboard.tsx` (lazy), sem alterar rotas existentes.
 
-1. **Cache do React Query** (`staleTime: 5 min`) e/ou cache do Service Worker do PWA, mantendo banners antigos quando a segmentação ainda não existia.
-2. Os banners foram criados inicialmente **sem segmentação** (visíveis a todos) e o filtro de escola foi adicionado depois — o app dele ainda guarda a resposta anterior.
-3. Sessão antiga em outro perfil no mesmo dispositivo (admin/preview).
+### Dados (apenas o que já existe)
+RPC `get_resumo_mensal_atleta(p_crianca_id, p_ano, p_mes)` — SECURITY DEFINER, valida que `auth.uid()` é responsável da criança e que a criança pertence ao Fluminense. Retorna:
+- Cabeçalho: nome/foto da criança, nome/logo da escolinha, mês/ano.
+- Presença: aulas no mês (`aulas` filtradas por turmas da criança no período), presenças (`presencas` com presente=true), % frequência.
+- Participações: amistosos (`amistoso_convocacoes` + `eventos_esportivos` no mês), campeonatos com jogos no mês (`campeonato_convocacoes` + jogos), total de jogos disputados.
+- Mensagem emocional: escolhida no client por regra simples (frequência alta / participou de jogo / sem jogos etc.).
 
-Não há, hoje, nenhum usuário da Bandeirantes que deveria estar vendo esses 3 banners pelo RLS.
+Sem alteração de schema. Apenas 1 função nova + 1 função `is_crianca_fluminense(p_crianca_id)` para gating server-side. RLS atual permanece intacto.
 
-## O que vamos fazer
+### Push notification (dia 01)
+- Edge Function nova `resumo-mensal-push` (deno) — envia push web (VAPID já configurado) para responsáveis das crianças do Fluminense, payload com deep link `/dashboard/jornada/resumo/{criancaId}/{anoAnterior}/{mesAnterior}`.
+- Cron via `pg_cron` + `pg_net`: `0 12 1 * *` chama a edge function.
+- Mensagens rotativas dentre os exemplos fornecidos, personalizadas com primeiro nome da criança.
+- Reaproveita infraestrutura existente de `push_subscriptions` (sem alterar). Idempotência: tabela leve `resumo_mensal_envios(crianca_id, ano, mes)` para não duplicar disparos.
 
-1. **Eliminar a janela de cache do banner**: trocar `staleTime` para `0` no hook `useBannersAtivos` e adicionar `refetchOnWindowFocus: true`. Banners são poucos e leves; vale ter sempre frescos.
-2. **Forçar revalidação após qualquer alteração no admin**: já invalidamos `banners-ativos`, mas vamos também passar a invalidar em alterações de `banner_escolas` (segmentação) explicitamente.
-3. **Criar uma RPC `debug_my_visible_banners()`** (SECURITY INVOKER) que retorna a lista exata que o usuário logado consegue ler. Vamos chamá-la temporariamente em uma tela de diagnóstico admin acessível em `/dashboard/admin/diagnostico-banners`, onde o admin pode digitar o email do responsável e ver:
-   - escolas vinculadas
-   - banners que o RLS retornaria para aquele usuário
-   - banners atualmente cacheados no app dele (instruções para limpar)
-4. **Botão "Forçar atualização" no carrossel do responsável** (somente visível para admins logados como responsável) — opcional, apenas se útil.
+### Tela de resumo (visual)
+Estética esportiva, NÃO administrativa:
+- Hero com gradiente da cor da escolinha, foto do atleta grande, mês em destaque tipográfico.
+- Anel de progresso para % frequência.
+- Cards horizontais para amistosos / campeonatos / jogos com ícones (Trophy, Swords, Goal).
+- Frase emocional em itálico no rodapé do card principal.
+- Botão `Compartilhar resumo` → usa `navigator.share` com imagem renderizada (html-to-image já em uso? — se não, fallback para copiar link/screenshot via canvas simples). Sem nova dep pesada: usar `html-to-image` (lib pequena) só se necessário; caso contrário botão compartilha texto + link público.
 
-## Como o usuário valida
+### Card na Jornada
+Bloco compacto no topo:
+```
+RESUMO DO MÊS · MAIO 2026
+Veja como foi o mês do João
+[ Ver resumo ]
+```
+Só aparece se `is_crianca_fluminense` = true para a criança selecionada. Sem badge/aba nova no menu inferior.
 
-- Pedir ao `wnogueira` para fechar o app e abrir de novo (ou puxar para atualizar). Com `staleTime: 0`, os banners desaparecem na próxima abertura.
-- Abrir `/dashboard/admin/diagnostico-banners`, digitar `wnogueira@hotmail.com` e confirmar que a lista vem vazia.
+### Gating Fluminense
+- Client: `useResumoMensalEnabled(criancaId)` consulta vínculo com escolinha Fluminense.
+- Server: RPC e edge function validam o mesmo id de escolinha. Constante única em uma migration (comment) — fácil de remover depois ao expandir.
 
-## Detalhes técnicos
+### Garantias de não-regressão
+- Nenhum hook/componente existente é editado, exceto:
+  - `GuardianJornadaPage.tsx`: 1 import + 1 render condicional acima das tabs.
+  - `Dashboard.tsx`: 1 lazy import + 1 `<Route>`.
+- Sem mudanças em schema de tabelas existentes, RLS, ou edge functions atuais.
+- Push usa fluxo VAPID já existente; novo registro de cron isolado.
 
-- `src/hooks/useBannersData.ts`: `staleTime: 0`, `refetchOnWindowFocus: true`, `refetchOnMount: 'always'` em `useBannersAtivos`.
-- Nova migração: função SQL `public.debug_banners_for_user(p_email text)` SECURITY DEFINER, restrita a `has_role(auth.uid(),'admin')`, retornando `id,titulo,posicao,ativo,segmentado_para[],visivel_para_user(bool)`.
-- Nova página `src/pages/dashboard/admin/AdminDiagnosticoBannersPage.tsx` + rota no `Dashboard.tsx`.
+### Entregáveis
+1. Migration: função `is_crianca_fluminense`, função `get_resumo_mensal_atleta`, tabela `resumo_mensal_envios` (id, crianca_id, ano, mes, enviado_em — RLS admin only), cron job.
+2. Edge function `resumo-mensal-push`.
+3. Hook `useResumoMensal` + `useResumoMensalEnabled`.
+4. Componentes `ResumoMesCard`, `ResumoMesShareCard`, página `GuardianResumoMesPage`.
+5. Rota + edição mínima em `GuardianJornadaPage` e `Dashboard`.
+
+### Fora do escopo V1
+- Métricas avançadas (gols por mês, MVPs, ranking).
+- Geração de imagem server-side.
+- Histórico de resumos passados navegável (somente mês anterior acessível via push; pela Jornada mostra o último mês fechado).
+- Liberar para outras escolas — virá depois trocando o gating por flag por escolinha.
