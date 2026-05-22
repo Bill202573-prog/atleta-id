@@ -1,4 +1,5 @@
-// Envia push de "Resumo Mensal" para responsáveis das crianças do Fluminense.
+// Envia push de "Resumo Mensal" para responsáveis das crianças das escolas habilitadas.
+// As escolas habilitadas são gerenciadas pelo admin via resumo_mensal_escolas_habilitadas.
 // Disparado por cron no dia 01 às 12:00 (referência: mês anterior).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -6,8 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const ESCOLINHA_FLUMINENSE = '1717c373-f039-4179-9839-b749abf0b882';
 
 const MENSAGENS = [
   (n: string) => `O resumo esportivo já está disponível ⚽`,
@@ -40,14 +39,32 @@ Deno.serve(async (req) => {
     if (body?.mes) mesRef = Number(body.mes);
     const dryRun = !!body?.dry_run;
 
-    // Crianças ativas do Fluminense
+    // Escolas habilitadas (gerenciadas pelo admin)
+    const { data: escolasHab, error: ehErr } = await admin
+      .from('resumo_mensal_escolas_habilitadas')
+      .select('escolinha_id');
+    if (ehErr) throw ehErr;
+    const escolinhaIds = (escolasHab || []).map((e: any) => e.escolinha_id);
+    if (escolinhaIds.length === 0) {
+      return new Response(JSON.stringify({ sent: 0, message: 'Nenhuma escola habilitada' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Crianças ativas das escolas habilitadas
     const { data: vinculos, error: vErr } = await admin
       .from('crianca_escolinha')
-      .select('crianca_id')
-      .eq('escolinha_id', ESCOLINHA_FLUMINENSE)
+      .select('crianca_id, escolinha_id')
+      .in('escolinha_id', escolinhaIds)
       .eq('ativo', true);
     if (vErr) throw vErr;
-    const criancaIds = [...new Set((vinculos || []).map((v: any) => v.crianca_id))];
+    const escolaDaCrianca = new Map<string, string>();
+    for (const v of vinculos || []) {
+      if (!escolaDaCrianca.has((v as any).crianca_id)) {
+        escolaDaCrianca.set((v as any).crianca_id, (v as any).escolinha_id);
+      }
+    }
+    const criancaIds = [...escolaDaCrianca.keys()];
     if (criancaIds.length === 0) {
       return new Response(JSON.stringify({ sent: 0, message: 'Nenhuma criança ativa' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -113,7 +130,7 @@ Deno.serve(async (req) => {
           tag: `resumo-${anoRef}-${mesRef}-${criancaId}`,
           tipo: 'resumo_mensal',
           referencia_id: criancaId,
-          escolinha_id: ESCOLINHA_FLUMINENSE,
+          escolinha_id: escolaDaCrianca.get(criancaId),
         }),
       });
 
