@@ -132,6 +132,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
         slides: validSlides,
         ordem,
         ativo,
+        autoplay_segundos: autoplaySegundos,
         inicio_em: inicioEm ? new Date(inicioEm).toISOString() : null,
         fim_em: fimEm ? new Date(fimEm).toISOString() : null,
         escolinha_ids: escolinhaIds,
