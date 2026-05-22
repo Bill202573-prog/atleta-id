@@ -30,6 +30,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
   const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [ordem, setOrdem] = useState(0);
   const [ativo, setAtivo] = useState(true);
+  const [autoplaySegundos, setAutoplaySegundos] = useState(5);
   const [inicioEm, setInicioEm] = useState('');
   const [fimEm, setFimEm] = useState('');
   const [escolinhaIds, setEscolinhaIds] = useState<string[]>([]);
