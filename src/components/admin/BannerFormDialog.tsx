@@ -30,6 +30,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
   const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [ordem, setOrdem] = useState(0);
   const [ativo, setAtivo] = useState(true);
+  const [autoplaySegundos, setAutoplaySegundos] = useState(5);
   const [inicioEm, setInicioEm] = useState('');
   const [fimEm, setFimEm] = useState('');
   const [escolinhaIds, setEscolinhaIds] = useState<string[]>([]);
@@ -54,6 +55,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
       setSlides(banner?.slides?.length ? banner.slides : []);
       setOrdem(banner?.ordem ?? 0);
       setAtivo(banner?.ativo ?? true);
+      setAutoplaySegundos(banner?.autoplay_segundos ?? 5);
       setInicioEm(banner?.inicio_em ? banner.inicio_em.slice(0, 16) : '');
       setFimEm(banner?.fim_em ? banner.fim_em.slice(0, 16) : '');
       setEscolinhaIds(banner?.escolinha_ids ?? []);
@@ -130,6 +132,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
         slides: validSlides,
         ordem,
         ativo,
+        autoplay_segundos: autoplaySegundos,
         inicio_em: inicioEm ? new Date(inicioEm).toISOString() : null,
         fim_em: fimEm ? new Date(fimEm).toISOString() : null,
         escolinha_ids: escolinhaIds,
@@ -259,6 +262,21 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
               <Switch checked={ativo} onCheckedChange={setAtivo} />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label>Tempo entre slides (segundos)</Label>
+            <Input
+              type="number"
+              min={2}
+              max={60}
+              value={autoplaySegundos}
+              onChange={(e) => setAutoplaySegundos(Number(e.target.value))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Entre 2 e 60 segundos. Aplica-se ao carrossel desta posição.
+            </p>
+          </div>
+
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">

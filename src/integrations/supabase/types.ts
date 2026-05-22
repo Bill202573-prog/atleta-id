@@ -469,6 +469,7 @@ export type Database = {
         Row: {
           abrir_nova_aba: boolean
           ativo: boolean
+          autoplay_segundos: number
           created_at: string
           created_by: string | null
           fim_em: string | null
@@ -485,6 +486,7 @@ export type Database = {
         Insert: {
           abrir_nova_aba?: boolean
           ativo?: boolean
+          autoplay_segundos?: number
           created_at?: string
           created_by?: string | null
           fim_em?: string | null
@@ -501,6 +503,7 @@ export type Database = {
         Update: {
           abrir_nova_aba?: boolean
           ativo?: boolean
+          autoplay_segundos?: number
           created_at?: string
           created_by?: string | null
           fim_em?: string | null

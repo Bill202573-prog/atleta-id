@@ -1,0 +1,1 @@
+ALTER TABLE public.banners_publicitarios ADD COLUMN IF NOT EXISTS autoplay_segundos integer NOT NULL DEFAULT 5 CHECK (autoplay_segundos BETWEEN 2 AND 60);
