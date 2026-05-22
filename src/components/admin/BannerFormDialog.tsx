@@ -115,9 +115,11 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
       toast.error('Preencha o título');
       return;
     }
-    const validSlides = slides.filter((s) => s.imagem_url && s.link_url.trim());
+    const validSlides = slides
+      .filter((s) => s.imagem_url)
+      .map((s) => ({ ...s, link_url: (s.link_url ?? '').trim() }));
     if (validSlides.length === 0) {
-      toast.error('Adicione ao menos 1 slide com imagem e link');
+      toast.error('Adicione ao menos 1 slide com imagem');
       return;
     }
     try {
@@ -135,21 +137,22 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
       toast.success(banner ? 'Banner atualizado!' : 'Banner criado!');
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar');
+      console.error('[BannerFormDialog] save error', err);
+      toast.error(err?.message || 'Erro ao salvar');
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="p-6 pb-2 border-b shrink-0">
           <DialogTitle>{banner ? 'Editar Banner' : 'Novo Banner'}</DialogTitle>
           <DialogDescription>
             Cada banner aceita até {MAX_SLIDES} imagens (carrossel). Recomendado: 1200x675 (16:9), até 500KB. JPG, PNG ou WebP.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="flex-1 overflow-y-auto px-6 space-y-4 py-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Título (interno)</Label>
@@ -290,7 +293,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="p-6 pt-3 border-t shrink-0 bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit} disabled={saveMutation.isPending}>
             {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
