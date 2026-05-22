@@ -129,6 +129,7 @@ const Dashboard = () => {
       if (path === '/dashboard/banners') return <AdminBannersPage />;
       if (path === '/dashboard/diagnostico-banners') return <AdminDiagnosticoBannersPage />;
       if (path === '/dashboard/users') return <AdminUsersPage />;
+      if (path === '/dashboard/resumo-mensal') return <AdminResumoMensalPage />;
     }
 
     if (user.role === 'school') {
