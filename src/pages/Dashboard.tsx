@@ -30,6 +30,7 @@ const AtividadesExternasAdminPage = lazy(() => import('./dashboard/admin/Ativida
 const AdminRedeSocialPage = lazy(() => import('./dashboard/admin/AdminRedeSocialPage'));
 const AdminBannersPage = lazy(() => import('./dashboard/admin/AdminBannersPage'));
 const AdminDiagnosticoBannersPage = lazy(() => import('./dashboard/admin/AdminDiagnosticoBannersPage'));
+const AdminResumoMensalPage = lazy(() => import('./dashboard/admin/AdminResumoMensalPage'));
 const ComunicadosEscolaManagement = lazy(() => import('./dashboard/school/ComunicadosEscolaManagement'));
 const IndicacoesManagement = lazy(() => import('./dashboard/school/IndicacoesManagement'));
 const SchoolLojaPage = lazy(() => import('./dashboard/school/SchoolLojaPage'));
