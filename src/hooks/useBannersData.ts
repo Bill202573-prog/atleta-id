@@ -70,7 +70,9 @@ export function useBannersAtivos(posicao?: BannerPosicao) {
         autoplay_segundos: Number(b.autoplay_segundos ?? 5),
       })) as Banner[];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
