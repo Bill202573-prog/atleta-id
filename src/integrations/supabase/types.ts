@@ -3542,6 +3542,30 @@ export type Database = {
         }
         Relationships: []
       }
+      resumo_mensal_envios: {
+        Row: {
+          ano: number
+          crianca_id: string
+          enviado_em: string
+          id: string
+          mes: number
+        }
+        Insert: {
+          ano: number
+          crianca_id: string
+          enviado_em?: string
+          id?: string
+          mes: number
+        }
+        Update: {
+          ano?: number
+          crianca_id?: string
+          enviado_em?: string
+          id?: string
+          mes?: number
+        }
+        Relationships: []
+      }
       saas_config: {
         Row: {
           chave: string
@@ -3836,6 +3860,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: string
       }
+      get_resumo_mensal_atleta: {
+        Args: { p_ano: number; p_crianca_id: string; p_mes: number }
+        Returns: Json
+      }
       get_school_parent_access_analytics: {
         Args: { p_escolinha_id: string }
         Returns: {
@@ -3914,6 +3942,10 @@ export type Database = {
       is_admin_of_turma: { Args: { p_turma_id: string }; Returns: boolean }
       is_admin_of_turma_no_rls: {
         Args: { p_turma_id: string }
+        Returns: boolean
+      }
+      is_crianca_resumo_mensal_enabled: {
+        Args: { p_crianca_id: string }
         Returns: boolean
       }
       is_perfil_atleta_owner: {
