@@ -293,7 +293,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="p-6 pt-3 border-t shrink-0 bg-background">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button onClick={handleSubmit} disabled={saveMutation.isPending}>
             {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
