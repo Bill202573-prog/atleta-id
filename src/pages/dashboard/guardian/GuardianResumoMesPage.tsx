@@ -21,7 +21,13 @@ import { toast } from 'sonner';
 
 const GuardianResumoMesPage = () => {
   const navigate = useNavigate();
-  const { criancaId, ano, mes } = useParams();
+  const location = useLocation();
+  // Path: /dashboard/jornada/resumo/:criancaId/:ano/:mes
+  const parts = location.pathname.split('/').filter(Boolean);
+  const idx = parts.indexOf('resumo');
+  const criancaId = idx >= 0 ? parts[idx + 1] : undefined;
+  const ano = idx >= 0 ? parts[idx + 2] : undefined;
+  const mes = idx >= 0 ? parts[idx + 3] : undefined;
 
   const cId = criancaId || '';
   const aNum = Number(ano);
