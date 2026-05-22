@@ -1,4 +1,5 @@
-// Envia push de "Resumo Mensal" para responsáveis das crianças do Fluminense.
+// Envia push de "Resumo Mensal" para responsáveis das crianças das escolas habilitadas.
+// As escolas habilitadas são gerenciadas pelo admin via resumo_mensal_escolas_habilitadas.
 // Disparado por cron no dia 01 às 12:00 (referência: mês anterior).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -6,8 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const ESCOLINHA_FLUMINENSE = '1717c373-f039-4179-9839-b749abf0b882';
 
 const MENSAGENS = [
   (n: string) => `O resumo esportivo já está disponível ⚽`,
