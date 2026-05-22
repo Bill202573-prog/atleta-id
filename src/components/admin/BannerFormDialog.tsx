@@ -152,7 +152,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="flex-1 overflow-y-auto px-6 space-y-4 py-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Título (interno)</Label>
