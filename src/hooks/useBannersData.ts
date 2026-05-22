@@ -89,6 +89,7 @@ export function useAdminBanners() {
         ...b,
         posicao: (b.posicao ?? 'topo') as BannerPosicao,
         slides: normalizeSlides(b),
+        autoplay_segundos: Number(b.autoplay_segundos ?? 5),
         escolinha_ids: (b.banner_escolas ?? []).map((be: any) => be.escolinha_id),
       }));
     },
