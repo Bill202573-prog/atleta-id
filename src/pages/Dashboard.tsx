@@ -29,6 +29,7 @@ const ComunicadosManagement = lazy(() => import('./dashboard/admin/ComunicadosMa
 const AtividadesExternasAdminPage = lazy(() => import('./dashboard/admin/AtividadesExternasAdminPage'));
 const AdminRedeSocialPage = lazy(() => import('./dashboard/admin/AdminRedeSocialPage'));
 const AdminBannersPage = lazy(() => import('./dashboard/admin/AdminBannersPage'));
+const AdminDiagnosticoBannersPage = lazy(() => import('./dashboard/admin/AdminDiagnosticoBannersPage'));
 const ComunicadosEscolaManagement = lazy(() => import('./dashboard/school/ComunicadosEscolaManagement'));
 const IndicacoesManagement = lazy(() => import('./dashboard/school/IndicacoesManagement'));
 const SchoolLojaPage = lazy(() => import('./dashboard/school/SchoolLojaPage'));
@@ -123,6 +124,7 @@ const Dashboard = () => {
       if (path === '/dashboard/atividades-externas') return <AtividadesExternasAdminPage />;
       if (path === '/dashboard/rede-social') return <AdminRedeSocialPage />;
       if (path === '/dashboard/banners') return <AdminBannersPage />;
+      if (path === '/dashboard/diagnostico-banners') return <AdminDiagnosticoBannersPage />;
       if (path === '/dashboard/users') return <AdminUsersPage />;
     }
 
