@@ -7,6 +7,7 @@ import HistoricoTab from '@/components/guardian/HistoricoTab';
 import AtividadesExternasTab from '@/components/guardian/AtividadesExternasTab';
 import { MobileGuardianLayout } from '@/components/layout/MobileGuardianLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ResumoMesCard from '@/components/guardian/resumo-mes/ResumoMesCard';
 
 const GuardianJornadaPage = () => {
   const { data: children = [], isLoading } = useGuardianChildren();
@@ -39,6 +40,10 @@ const GuardianJornadaPage = () => {
             Desempenho e histórico
           </p>
         </div>
+
+        {currentChild && (
+          <ResumoMesCard criancaId={currentChild.id} childName={currentChild.nome} />
+        )}
 
         {currentChild && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
