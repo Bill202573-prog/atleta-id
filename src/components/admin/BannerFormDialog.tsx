@@ -55,6 +55,7 @@ export function BannerFormDialog({ open, onOpenChange, banner }: Props) {
       setSlides(banner?.slides?.length ? banner.slides : []);
       setOrdem(banner?.ordem ?? 0);
       setAtivo(banner?.ativo ?? true);
+      setAutoplaySegundos(banner?.autoplay_segundos ?? 5);
       setInicioEm(banner?.inicio_em ? banner.inicio_em.slice(0, 16) : '');
       setFimEm(banner?.fim_em ? banner.fim_em.slice(0, 16) : '');
       setEscolinhaIds(banner?.escolinha_ids ?? []);
