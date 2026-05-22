@@ -108,6 +108,7 @@ const Dashboard = () => {
     if (path === '/dashboard/frequencia') return <Suspense fallback={<DashboardLoading />}><GuardianFrequenciaPage /></Suspense>;
     if (path === '/dashboard/financeiro') return <Suspense fallback={<DashboardLoading />}><GuardianFinanceiroPage /></Suspense>;
     if (path === '/dashboard/jornada') return <Suspense fallback={<DashboardLoading />}><GuardianJornadaPage /></Suspense>;
+    if (path.startsWith('/dashboard/jornada/resumo/')) return <Suspense fallback={<DashboardLoading />}><GuardianResumoMesPage /></Suspense>;
     if (path === '/dashboard/convocacoes') return <Suspense fallback={<DashboardLoading />}><GuardianConvocacoesPage /></Suspense>;
     if (path === '/dashboard/loja') return <Suspense fallback={<DashboardLoading />}><GuardianLojaPage /></Suspense>;
     return <Suspense fallback={<DashboardLoading />}><GuardianInicioPage /></Suspense>;
