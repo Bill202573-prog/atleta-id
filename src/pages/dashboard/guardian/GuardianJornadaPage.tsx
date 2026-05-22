@@ -42,6 +42,10 @@ const GuardianJornadaPage = () => {
         </div>
 
         {currentChild && (
+          <ResumoMesCard criancaId={currentChild.id} childName={currentChild.nome} />
+        )}
+
+        {currentChild && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className={`grid w-full h-12 mb-4 ${showExternalTab ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <TabsTrigger value="desempenho" className="flex items-center gap-2 text-sm">
