@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type BannerPosicao = 'topo' | 'produtos';
 
@@ -51,8 +52,11 @@ function normalizeSlides(row: any): BannerSlide[] {
 
 // Banners ativos visíveis para o usuário (responsável). RLS faz o filtro.
 export function useBannersAtivos(posicao?: BannerPosicao) {
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+
   return useQuery({
-    queryKey: ['banners-ativos', posicao ?? 'all'],
+    queryKey: ['banners-ativos', userId ?? 'anonymous', posicao ?? 'all'],
     queryFn: async (): Promise<Banner[]> => {
       let q = supabase
         .from('banners_publicitarios')
@@ -70,6 +74,7 @@ export function useBannersAtivos(posicao?: BannerPosicao) {
         autoplay_segundos: Number(b.autoplay_segundos ?? 5),
       })) as Banner[];
     },
+    enabled: !!userId,
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
