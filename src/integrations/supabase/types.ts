@@ -3760,6 +3760,20 @@ export type Database = {
         Args: { p_crianca_id: string; p_data_type?: string }
         Returns: boolean
       }
+      debug_banners_for_user: {
+        Args: { p_email: string }
+        Returns: {
+          ativo: boolean
+          banner_id: string
+          fim_em: string
+          inicio_em: string
+          posicao: string
+          segmentado_para: string[]
+          titulo: string
+          user_escolas: string[]
+          visivel_para_user: boolean
+        }[]
+      }
       decrement_estoque: {
         Args: { p_produto_id: string; p_quantidade: number }
         Returns: undefined
