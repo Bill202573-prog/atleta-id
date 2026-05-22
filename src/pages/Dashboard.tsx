@@ -124,6 +124,7 @@ const Dashboard = () => {
       if (path === '/dashboard/atividades-externas') return <AtividadesExternasAdminPage />;
       if (path === '/dashboard/rede-social') return <AdminRedeSocialPage />;
       if (path === '/dashboard/banners') return <AdminBannersPage />;
+      if (path === '/dashboard/diagnostico-banners') return <AdminDiagnosticoBannersPage />;
       if (path === '/dashboard/users') return <AdminUsersPage />;
     }
 
