@@ -18,8 +18,12 @@ export function PWAUpdatePrompt() {
     const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
-        setDismissed(false);
-        setNeedsRefresh(true);
+        // Auto-update silently — no prompt, just reload with the new version
+        try {
+          updateSW(true);
+        } catch (e) {
+          console.error('[PWA] auto-update error:', e);
+        }
       },
       onRegisterError(error) {
         console.error('[PWA] register error:', error);
