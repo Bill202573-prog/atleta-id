@@ -20,9 +20,10 @@ export default function AdminResumoMensalPage() {
   const totalHabilitadas = (data || []).filter((e) => e.habilitado).length;
 
   return (
-    <div className="container max-w-3xl mx-auto p-4 space-y-4">
+    <div className="container max-w-3xl mx-auto p-3 sm:p-4 space-y-4">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+        <div className="h-10 w-10 shrink-0 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+
           <Sparkles className="h-5 w-5" />
         </div>
         <div>
