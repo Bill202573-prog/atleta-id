@@ -18,6 +18,7 @@ import {
   mensagemEmocional,
 } from '@/hooks/useResumoMensal';
 import { toast } from 'sonner';
+import { useSignedUrl } from '@/hooks/useSignedUrl';
 
 const GuardianResumoMesPage = () => {
   const navigate = useNavigate();
