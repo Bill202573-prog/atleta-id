@@ -137,9 +137,9 @@ const GuardianResumoMesPage = () => {
 
             <div className="mt-4 flex items-center gap-3">
               <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm overflow-hidden flex items-center justify-center text-2xl font-bold ring-2 ring-white/40">
-                {data.crianca.foto_url ? (
+                {fotoResolvida ? (
                   <img
-                    src={data.crianca.foto_url}
+                    src={fotoResolvida}
                     alt={data.crianca.nome}
                     className="w-full h-full object-cover"
                   />
