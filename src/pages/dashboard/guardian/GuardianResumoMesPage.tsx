@@ -40,6 +40,7 @@ const GuardianResumoMesPage = () => {
     aNum,
     mNum,
   );
+  const fotoResolvida = useSignedUrl(data?.crianca?.foto_url, 'child-photos');
 
   const handleShare = async () => {
     if (!data) return;
