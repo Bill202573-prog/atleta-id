@@ -30,25 +30,23 @@ export function ResumoMesCard({ criancaId, childName }: Props) {
       onClick={() => navigate(`/dashboard/jornada/resumo/${criancaId}/${ano}/${mes}`)}
     >
       <div className="relative p-4 bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 text-xs uppercase tracking-wider opacity-90 mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Resumo do Mês · {NOMES_MESES[mes - 1]} {ano}
-            </div>
-            <p className="text-base font-semibold truncate">
-              Veja como foi o mês {firstName ? `de ${firstName}` : ''}
-            </p>
-            {data && !isLoading && (
-              <p className="text-xs opacity-90 mt-1">
-                {data.presenca.percentual}% de presença · {data.participacoes.jogos} jogo{data.participacoes.jogos === 1 ? '' : 's'}
-              </p>
-            )}
-          </div>
+        <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider opacity-90 mb-1">
+          <Sparkles className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">Resumo do Mês · {NOMES_MESES[mes - 1]} {ano}</span>
+        </div>
+        <p className="text-base font-semibold leading-snug break-words pr-1">
+          Veja como foi o mês {firstName ? `de ${firstName}` : ''}
+        </p>
+        {data && !isLoading && (
+          <p className="text-xs opacity-90 mt-1">
+            {data.presenca.percentual}% de presença · {data.participacoes.jogos} jogo{data.participacoes.jogos === 1 ? '' : 's'}
+          </p>
+        )}
+        <div className="mt-3 flex justify-end">
           <Button
             variant="secondary"
             size="sm"
-            className="shrink-0 gap-1"
+            className="gap-1"
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/dashboard/jornada/resumo/${criancaId}/${ano}/${mes}`);
