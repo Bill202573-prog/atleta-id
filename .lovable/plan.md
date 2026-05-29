@@ -1,39 +1,44 @@
 ## Objetivo
-Substituir o ID hardcoded da Fluminense por uma configuração no painel admin, permitindo marcar quais escolas têm o "Resumo Mensal do Atleta" habilitado.
+Permitir ao admin visualizar, por escola, **quem está recebendo push, quantas notificações foram enviadas e o histórico**, e identificar pais sem push ativo para acionar.
 
-## Mudanças no banco
+## Achados do diagnóstico (Bandeirantes)
+- 26 pais ativos · 12 com push (46%) · 14 sem push ativo
+- Admin da escola: 5 devices registrados
+- 339 push enviados nos últimos 30 dias (comunicado, cobrança, pendências, aniversário)
+- Tipos disparados automaticamente: `comunicado`, `cobranca`, `aniversario`, `aniversario_admin`, `admin_pendencias`, `resumo_mensal` (novo)
 
-**Nova tabela `resumo_mensal_escolas_habilitadas`:**
-- `escolinha_id` (uuid, PK, FK → escolinhas)
-- `habilitado_em` (timestamp)
-- `habilitado_por` (uuid, user_id do admin)
-- RLS: apenas admins (SELECT/INSERT/DELETE via `has_role(auth.uid(), 'admin')`)
+## Nova página: `/dashboard/admin/push-monitor`
 
-**Atualizar função `is_crianca_resumo_mensal_enabled(p_crianca_id)`:**
-- Trocar comparação com UUID fixo por `EXISTS` na nova tabela
-- Mantém mesma assinatura → nenhuma quebra no frontend/hook
+### Seção 1 — Seletor de escola
+Dropdown com todas as escolas (default: a primeira). Reaproveita hook existente de listagem.
 
-**Seed:** inserir a Fluminense (`1717c373-...`) automaticamente na nova tabela, preservando o comportamento atual.
+### Seção 2 — Cards de cobertura
+- **Pais com push ativo:** X de Y (barra de progresso)
+- **Admins com push ativo:** X (lista de devices)
+- **Professores com push ativo:** X de Y
+- **Envios nos últimos 30 dias** (total)
 
-## Edge Function `resumo-mensal-push`
-- Trocar filtro hardcoded de `escolinha_id = 'fluminense'` por query nas escolas presentes em `resumo_mensal_escolas_habilitadas`
-- Continua varrendo Fluminense + qualquer outra escola que o admin habilitar no futuro
+### Seção 3 — Envios por tipo (últimos 30d)
+Tabela: tipo · total enviado · último envio · % entregue
+Tipos: comunicado, cobranca, aniversario, admin_pendencias, resumo_mensal, etc.
 
-## UI Admin
-Adicionar nova seção em `/dashboard/admin` (ou na página de configurações SaaS existente, se houver):
-- **Card "Resumo Mensal do Atleta (Beta)"**
-- Lista de escolas com switch (toggle) ON/OFF
-- Busca por nome de escola
-- Ao ligar/desligar: insert/delete na tabela `resumo_mensal_escolas_habilitadas`
-- Texto explicativo: "Escolas habilitadas recebem o resumo mensal automático no dia 1 e o bloco aparece na Jornada dos responsáveis."
+### Seção 4 — Pais sem push (acionáveis)
+Lista de responsáveis ativos **sem** subscription. Para cada um:
+- Nome, filho(s), telefone (WhatsApp)
+- Botão "Enviar WhatsApp" com mensagem pronta orientando a ativar notificações
 
-Hook novo: `useResumoMensalEscolas` (lista + toggle).
+### Seção 5 — Histórico recente
+Últimos 50 envios da escola (push_notifications_log): data/hora · destinatário · tipo · título · entregue.
+
+## Backend
+Nova RPC `get_push_monitor_escola(p_escolinha_id uuid)` retornando JSONB com as 5 seções acima em uma única chamada. SECURITY DEFINER + check `has_role(auth.uid(), 'admin')`. Sem novas tabelas — usa `push_subscriptions`, `push_notifications_log`, `responsaveis`, `crianca_escolinha`, `professores`, `escolinhas`.
+
+## Frontend
+- Hook `usePushMonitor(escolinhaId)` (React Query)
+- Página mobile-first: cards empilhados, tabela com scroll horizontal em telas pequenas
+- Link na sidebar admin "Monitor de Push" (ícone Bell)
 
 ## Não muda
-- `useResumoMensal` (consumidor já chama a RPC genérica)
-- `ResumoMesCard` e `GuardianResumoMesPage`
-- Rota `/dashboard/jornada/resumo/:criancaId/:ano/:mes`
-- Cron job (continua chamando a edge function 1×/mês)
-
-## Memória
-Atualizar `mem://recursos/resumo-mensal-atleta` removendo a menção a "gating Fluminense hardcoded" e descrevendo o gating via tabela admin.
+- Não altera lógica de envio existente
+- Não modifica `push_subscriptions` nem `push_notifications_log`
+- Sem migrações destrutivas
