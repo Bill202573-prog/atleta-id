@@ -23,6 +23,7 @@ import {
   Settings,
   Image,
   Sparkles,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
