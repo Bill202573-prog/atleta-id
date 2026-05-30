@@ -131,6 +131,7 @@ const Dashboard = () => {
       if (path === '/dashboard/diagnostico-banners') return <AdminDiagnosticoBannersPage />;
       if (path === '/dashboard/users') return <AdminUsersPage />;
       if (path === '/dashboard/resumo-mensal') return <AdminResumoMensalPage />;
+      if (path === '/dashboard/push-monitor') return <AdminPushMonitorPage />;
     }
 
     if (user.role === 'school') {
