@@ -23,6 +23,7 @@ import {
   Settings,
   Image,
   Sparkles,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ForcePasswordChangeDialog from '@/components/auth/ForcePasswordChangeDialog';
@@ -126,6 +127,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           { href: '/dashboard/rede-social', label: 'Rede Social', icon: Globe },
           { href: '/dashboard/banners', label: 'Banners', icon: Image },
           { href: '/dashboard/resumo-mensal', label: 'Resumo Mensal', icon: Sparkles },
+          { href: '/dashboard/push-monitor', label: 'Monitor de Push', icon: Bell },
           { href: '/dashboard/financeiro', label: 'Financeiro', icon: DollarSign },
           { href: '/dashboard/users', label: 'Usuários', icon: UserCog },
           { href: '/dashboard/diagnostico', label: 'Diagnóstico', icon: Stethoscope },

@@ -3881,6 +3881,10 @@ export type Database = {
           valor: number
         }[]
       }
+      get_push_monitor_escola: {
+        Args: { p_escolinha_id: string }
+        Returns: Json
+      }
       get_responsavel_id: { Args: { _user_id: string }; Returns: string }
       get_responsavel_id_simple: {
         Args: { user_uuid: string }
@@ -3994,6 +3998,13 @@ export type Database = {
       is_teacher_of_turma_no_rls: {
         Args: { p_turma_id: string }
         Returns: boolean
+      }
+      list_escolas_para_admin: {
+        Args: never
+        Returns: {
+          id: string
+          nome: string
+        }[]
       }
       pode_usar_atividades_externas: {
         Args: { p_crianca_id?: string; p_user_id: string }
