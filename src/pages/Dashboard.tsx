@@ -31,6 +31,7 @@ const AdminRedeSocialPage = lazy(() => import('./dashboard/admin/AdminRedeSocial
 const AdminBannersPage = lazy(() => import('./dashboard/admin/AdminBannersPage'));
 const AdminDiagnosticoBannersPage = lazy(() => import('./dashboard/admin/AdminDiagnosticoBannersPage'));
 const AdminResumoMensalPage = lazy(() => import('./dashboard/admin/AdminResumoMensalPage'));
+const AdminPushMonitorPage = lazy(() => import('./dashboard/admin/AdminPushMonitorPage'));
 const ComunicadosEscolaManagement = lazy(() => import('./dashboard/school/ComunicadosEscolaManagement'));
 const IndicacoesManagement = lazy(() => import('./dashboard/school/IndicacoesManagement'));
 const SchoolLojaPage = lazy(() => import('./dashboard/school/SchoolLojaPage'));
