@@ -103,17 +103,7 @@ Deno.serve(async (req) => {
           if (upRes.ok) {
             result.reactivated = true;
             reactivatedCount++;
-            // Audit log
-            await supabase.from('admin_audit_log').insert({
-              acao: 'asaas_webhook_reativado',
-              detalhes: {
-                escolinha_id: c.escolinha_id,
-                escolinha_nome: escolinhaNome,
-                webhook_id: webhook.id,
-                was_interrupted: result.was_interrupted,
-                was_disabled: result.was_disabled,
-              },
-            });
+            console.log(`REACTIVATED webhook for escola ${escolinhaNome} (${c.escolinha_id}) - interrupted=${result.was_interrupted} disabled=${result.was_disabled}`);
           } else {
             result.error = `PUT /webhooks ${upRes.status}`;
             errorCount++;
